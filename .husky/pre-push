@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Exit on any error
+set -e
+
+echo "🚀 Running pre-push checks..."
+
+# Check formatting (without fixing)
+echo "📝 Checking code formatting..."
+npm run format -- --check
+
+# Run linter
+echo "🔍 Linting code..."
+npm run lint
+
+# Run type checking
+echo "🔷 Type checking..."
+npm run typecheck
+
+# Run tests with coverage
+echo "🧪 Running tests with coverage..."
+npm run test:coverage
+
+# Build the project to ensure it compiles
+echo "📦 Building project..."
+npm run build
+
+echo "✅ All pre-push checks passed! Pushing to remote..."

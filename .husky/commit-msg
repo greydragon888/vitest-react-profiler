@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Validate commit message format
+npx --no -- commitlint --edit "$1"

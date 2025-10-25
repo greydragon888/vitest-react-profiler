@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions & Discussions
+    url: https://github.com/greydragon888/vitest-react-profiler/discussions
+    about: Please ask and answer questions in GitHub Discussions
+  - name: Documentation
+    url: https://github.com/greydragon888/vitest-react-profiler#readme
+    about: Check the documentation for usage examples and API reference
+  - name: Discord Community
+    url: https://discord.gg/vitest
+    about: Join the Vitest Discord server for community support

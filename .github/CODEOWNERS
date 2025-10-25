@@ -1,0 +1,29 @@
+# CODEOWNERS for vitest-react-profiler
+# This file defines who is responsible for code in this repository
+
+# Default owner for everything in the repo
+* @greydragon888
+
+# Source code
+/src/ @greydragon888
+
+# Tests
+/tests/ @greydragon888
+
+# Documentation
+*.md @greydragon888
+/README.md @greydragon888
+/CONTRIBUTING.md @greydragon888
+
+# Configuration files
+/.github/ @greydragon888
+/package.json @greydragon888
+/tsconfig*.json @greydragon888
+/vitest.config.* @greydragon888
+/eslint.config.* @greydragon888
+
+# Examples
+/examples/ @greydragon888
+
+# Build configuration
+/tsup.config.ts @greydragon888

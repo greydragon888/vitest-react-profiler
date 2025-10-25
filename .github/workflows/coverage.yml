@@ -1,0 +1,170 @@
+name: Coverage Report
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Generate coverage summary
+        id: coverage
+        run: |
+          # Extract coverage percentages
+          COVERAGE_LINES=$(grep -A 1 "All files" coverage/lcov.info | grep "LF:" | cut -d':' -f2 || echo "0")
+          COVERAGE_BRANCHES=$(grep -A 1 "All files" coverage/lcov.info | grep "BRF:" | cut -d':' -f2 || echo "0")
+
+          # Read from coverage summary if available
+          if [ -f coverage/coverage-summary.json ]; then
+            LINES_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)" 2>/dev/null || echo "0")
+            BRANCHES_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.branches.pct)" 2>/dev/null || echo "0")
+            FUNCTIONS_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.functions.pct)" 2>/dev/null || echo "0")
+            STATEMENTS_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.statements.pct)" 2>/dev/null || echo "0")
+
+            echo "lines=$LINES_PCT" >> $GITHUB_OUTPUT
+            echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
+            echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
+            echo "statements=$STATEMENTS_PCT" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create coverage badges
+        run: |
+          mkdir -p .github/badges
+
+          # Function to determine color based on percentage
+          get_color() {
+            if [ $(echo "$1 >= 90" | bc -l) -eq 1 ]; then
+              echo "brightgreen"
+            elif [ $(echo "$1 >= 80" | bc -l) -eq 1 ]; then
+              echo "yellow"
+            elif [ $(echo "$1 >= 70" | bc -l) -eq 1 ]; then
+              echo "orange"
+            else
+              echo "red"
+            fi
+          }
+
+          # Generate badge URLs (for shields.io)
+          echo "[![Coverage Status](https://codecov.io/gh/${{ github.repository }}/branch/main/graph/badge.svg)](https://codecov.io/gh/${{ github.repository }})" > .github/badges/coverage.md
+
+      - name: Comment PR with coverage report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const { execSync } = require('child_process');
+
+            let comment = `## 📊 Test Coverage Report\n\n`;
+
+            try {
+              // Read coverage summary
+              const coverageSummary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+              const total = coverageSummary.total;
+
+              // Create coverage table
+              comment += '| Type | Coverage | Status |\n';
+              comment += '|------|----------|--------|\n';
+
+              const getEmoji = (pct) => pct >= 90 ? '🟢' : pct >= 80 ? '🟡' : pct >= 70 ? '🟠' : '🔴';
+
+              ['lines', 'statements', 'functions', 'branches'].forEach(type => {
+                const data = total[type];
+                const pct = data.pct || 0;
+                const emoji = getEmoji(pct);
+                const covered = data.covered || 0;
+                const total = data.total || 0;
+
+                comment += `| **${type.charAt(0).toUpperCase() + type.slice(1)}** | ${pct.toFixed(2)}% (${covered}/${total}) | ${emoji} |\n`;
+              });
+
+              // Add threshold status
+              comment += '\n### Coverage Thresholds\n\n';
+              const thresholds = {
+                statements: 100,
+                branches: 100,
+                functions: 100,
+                lines: 100
+              };
+
+              let allPassed = true;
+              Object.entries(thresholds).forEach(([type, threshold]) => {
+                const pct = total[type]?.pct || 0;
+                const status = pct >= threshold ? '✅ PASS' : '❌ FAIL';
+                if (pct < threshold) allPassed = false;
+                comment += `- ${type}: ${pct.toFixed(2)}% / ${threshold}% ${status}\n`;
+              });
+
+              comment += allPassed ? '\n✅ **All coverage thresholds met!**' : '\n⚠️ **Some coverage thresholds not met**';
+
+            } catch (error) {
+              comment += `⚠️ Could not generate coverage report: ${error.message}`;
+            }
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('📊 Test Coverage Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+            !coverage/tmp/
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          verbose: true

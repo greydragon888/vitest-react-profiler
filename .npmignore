@@ -1,0 +1,105 @@
+# Development files
+*.log
+*.pid
+*.seed
+*.pid.lock
+*.tsbuildinfo
+
+# Source maps (optional - remove if you want to include them)
+*.map
+*.js.map
+*.cjs.map
+
+# Testing
+coverage/
+.nyc_output/
+tests/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+vitest.config.*
+jest.config.*
+
+# Examples - not needed in the package
+examples/
+
+# Source files (only if publishing dist)
+# Uncomment if you want to include sources
+# src/
+
+# Development configs
+.editorconfig
+.eslintrc*
+eslint.config.*
+.prettierrc*
+prettier.config.*
+.gitattributes
+.gitignore
+.nvmrc
+.npmrc
+tsconfig.json
+tsconfig.*.json
+tsup.config.*
+rollup.config.*
+webpack.config.*
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+
+# Documentation files (optional)
+CONTRIBUTING.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+SECURITY.md
+LAUNCH_CHECKLIST.md
+docs/
+*.md
+!README.md  # README.md is needed on npm page
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Build tools
+.turbo/
+.parcel-cache/
+.next/
+.nuxt/
+.cache/
+
+# Node modules (always exclude)
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Misc
+.env*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Scripts that shouldn't be published
+scripts/
+find-empty-file.sh
+*.sh
+
+# Husky hooks
+.husky/

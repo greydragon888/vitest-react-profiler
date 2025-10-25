@@ -1,0 +1,14 @@
+{
+  "name": "memoization-examples",
+  "version": "1.0.0",
+  "description": "Memoization testing examples for vitest-react-profiler",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch"
+  },
+  "author": "GreyDragon888",
+  "license": "MIT"
+}

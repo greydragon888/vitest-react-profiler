@@ -1,0 +1,117 @@
+name: Size Check
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  size:
+    name: Check Bundle Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check bundle size
+        run: |
+          echo "📊 Bundle Size Report"
+          echo "===================="
+
+          # Check file sizes
+          ESM_SIZE=$(wc -c < dist/index.js | xargs)
+          CJS_SIZE=$(wc -c < dist/index.cjs | xargs)
+          DTS_SIZE=$(wc -c < dist/index.d.ts | xargs)
+
+          # Convert to KB
+          ESM_KB=$(echo "scale=2; $ESM_SIZE / 1024" | bc)
+          CJS_KB=$(echo "scale=2; $CJS_SIZE / 1024" | bc)
+          DTS_KB=$(echo "scale=2; $DTS_SIZE / 1024" | bc)
+
+          echo "ESM: ${ESM_KB}KB"
+          echo "CJS: ${CJS_KB}KB"
+          echo "Types: ${DTS_KB}KB"
+
+          # Check if files are too large (>50KB warning, >100KB error)
+          if [ "$ESM_SIZE" -gt 102400 ] || [ "$CJS_SIZE" -gt 102400 ]; then
+            echo "❌ Bundle size exceeds 100KB limit!"
+            exit 1
+          elif [ "$ESM_SIZE" -gt 51200 ] || [ "$CJS_SIZE" -gt 51200 ]; then
+            echo "⚠️  Bundle size exceeds 50KB warning threshold"
+          else
+            echo "✅ Bundle size is optimal"
+          fi
+
+      - name: Analyze with size-limit
+        if: false # Enable when size-limit is configured
+        run: |
+          npx size-limit --json > size-report.json
+          cat size-report.json
+
+      - name: Comment PR with size
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read sizes
+            const esmSize = fs.statSync('dist/index.js').size;
+            const cjsSize = fs.statSync('dist/index.cjs').size;
+            const dtsSize = fs.statSync('dist/index.d.ts').size;
+
+            // Format sizes
+            const formatSize = (bytes) => {
+              const kb = bytes / 1024;
+              return `${kb.toFixed(2)} KB`;
+            };
+
+            const comment = `## 📊 Bundle Size Report
+
+            | Format | Size |
+            |--------|------|
+            | ESM    | ${formatSize(esmSize)} |
+            | CJS    | ${formatSize(cjsSize)} |
+            | Types  | ${formatSize(dtsSize)} |
+
+            Total: ${formatSize(esmSize + cjsSize + dtsSize)}`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('📊 Bundle Size Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }

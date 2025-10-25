@@ -1,0 +1,205 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Check formatting
+        run: npm run format -- --check
+
+  test:
+    name: Test (Node ${{ matrix.node }} + React ${{ matrix.react }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+        react: [18, 19]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install React ${{ matrix.react }}
+        if: matrix.react != 19
+        run: |
+          npm install --save-dev react@^${{ matrix.react }}.0.0 react-dom@^${{ matrix.react }}.0.0
+          npm install --save-dev @types/react@^${{ matrix.react }}.0.0 @types/react-dom@^${{ matrix.react }}.0.0
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.node == 20 && matrix.react == 19
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-coverage
+          fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check build outputs
+        run: |
+          if [ ! -f "dist/index.js" ]; then
+            echo "ESM build missing"
+            exit 1
+          fi
+          if [ ! -f "dist/index.cjs" ]; then
+            echo "CJS build missing"
+            exit 1
+          fi
+          if [ ! -f "dist/index.d.ts" ]; then
+            echo "Type definitions missing"
+            exit 1
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  test-examples:
+    name: Test Examples
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Test basic example
+        run: |
+          cd examples/basic
+          npm install
+          npm test
+
+      - name: Test memoization example
+        run: |
+          cd examples/memoization
+          npm install
+          npm test
+
+      - name: Test performance example
+        run: |
+          cd examples/performance
+          npm install
+          npm test
+
+  test-installation:
+    name: Test Package Installation
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create test project
+        run: |
+          mkdir test-project
+          cd test-project
+          npm init -y
+          npm install vitest react react-dom @testing-library/react
+          npm install ../
+
+      - name: Test ESM import
+        run: |
+          cd test-project
+          cat > test.mjs << 'EOF'
+          import { withProfiler } from 'vitest-react-profiler';
+          console.log('✅ ESM import successful');
+          console.log('withProfiler:', typeof withProfiler);
+          EOF
+          node test.mjs
+
+      - name: Test TypeScript definitions
+        run: |
+          cd test-project
+          npm install -D typescript @types/react
+          cat > test.ts << 'EOF'
+          import { withProfiler, ProfiledComponent } from 'vitest-react-profiler';
+          import * as React from 'react';
+          const Component: React.FC = () => React.createElement('div');
+          const profiled: ProfiledComponent<{}> & React.ComponentType<{}> = withProfiler(Component);
+          console.log('✅ TypeScript definitions work');
+          EOF
+          npx tsc test.ts --noEmit --esModuleInterop --jsx react --moduleResolution node

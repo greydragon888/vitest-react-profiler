@@ -1,0 +1,53 @@
+codecov:
+  require_ci_to_pass: yes
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        target: 85%
+        threshold: 2%
+        base: auto
+        flags:
+          - unittests
+        if_ci_failed: error
+
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        base: auto
+
+parsers:
+  javascript:
+    enable_partials: yes
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/tests/**"
+  - "**/examples/**"
+  - "dist/**"
+  - "coverage/**"
+  - "*.config.*"
+  - "**/index.ts"
+  - "**/types.ts"
+
+flags:
+  unittests:
+    paths:
+      - src/
+    carryforward: true

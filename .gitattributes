@@ -1,0 +1,124 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Force LF for all source files (cross-platform consistency)
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.less text eol=lf
+*.html text eol=lf
+*.xml text eol=lf
+*.svg text eol=lf
+
+# Shell scripts must have LF endings
+*.sh text eol=lf
+.husky/* text eol=lf
+
+# Windows-specific files should use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files - no line ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.7z binary
+*.rar binary
+
+# Generated files - exclude from language statistics
+dist/** linguist-generated=true
+*.min.js linguist-generated=true
+*.min.css linguist-generated=true
+package-lock.json linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+yarn.lock linguist-generated=true
+
+# Documentation - mark as documentation for GitHub stats
+docs/** linguist-documentation=true
+*.md linguist-documentation=true
+examples/** linguist-documentation=true
+README.md linguist-documentation=true
+CHANGELOG.md linguist-documentation=true
+CONTRIBUTING.md linguist-documentation=true
+
+# Test files - exclude from language statistics
+*.test.ts linguist-detectable=false
+*.test.tsx linguist-detectable=false
+*.spec.ts linguist-detectable=false
+*.spec.tsx linguist-detectable=false
+tests/** linguist-detectable=false
+__tests__/** linguist-detectable=false
+*.snap linguist-detectable=false
+
+# Vendored dependencies (if any)
+vendor/** linguist-vendored=true
+node_modules/** linguist-vendored=true
+
+# Files to exclude when creating an archive (git archive)
+.github/ export-ignore
+.husky/ export-ignore
+.vscode/ export-ignore
+.idea/ export-ignore
+tests/ export-ignore
+examples/ export-ignore
+.editorconfig export-ignore
+.eslintignore export-ignore
+.eslintrc* export-ignore
+eslint.config.* export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+.npmignore export-ignore
+.prettierignore export-ignore
+.prettierrc* export-ignore
+prettier.config.* export-ignore
+commitlint.config.* export-ignore
+vitest.config.* export-ignore
+tsconfig.*.json export-ignore
+tsup.config.* export-ignore
+*.test.ts export-ignore
+*.test.tsx export-ignore
+*.spec.ts export-ignore
+*.spec.tsx export-ignore
+CONTRIBUTING.md export-ignore
+SECURITY.md export-ignore
+renovate.json export-ignore
+.nvmrc export-ignore
+.npmrc export-ignore
+
+# Diff settings - these files should not show detailed diffs
+package-lock.json -diff
+pnpm-lock.yaml -diff
+yarn.lock -diff
+dist/** -diff
+*.min.js -diff
+*.min.css -diff
+*.map -diff
+
+# Merge strategies
+package-lock.json merge=ours
+pnpm-lock.yaml merge=ours
+yarn.lock merge=ours
+CHANGELOG.md merge=union
