@@ -222,6 +222,7 @@ expect.extend({
           return `Expected component to have only updates, but it only mounted`;
         }
 
+        /* c8 ignore next */
         return `Expected component not to have only updates, but it did`;
       },
     };

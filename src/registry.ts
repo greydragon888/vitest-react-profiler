@@ -31,6 +31,7 @@ class ComponentRegistry {
    * For debugging purposes only
    * @internal
    */
+  /* c8 ignore next 3 */
   getRegisteredCount(): number {
     return this.components.size;
   }
