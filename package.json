@@ -57,7 +57,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "node -e \"try { require('husky') } catch (e) {}\""
   },
   "peerDependencies": {
     "react": ">=16.8.0",
