@@ -7,6 +7,9 @@
 // Core functionality
 export { withProfiler } from "./withProfiler";
 
+// Hook profiling
+export { profileHook, createHookProfiler } from "./hooks";
+
 // Types
 export type { ProfiledComponent, RenderInfo } from "./types";
 

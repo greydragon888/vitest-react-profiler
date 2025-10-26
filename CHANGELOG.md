@@ -5,9 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-10-26
+## [1.2.0] - 2025-10-27
 
-**Major DX improvement: Automatic cleanup system**
+### Added
+
+- **Hook profiling** - Profile React hooks to detect extra renders caused by improper state management
+  - `profileHook()` - Main hook profiling function that wraps hooks for render tracking
+  - `createHookProfiler()` - Simplified API with built-in assertion helpers
+  - Type overloads for hooks with and without parameters
+  - Full integration with existing matchers (toHaveRenderedTimes, etc.)
+  - Automatic cleanup via existing registry system
+  - Comprehensive documentation with real-world anti-pattern examples
+  - 22 tests covering basic usage, edge cases, integration, and real-world scenarios
+
+### Documentation
+
+- Added "Hook Profiling" section to README.md with:
+  - Basic usage examples
+  - Common anti-pattern detection (useEffect state sync, data fetching)
+  - Real-world fixes and best practices
+  - Batch testing patterns
+  - React.StrictMode behavior notes
+
+## [1.1.0] - 2025-10-26
 
 This version removes the need for manual cleanup code in tests by introducing an internal registry system that automatically clears component data between tests.
 
@@ -19,33 +39,13 @@ This version removes the need for manual cleanup code in tests by introducing an
 
 ### Removed
 
-- **BREAKING:** `clearCounters()` method removed from `ProfiledComponent` public API
-  - Migration: Simply delete all `ProfiledComponent.clearCounters()` calls
-  - Migration: Remove `afterEach` hooks that only called `clearCounters()`
-  - Cleanup now happens automatically via internal registry
+- `clearCounters()` method removed from `ProfiledComponent` public API. Cleanup now happens automatically via internal registry
 
 ### Changed
 
 - All internal tests and examples updated to remove manual cleanup code
 - Eliminates 3-5 lines of boilerplate per test file
 - `sideEffects` in package.json now includes `auto-setup.ts` for proper tree-shaking
-
-### Migration from v1.0.0
-
-```diff
- describe('MyComponent', () => {
-   const ProfiledComponent = withProfiler(MyComponent);
-
--  afterEach(() => {
--    ProfiledComponent.clearCounters();
--  });
-
-   it('test', () => {
-     render(<ProfiledComponent />);
-     expect(ProfiledComponent).toHaveRenderedTimes(1);
-   });
- });
-```
 
 ## [1.0.0] - 2025-10-26
 

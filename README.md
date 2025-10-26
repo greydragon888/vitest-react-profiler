@@ -174,6 +174,181 @@ interface ProfiledComponent<P> {
 // Note: Cleanup is automatic between tests - no manual intervention needed!
 ```
 
+## Hook Profiling ⚡
+
+Profile React hooks to detect extra renders caused by improper state management.
+
+### `profileHook(hook, initialProps?)`
+
+Profile a React hook to track its render behavior.
+
+```typescript
+import { profileHook } from "vitest-react-profiler";
+
+it("should not cause extra renders", () => {
+  const { ProfiledHook } = profileHook(() => useMyHook());
+
+  // Expect only 1 render on mount
+  expect(ProfiledHook).toHaveRenderedTimes(1);
+});
+```
+
+### Detecting Extra Renders
+
+Common anti-pattern: using `useEffect` to sync state instead of deriving it.
+
+```typescript
+// ❌ Bad hook - causes extra render
+function useBadHook(value: number) {
+  const [state, setState] = useState(value);
+
+  useEffect(() => {
+    setState(value * 2); // Extra render!
+  }, [value]);
+
+  return state;
+}
+
+// Test it
+const { ProfiledHook } = profileHook(({ value }) => useBadHook(value), {
+  value: 1,
+});
+
+// Detected: mount + effect = 2 renders
+expect(ProfiledHook).toHaveRenderedTimes(2); // ❌ Extra render detected!
+```
+
+**Fix:** Derive state directly instead of using effect:
+
+```typescript
+// ✅ Good hook - no extra renders
+function useGoodHook(value: number) {
+  const [multiplier] = useState(2);
+  return value * multiplier; // Derived on each render
+}
+
+const { ProfiledHook } = profileHook(({ value }) => useGoodHook(value), {
+  value: 1,
+});
+
+expect(ProfiledHook).toHaveRenderedTimes(1); // ✅ Perfect!
+```
+
+### Simplified API with `createHookProfiler`
+
+For cleaner test code with built-in assertions:
+
+```typescript
+import { createHookProfiler } from "vitest-react-profiler";
+
+it("should handle rerenders correctly", () => {
+  const profiler = createHookProfiler(({ value }) => useMyHook(value), {
+    value: 1,
+  });
+
+  profiler.expectRenderCount(1); // Throws if not 1
+
+  profiler.rerender({ value: 2 });
+  profiler.expectRenderCount(2);
+
+  // Access metrics
+  const avgTime = profiler.getAverageRenderTime();
+  expect(avgTime).toBeLessThan(10); // ms
+});
+```
+
+### All Matchers Work!
+
+Hook profiling reuses component profiling, so **all matchers work**:
+
+```typescript
+const { ProfiledHook } = profileHook(() => useMyHook());
+
+expect(ProfiledHook).toHaveRendered();
+expect(ProfiledHook).toHaveRenderedTimes(1);
+expect(ProfiledHook).toHaveRenderedWithin(16); // 60fps
+expect(ProfiledHook).toHaveMountedOnce();
+expect(ProfiledHook).toHaveAverageRenderTime(5);
+```
+
+### Real-World Anti-Patterns
+
+**Data Fetching Anti-Pattern:**
+
+```typescript
+// ❌ Multiple state updates = multiple renders
+function useBadDataFetch(id: string) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true); // Render 1
+    fetch(`/api/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setData(data); // Render 2
+        setLoading(false); // Render 3
+      });
+  }, [id]);
+
+  return { data, loading };
+}
+
+// Detected: 3+ renders!
+const { ProfiledHook } = profileHook(() => useBadDataFetch("1"));
+expect(ProfiledHook.getRenderCount()).toBeGreaterThanOrEqual(3);
+```
+
+**Fix:** Use single state object:
+
+```typescript
+// ✅ Single state update = single render per change
+function useGoodDataFetch(id: string) {
+  const [state, setState] = useState({ data: null, loading: false });
+
+  useEffect(() => {
+    setState({ data: null, loading: true }); // 1 render
+    fetch(`/api/${id}`)
+      .then((res) => res.json())
+      .then((data) => setState({ data, loading: false })); // 1 render
+  }, [id]);
+
+  return state;
+}
+```
+
+### Batch Testing
+
+No special API needed - just use `forEach`:
+
+```typescript
+describe("useMyHook edge cases", () => {
+  [0, -1, 10, 100, Number.MAX_SAFE_INTEGER].forEach((value) => {
+    it(`should handle value ${value}`, () => {
+      const { ProfiledHook } = profileHook(({ val }) => useMyHook(val), {
+        val: value,
+      });
+      expect(ProfiledHook).toHaveRenderedTimes(1);
+    });
+  });
+});
+```
+
+### React.StrictMode Behavior
+
+⚠️ **Important:** In development mode, React.StrictMode causes components to render twice intentionally to detect side effects.
+
+```typescript
+// In StrictMode (development):
+const { ProfiledHook } = profileHook(() => useState(0));
+// May render 2 times instead of 1 (mount + strict mode re-render)
+
+// In production or without StrictMode:
+// Will render exactly once
+```
+
+**Note:** Hook profiling respects this behavior. If your test environment has StrictMode enabled, render counts will be doubled. This is expected and helps ensure your hooks work correctly in StrictMode.
+
 ## Examples
 
 ### Testing Memoization
