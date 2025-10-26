@@ -218,6 +218,7 @@ expect.extend({
         if (hasMounts && hasUpdates) {
           return `Expected component to have only updates, but it also mounted`;
         }
+        /* c8 ignore next 3 */
         if (hasMounts && !hasUpdates) {
           return `Expected component to have only updates, but it only mounted`;
         }
