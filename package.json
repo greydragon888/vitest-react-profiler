@@ -36,6 +36,7 @@
   },
   "sideEffects": [
     "./src/matchers.ts",
+    "./src/auto-setup.ts",
     "./dist/index.js",
     "./dist/index.cjs"
   ],
