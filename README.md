@@ -21,7 +21,7 @@
 - ⚡ **Performance Monitoring** - Measure and assert render durations
 - 🎯 **Phase Detection** - Distinguish between mount, update, and nested update phases
 - 📊 **Statistical Analysis** - Get average, min, max render times across multiple renders
-- 🧹 **Automatic Cleanup** - Test isolation with automatic data clearing between tests
+- 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
 - 📦 **Tiny Bundle** - Less than 10KB minified
@@ -95,9 +95,8 @@ import { withProfiler } from 'vitest-react-profiler';
 import { MyComponent } from './MyComponent';
 
 describe('MyComponent performance', () => {
-  const ProfiledComponent = withProfiler(MyComponent);
-
   it('should render only once on mount', () => {
+    const ProfiledComponent = withProfiler(MyComponent);
     render(<ProfiledComponent />);
 
     expect(ProfiledComponent).toHaveRenderedTimes(1);
@@ -105,10 +104,13 @@ describe('MyComponent performance', () => {
   });
 
   it('should render quickly', () => {
+    const ProfiledComponent = withProfiler(MyComponent);
     render(<ProfiledComponent />);
 
     expect(ProfiledComponent).toHaveRenderedWithin(16); // 60fps budget
   });
+
+  // No cleanup needed - automatic between tests!
 });
 ```
 
@@ -156,18 +158,20 @@ Asserts average render time across all renders.
 
 ```typescript
 interface ProfiledComponent<P> {
-  // Properties
-  __renderHistory: ReadonlyArray<RenderInfo>;
-  __numRenders: number;
-
   // Methods
-  clearCounters(): void;
+  getRenderCount(): number;
+  getRenderHistory(): readonly RenderInfo[];
   getLastRender(): RenderInfo | undefined;
   getRenderAt(index: number): RenderInfo | undefined;
-  getRendersByPhase(phase: Phase): ReadonlyArray<RenderInfo>;
+  getRendersByPhase(phase: Phase): readonly RenderInfo[];
   getAverageRenderTime(): number;
   hasMounted(): boolean;
+
+  // Properties
+  readonly OriginalComponent: FC<P>;
 }
+
+// Note: Cleanup is automatic between tests - no manual intervention needed!
 ```
 
 ## Examples
@@ -337,7 +341,7 @@ expect(ProfiledComponent).toHaveRenderedTimes(1);
 
 ## Best Practices
 
-1. **Clear Between Tests**: Components are automatically cleared, but you can manually clear if needed.
+1. **Automatic Cleanup**: All profiled components are automatically cleared between tests - no manual cleanup needed!
 2. **Use Descriptive Names**: `withProfiler(Component, 'UserDashboard')` for better debugging.
 3. **Set Performance Budgets**: Define and test against realistic performance goals.
 4. **Profile in Production Mode**: Use `NODE_ENV=production` for accurate measurements.

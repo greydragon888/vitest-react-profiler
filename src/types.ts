@@ -73,14 +73,15 @@ export interface RenderInfo {
 
 /**
  * Extended component with profiling capabilities
+ *
+ * Note: Cleanup is automatic between tests - no manual clearCounters needed
+ * All render data is automatically cleared by afterEach hook
  */
 export interface ProfiledComponent<P> {
   /** Get complete history of all renders */
   getRenderCount: () => number;
   /** Get total number of renders */
   getRenderHistory: () => readonly RenderInfo[];
-  /** Clear all recorded render data */
-  clearCounters: () => void;
   /** Get information about the most recent render */
   getLastRender: () => RenderInfo | undefined;
   /** Get information about a specific render by index */

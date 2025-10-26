@@ -66,7 +66,6 @@ describe("Performance Testing Suite", () => {
         console.log(`Complexity ${complexity}: ${renderTime.toFixed(2)}ms`);
 
         unmount();
-        ProfiledComponent.clearCounters();
       });
 
       // Verify that render time generally increases with complexity
@@ -278,12 +277,14 @@ describe("Performance Testing Suite", () => {
 
       // Perform search
       const searchInput = screen.getByPlaceholderText(/Search items/);
+      const renderCountBeforeSearch = ProfiledList.getRenderCount();
 
-      ProfiledList.clearCounters();
       fireEvent.change(searchInput, { target: { value: "1" } });
 
       await waitFor(() => {
-        expect(ProfiledList).toHaveRendered();
+        expect(ProfiledList.getRenderCount()).toBeGreaterThan(
+          renderCountBeforeSearch,
+        );
       });
 
       const searchRenderTime =
@@ -377,8 +378,6 @@ describe("Performance Testing Suite", () => {
       const performancMetrics: Record<string, number> = {};
 
       operations.forEach((op) => {
-        ProfiledReconciliation.clearCounters();
-
         const button = screen.getByText(op.button);
 
         fireEvent.click(button);
@@ -518,7 +517,6 @@ describe("Performance Testing Suite", () => {
       // Enable filtering
       const filterCheckbox = screen.getByLabelText(/Filter/);
 
-      ProfiledConditional.clearCounters();
       fireEvent.click(filterCheckbox);
 
       const filterRenderTime =
@@ -527,7 +525,6 @@ describe("Performance Testing Suite", () => {
       // Enable sorting
       const sortCheckbox = screen.getByLabelText(/Sort/);
 
-      ProfiledConditional.clearCounters();
       fireEvent.click(sortCheckbox);
 
       const sortRenderTime =
@@ -536,7 +533,6 @@ describe("Performance Testing Suite", () => {
       // Enable highlighting (cosmetic change)
       const highlightCheckbox = screen.getByLabelText(/Highlight/);
 
-      ProfiledConditional.clearCounters();
       fireEvent.click(highlightCheckbox);
 
       const highlightRenderTime =
@@ -627,7 +623,6 @@ describe("Performance Testing Suite", () => {
       // Trigger state update
       const startButton = screen.getByText(/Start Updates/);
 
-      ProfiledContext.clearCounters();
       fireEvent.click(startButton);
 
       // Wait for at least one update
@@ -668,7 +663,6 @@ describe("Performance Testing Suite", () => {
       // Click reset button
       const resetButton = screen.getByText(/Reset/);
 
-      ProfiledContext.clearCounters();
       fireEvent.click(resetButton);
 
       const resetRenderTime =
@@ -748,7 +742,6 @@ describe("Performance Testing Suite", () => {
       expect(renderCountBefore).toBeGreaterThan(0);
 
       unmount();
-      ProfiledComponent.clearCounters();
 
       const renderCountAfter = ProfiledComponent.getRenderCount();
 

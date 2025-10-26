@@ -1,5 +1,5 @@
+import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import { withProfiler } from "../../src";
 import { memo } from "react";
 import { Counter } from "../fixtures/Counter";
@@ -13,12 +13,8 @@ describe("Profiler Usage Examples", () => {
     "ExpensiveComponent",
   );
 
-  beforeEach(() => {
-    // Components are automatically cleared after each test
-    // but you can manually clear if needed
-    ProfiledCounter.clearCounters();
-    ProfiledExpensive.clearCounters();
-  });
+  // Components are automatically cleared after each test
+  // No manual cleanup needed!
 
   describe("Basic render counting", () => {
     it("should count initial mount", () => {
@@ -116,17 +112,18 @@ describe("Profiler Usage Examples", () => {
       expect(updates).toHaveLength(1);
     });
 
-    it("should track only updates when component is already mounted", () => {
-      // Simulate a component that's already mounted (e.g., in a larger app)
+    it("should track mounts and updates separately", () => {
       const { rerender } = render(<ProfiledCounter />);
 
-      ProfiledCounter.clearCounters(); // Clear the mount from our tracking
+      // Initial render is a mount
+      expect(ProfiledCounter.getRendersByPhase("mount")).toHaveLength(1);
 
       rerender(<ProfiledCounter initialCount={10} />);
       rerender(<ProfiledCounter initialCount={20} />);
 
-      expect(ProfiledCounter).toHaveOnlyUpdated();
-      expect(ProfiledCounter).toHaveNeverMounted();
+      // After rerenders, we have 1 mount and 2 updates
+      expect(ProfiledCounter.getRendersByPhase("mount")).toHaveLength(1);
+      expect(ProfiledCounter.getRendersByPhase("update")).toHaveLength(2);
     });
   });
 

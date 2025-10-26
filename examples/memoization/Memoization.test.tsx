@@ -321,13 +321,14 @@ describe("Memoization Performance Tests", () => {
       render(<TestForm />);
 
       const submitButton = screen.getByText("Submit");
-
-      ProfiledFormField.clearCounters();
+      const renderCountBeforeSubmit = ProfiledFormField.getRenderCount();
 
       fireEvent.click(submitButton);
 
-      // Fields should re-render when errors are added
-      expect(ProfiledFormField).toHaveRenderedTimes(3);
+      // Fields should re-render when errors are added (3 fields)
+      expect(ProfiledFormField.getRenderCount()).toBe(
+        renderCountBeforeSubmit + 3,
+      );
 
       const avgRenderTime = ProfiledFormField.getAverageRenderTime();
 
@@ -436,13 +437,14 @@ describe("Memoization Performance Tests", () => {
         <ProfiledMemoizedGrid data={data} filterBy="active" />,
       );
 
-      ProfiledMemoizedGrid.clearCounters();
+      const renderCountBefore = ProfiledMemoizedGrid.getRenderCount();
 
       rerender(
         <ProfiledMemoizedGrid data={data} filterBy="active" sortBy="value" />,
       );
 
-      expect(ProfiledMemoizedGrid).toHaveRenderedTimes(1);
+      // Rerender should cause exactly 1 additional render
+      expect(ProfiledMemoizedGrid.getRenderCount()).toBe(renderCountBefore + 1);
 
       const renderTime =
         ProfiledMemoizedGrid.getLastRender()?.actualDuration ?? 0;

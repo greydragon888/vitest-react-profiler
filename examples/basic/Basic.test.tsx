@@ -156,7 +156,6 @@ describe("Basic vitest-react-profiler Examples", () => {
       const ProfiledTodoList = withProfiler(TodoList, "TodoList");
 
       render(<ProfiledTodoList />);
-      ProfiledTodoList.clearCounters();
 
       const input = screen.getByPlaceholderText("Add a todo...");
       const addButton = screen.getByText("Add");
@@ -170,7 +169,9 @@ describe("Basic vitest-react-profiler Examples", () => {
 
       const renderCount = ProfiledTodoList.getRenderCount();
 
-      console.log(`Adding ${todos.length} todos caused ${renderCount} renders`);
+      console.log(
+        `TodoList with ${todos.length} todos rendered ${renderCount} times total`,
+      );
 
       expect(ProfiledTodoList.getAverageRenderTime()).toBeLessThan(50);
     });
@@ -210,13 +211,15 @@ describe("Basic vitest-react-profiler Examples", () => {
         expect(screen.getByText("Name: User 456")).toBeInTheDocument();
       });
 
-      ProfiledUserProfile.clearCounters();
+      const renderCountBeforeEdit = ProfiledUserProfile.getRenderCount();
 
       const editButton = screen.getByText("Edit");
 
       fireEvent.click(editButton);
 
-      expect(ProfiledUserProfile).toHaveRenderedTimes(1);
+      expect(ProfiledUserProfile.getRenderCount()).toBe(
+        renderCountBeforeEdit + 1,
+      );
 
       const nameInput = screen.getByDisplayValue("User 456");
 
@@ -227,7 +230,10 @@ describe("Basic vitest-react-profiler Examples", () => {
       fireEvent.click(saveButton);
 
       expect(updateCount).toBe(1);
-      expect(ProfiledUserProfile).toHaveRenderedTimes(3);
+      // Edit mode caused 3 additional renders after initial load
+      expect(ProfiledUserProfile.getRenderCount()).toBe(
+        renderCountBeforeEdit + 3,
+      );
 
       const editRenders = ProfiledUserProfile.getRenderHistory();
 
@@ -304,7 +310,7 @@ describe("Basic vitest-react-profiler Examples", () => {
 
       render(<ProfiledConditional showContent={true} renderCount={10} />);
 
-      ProfiledConditional.clearCounters();
+      const initialRenderCount = ProfiledConditional.getRenderCount();
 
       const tab2 = screen.getByText("Tab 2");
       const tab3 = screen.getByText("Tab 3");
@@ -319,7 +325,8 @@ describe("Basic vitest-react-profiler Examples", () => {
       fireEvent.click(tab1);
       expect(screen.getByText("Content for Tab 1")).toBeInTheDocument();
 
-      expect(ProfiledConditional).toHaveRenderedTimes(3);
+      // Tab switching caused 3 additional renders
+      expect(ProfiledConditional.getRenderCount()).toBe(initialRenderCount + 3);
 
       const avgTime = ProfiledConditional.getAverageRenderTime();
 
@@ -350,7 +357,6 @@ describe("Basic vitest-react-profiler Examples", () => {
           `Render with ${size} items: ${lastRender?.actualDuration}ms`,
         );
 
-        ProfiledConditional.clearCounters();
         unmount();
       });
 
@@ -433,7 +439,6 @@ describe("Basic vitest-react-profiler Examples", () => {
         const { unmount } = render(<ProfiledCounter initialCount={i} />);
 
         baseline.push(ProfiledCounter.getLastRender()?.actualDuration ?? 0);
-        ProfiledCounter.clearCounters();
         unmount();
       }
 
@@ -447,7 +452,7 @@ describe("Basic vitest-react-profiler Examples", () => {
       expect(currentTime).toBeLessThanOrEqual(avgBaseline * 2);
     });
 
-    it("should track memory cleanup", () => {
+    it("should track render counts across component lifecycle", () => {
       const ProfiledUserProfile = withProfiler(UserProfile, "UserProfile");
 
       const { unmount } = render(<ProfiledUserProfile userId="999" />);
@@ -457,13 +462,18 @@ describe("Basic vitest-react-profiler Examples", () => {
       expect(initialRenderCount).toBeGreaterThan(0);
 
       unmount();
-      ProfiledUserProfile.clearCounters();
+
+      // After unmount, render count persists (cleanup happens between tests)
+      expect(ProfiledUserProfile.getRenderCount()).toBe(initialRenderCount);
 
       const { unmount: unmount2 } = render(
         <ProfiledUserProfile userId="1000" />,
       );
 
-      expect(ProfiledUserProfile.getRenderCount()).toBe(1);
+      // New mount adds to the count
+      expect(ProfiledUserProfile.getRenderCount()).toBeGreaterThan(
+        initialRenderCount,
+      );
 
       unmount2();
     });

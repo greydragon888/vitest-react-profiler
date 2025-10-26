@@ -1,12 +1,4 @@
-import {
-  describe,
-  beforeEach,
-  afterEach,
-  it,
-  expectTypeOf,
-  expect,
-  vi,
-} from "vitest";
+import { describe, beforeEach, it, expectTypeOf, expect, vi } from "vitest";
 import { withProfiler } from "../../src";
 import { render, waitFor } from "@testing-library/react";
 import { useState, useEffect, memo, StrictMode } from "react";
@@ -27,11 +19,6 @@ describe("withProfiler", () => {
     ProfiledSimple = withProfiler(SimpleComponent, "SimpleComponent");
   });
 
-  afterEach(() => {
-    // Cleanup to ensure test isolation
-    ProfiledSimple.clearCounters();
-  });
-
   describe("Component Creation", () => {
     // eslint-disable-next-line vitest/expect-expect
     it("should create a profiled component with all required methods", () => {
@@ -42,7 +29,6 @@ describe("withProfiler", () => {
       expectTypeOf(Profiled).toBeFunction();
       expectTypeOf(Profiled.getRenderCount).toBeFunction();
       expectTypeOf(Profiled.getRenderHistory).toBeFunction();
-      expectTypeOf(Profiled.clearCounters).toBeFunction();
       expectTypeOf(Profiled.getLastRender).toBeFunction();
       expectTypeOf(Profiled.getRenderAt).toBeFunction();
       expectTypeOf(Profiled.getRendersByPhase).toBeFunction();
@@ -271,36 +257,28 @@ describe("withProfiler", () => {
     });
   });
 
-  describe("Data Cleanup", () => {
-    it("should clear all render data", () => {
-      const { rerender } = render(<ProfiledSimple value="1" />);
+  describe("Automatic Cleanup", () => {
+    it("should automatically clear data between tests", () => {
+      // This test relies on automatic cleanup from previous test
+      // If automatic cleanup works, render count should start at 0
+      expect(ProfiledSimple.getRenderCount()).toBe(0);
 
-      rerender(<ProfiledSimple value="2" />);
+      render(<ProfiledSimple value="test" />);
 
-      expect(ProfiledSimple.getRenderCount()).toBe(2);
+      expect(ProfiledSimple.getRenderCount()).toBe(1);
+    });
 
-      ProfiledSimple.clearCounters();
-
+    it("should have clean state from previous test", () => {
+      // Previous test rendered once, but this test should start fresh
       expect(ProfiledSimple.getRenderCount()).toBe(0);
       expect(ProfiledSimple.getRenderHistory()).toStrictEqual([]);
       expect(ProfiledSimple.getLastRender()).toBeUndefined();
       expect(ProfiledSimple.hasMounted()).toBe(false);
     });
-
-    it("should allow rendering after clearing", () => {
-      render(<ProfiledSimple value="first" />);
-      ProfiledSimple.clearCounters();
-
-      render(<ProfiledSimple value="second" />);
-
-      expect(ProfiledSimple.getRenderCount()).toBe(1);
-      expect(ProfiledSimple.getLastRender()?.phase).toBe("mount");
-    });
   });
 
   describe("Edge Cases", () => {
-    it("should handle missing data in profilerDataMap gracefully", () => {
-      // Create a component and clear its data to simulate missing map entry
+    it("should handle data persistence across renders", () => {
       const TestComponent: FC = () => <div>Test</div>;
       const ProfiledTest = withProfiler(TestComponent, "TestComponent");
 
@@ -309,26 +287,18 @@ describe("withProfiler", () => {
 
       expect(ProfiledTest.getRenderCount()).toBe(1);
 
-      // Clear the data
-      ProfiledTest.clearCounters();
-
-      // Unmount to trigger cleanup
+      // Unmount the component
       unmount();
 
-      // Now the data is cleared, methods should handle missing data gracefully
-      expect(ProfiledTest.getRenderCount()).toBe(0);
-      expect(ProfiledTest.getRenderHistory()).toStrictEqual([]);
-      expect(ProfiledTest.getLastRender()).toBeUndefined();
-      expect(ProfiledTest.hasMounted()).toBe(false);
+      // Data should persist after unmount
+      expect(ProfiledTest.getRenderCount()).toBe(1);
+      expect(ProfiledTest.getRenderHistory()).toHaveLength(1);
     });
 
-    it("should handle onRender callback with missing profilerDataMap entry", () => {
-      // Test the edge case where onRender is called but the WeakMap entry doesn't exist
-      // This can happen if the component reference changes or data is garbage collected
-
+    it("should track multiple component instances independently", () => {
       const TestComponent: FC = () => <div>Test</div>;
 
-      // Create two different wrappers - they'll have separate map entries
+      // Create two different wrappers for the same component
       const ProfiledTest1 = withProfiler(TestComponent, "Test1");
       const ProfiledTest2 = withProfiler(TestComponent, "Test2");
 
@@ -337,67 +307,12 @@ describe("withProfiler", () => {
 
       expect(ProfiledTest1.getRenderCount()).toBe(1);
 
-      // Clear data for first wrapper
-      ProfiledTest1.clearCounters();
-
-      // The onRender callback is bound to the Component reference
-      // When clearCounters is called, it deletes the map entry
-      // If onRender is somehow called after that (e.g., during unmount), it should handle gracefully
-      expect(ProfiledTest1.getRenderCount()).toBe(0);
-
-      // Verify that second wrapper works independently
+      // Verify that second wrapper shares the same underlying component data
+      // (since they wrap the same Component reference)
       render(<ProfiledTest2 />);
 
-      expect(ProfiledTest2.getRenderCount()).toBe(1);
-    });
-
-    it("should handle Profiler callback when data is missing from map", () => {
-      // This tests the specific case where onRender is called but data is not in the map
-      const TestComponent: FC = () => <div>Test</div>;
-      const ProfiledTest = withProfiler(TestComponent, "TestEdgeCase");
-
-      // Render the component
-      const { rerender } = render(<ProfiledTest />);
-
-      // Force clear the internal map data while component is still mounted
-      // This simulates the edge case where data might be missing
-      ProfiledTest.clearCounters();
-
-      // Trigger a re-render - this should not crash even with missing data
-      expect(() => {
-        rerender(<ProfiledTest />);
-      }).not.toThrow();
-
-      // The render count should be 1 since data was reinitialized
-      expect(ProfiledTest.getRenderCount()).toBe(1);
-    });
-
-    it("should reinitialize data if missing during render", () => {
-      const TestComponent: FC<{ value: string }> = ({ value }) => (
-        <div>{value}</div>
-      );
-      const ProfiledTest = withProfiler(TestComponent, "ReinitTest");
-
-      // Initial render
-      const { rerender, unmount } = render(<ProfiledTest value="initial" />);
-
-      expect(ProfiledTest.getRenderCount()).toBe(1);
-
-      // Clear data while component is mounted
-      ProfiledTest.clearCounters();
-
-      expect(ProfiledTest.getRenderCount()).toBe(0);
-
-      // Re-render should reinitialize data
-      rerender(<ProfiledTest value="updated" />);
-
-      expect(ProfiledTest.getRenderCount()).toBe(1);
-      expect(ProfiledTest.getLastRender()).toBeDefined();
-      // After clearing and re-rendering, it's still an update phase because component is already mounted
-      expect(ProfiledTest.getLastRender()?.phase).toBe("update");
-
-      // Clean up
-      unmount();
+      // Both wrappers point to the same component, so count accumulates
+      expect(ProfiledTest2.getRenderCount()).toBe(2);
     });
 
     it("should handle React.StrictMode double rendering", () => {
@@ -473,6 +388,7 @@ describe("withProfiler", () => {
       render(<ProfiledA />);
       render(<ProfiledB />);
 
+      // Different components maintain separate render counts
       expect(ProfiledA.getRenderCount()).toBe(1);
 
       await waitFor(() => {
@@ -481,9 +397,10 @@ describe("withProfiler", () => {
 
       const countB = ProfiledB.getRenderCount();
 
-      ProfiledA.clearCounters();
+      // Rendering ProfiledA again should not affect ProfiledB's count
+      render(<ProfiledA />);
 
-      expect(ProfiledA.getRenderCount()).toBe(0);
+      expect(ProfiledA.getRenderCount()).toBe(2);
       expect(ProfiledB.getRenderCount()).toBe(countB); // B should not be affected
     });
 

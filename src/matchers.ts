@@ -1,22 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, expect } from "vitest";
+import { expect } from "vitest";
 import type { ProfiledComponent } from "./types";
-
-/**
- * Track all profiled components to automatically clean them after each test
- */
-const profiledComponents = new Set<ProfiledComponent<unknown>>();
-
-/**
- * Automatically clear all profiler data after each test
- * This prevents test pollution and ensures isolation
- */
-afterEach(() => {
-  profiledComponents.forEach((component) => {
-    component.clearCounters();
-  });
-  profiledComponents.clear();
-});
 
 /**
  * Helper to validate profiled component
@@ -29,7 +13,7 @@ function isProfiledComponent(
     typeof received === "function" &&
     "getRenderCount" in received &&
     "getRenderHistory" in received &&
-    "clearCounters" in received
+    "getLastRender" in received
   );
 }
 
@@ -51,7 +35,6 @@ expect.extend({
       };
     }
 
-    profiledComponents.add(received);
     const renders = received.getRenderCount();
 
     return {
@@ -87,7 +70,6 @@ expect.extend({
       };
     }
 
-    profiledComponents.add(received);
     const actual = received.getRenderCount();
 
     return {
@@ -125,7 +107,6 @@ expect.extend({
       };
     }
 
-    profiledComponents.add(received);
     const lastRender = received.getLastRender();
 
     if (!lastRender) {
@@ -164,7 +145,6 @@ expect.extend({
       };
     }
 
-    profiledComponents.add(received);
     const mounts = received.getRendersByPhase("mount");
     const mountCount = mounts.length;
 
@@ -199,7 +179,6 @@ expect.extend({
       };
     }
 
-    profiledComponents.add(received);
     const hasMounted = received.hasMounted();
 
     return {
@@ -225,7 +204,6 @@ expect.extend({
       };
     }
 
-    profiledComponents.add(received);
     const history = received.getRenderHistory();
     const hasMounts = history.some((r) => r.phase === "mount");
     const hasUpdates = history.some((r) => r.phase === "update");
@@ -272,8 +250,6 @@ expect.extend({
           `Expected average duration must be a positive number, received ${maxAverage}`,
       };
     }
-
-    profiledComponents.add(received);
 
     if (received.getRenderCount() === 0) {
       return {

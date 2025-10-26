@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of vitest-react-profiler
 - Core `withProfiler()` function to wrap React components with profiling capabilities
+- **True automatic cleanup system** - Zero boilerplate! Components auto-clear between tests
+  - Internal component registry (`src/registry.ts`) for tracking profiled components
+  - Auto-setup module (`src/auto-setup.ts`) that registers `afterEach` cleanup hook on import
+  - No manual `afterEach()` or `clearCounters()` calls needed in tests
 - Custom Vitest matchers for performance testing:
   - `toHaveRendered()` - Assert component has rendered
   - `toHaveRenderedTimes(count)` - Assert exact number of renders
@@ -20,13 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `toHaveOnlyUpdated()` - Assert component only updated (no mounts)
   - `toHaveAverageRenderTime(ms)` - Assert average render time
 - Profiled component API with methods:
-  - `clearCounters()` - Reset profiling data
+  - `getRenderCount()` - Get total number of renders
+  - `getRenderHistory()` - Get complete render history
   - `getLastRender()` - Get last render information
   - `getRenderAt(index)` - Get render at specific index
   - `getRendersByPhase(phase)` - Filter renders by phase
   - `getAverageRenderTime()` - Calculate average render time
   - `hasMounted()` - Check if component has mounted
-- Automatic cleanup between tests for test isolation
+  - `OriginalComponent` - Reference to original unwrapped component
 - Full TypeScript support with complete type definitions
 - Comprehensive documentation and examples
 - Examples directory with:
@@ -36,19 +41,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+- **Zero boilerplate** - No manual cleanup code needed (no `afterEach` hooks!)
 - Zero configuration setup - works out of the box with Vitest
 - Precise render tracking using React Profiler API
 - Phase detection (mount, update, nested update)
 - Statistical analysis (average, min, max render times)
-- Automatic test isolation with data clearing
+- True automatic test isolation with component registry system
 - Tiny bundle size (< 10KB minified)
 - Support for React 16.8+ (Hooks)
 - Support for Vitest 1.0+
 - Compatible with @testing-library/react
 
+### Removed
+
+- `clearCounters()` method removed from public API (cleanup is now fully automatic)
+  - Tests no longer need manual cleanup calls
+  - Internal cleanup still happens automatically via registry system
+
 ### Infrastructure
 
-- Comprehensive test coverage (95+ tests, 100% coverage)
+- Comprehensive test coverage (93 tests passing)
 - ESLint configuration with strict TypeScript rules
 - Prettier for code formatting
 - Husky + lint-staged for pre-commit hooks

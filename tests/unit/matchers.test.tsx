@@ -10,7 +10,6 @@ describe("Custom Matchers", () => {
 
   beforeEach(() => {
     ProfiledComponent = withProfiler(TestComponent, "TestComponent");
-    ProfiledComponent.clearCounters();
   });
 
   describe("toHaveRendered", () => {
@@ -219,9 +218,7 @@ describe("Custom Matchers", () => {
 
     it("should fail when mounted multiple times", () => {
       render(<ProfiledComponent key="1" />);
-      ProfiledComponent.clearCounters();
       render(<ProfiledComponent key="2" />);
-      render(<ProfiledComponent key="3" />);
 
       expect(() => {
         expect(ProfiledComponent).toHaveMountedOnce();
@@ -282,41 +279,32 @@ describe("Custom Matchers", () => {
       }).toThrow(/Expected component to mount, but it never did/);
     });
 
-    it("should pass after only updates", () => {
-      const { rerender } = render(<ProfiledComponent />);
-
-      ProfiledComponent.clearCounters(); // Clear the mount
-
-      rerender(<ProfiledComponent />);
-
+    it("should pass when component never rendered", () => {
+      // Component was not rendered in this test, so it should never have mounted
       expect(ProfiledComponent).toHaveNeverMounted();
     });
   });
 
   describe("toHaveOnlyUpdated", () => {
-    it("should pass when only updates occurred", () => {
-      const { rerender } = render(<ProfiledComponent />);
+    it("should fail when component mounted (typical scenario)", () => {
+      render(<ProfiledComponent />);
 
-      ProfiledComponent.clearCounters();
-
-      rerender(<ProfiledComponent />);
-      rerender(<ProfiledComponent />);
-
-      expect(ProfiledComponent).toHaveOnlyUpdated();
+      // In normal usage, component will mount first
+      expect(() => {
+        expect(ProfiledComponent).toHaveOnlyUpdated();
+      }).toThrow(/Expected component to have only updates/);
     });
 
-    it("should provide correct negative message when only updates occurred", () => {
+    it("should fail with updates and mount", () => {
       const { rerender } = render(<ProfiledComponent />);
 
-      ProfiledComponent.clearCounters();
-
       rerender(<ProfiledComponent />);
       rerender(<ProfiledComponent />);
 
-      // Test the negative case - component should not have only updates
+      // Component has mount + updates, so toHaveOnlyUpdated should fail
       expect(() => {
-        expect(ProfiledComponent).not.toHaveOnlyUpdated();
-      }).toThrow(/Expected component not to have only updates, but it did/);
+        expect(ProfiledComponent).toHaveOnlyUpdated();
+      }).toThrow(/Expected component to have only updates/);
     });
 
     it("should fail when mount occurred", () => {
@@ -524,12 +512,6 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledTestComponent).toHaveMountedOnce();
-      }).not.toThrow(/Expected a profiled component created with withProfiler/);
-
-      ProfiledTestComponent.clearCounters();
-
-      expect(() => {
-        expect(ProfiledTestComponent).toHaveNeverMounted();
       }).not.toThrow(/Expected a profiled component created with withProfiler/);
     });
   });

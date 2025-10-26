@@ -1,6 +1,7 @@
 import { Profiler, useRef } from "react";
 import type { ProfilerOnRenderCallback, ComponentType } from "react";
 import type { RenderInfo, ProfiledComponent } from "./types";
+import { registry } from "./registry";
 
 /**
  * WeakMap storage for render data isolation between component instances
@@ -125,15 +126,20 @@ export function withProfiler<P extends object>(
   };
 
   /**
-   * Clear all recorded render data
+   * Internal cleanup method for automatic cleanup system
+   * Called automatically by afterEach hook - not exposed in public API
+   * @internal
    */
-  ProfiledComponent.clearCounters = () => {
+  const clearInternal = () => {
     const data = profilerDataMap.get(Component);
 
     if (data) {
       data.renderHistory = [];
     }
   };
+
+  // Register component for automatic cleanup between tests
+  registry.register({ clear: clearInternal });
 
   /**
    * Get the most recent render information
