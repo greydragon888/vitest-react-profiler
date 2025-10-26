@@ -178,8 +178,9 @@ jobs:
           mkdir test-project
           cd test-project
           npm init -y
-          npm install vitest react react-dom @testing-library/react
+          npm install react react-dom vitest @testing-library/react @types/react
           npm install ../
+          ls -la node_modules/vitest-react-profiler/dist/
 
       - name: Test ESM import
         run: |
