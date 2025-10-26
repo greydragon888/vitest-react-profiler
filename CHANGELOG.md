@@ -7,28 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2025-10-26
 
+**Major DX improvement: Automatic cleanup system**
+
+This version removes the need for manual cleanup code in tests by introducing an internal registry system that automatically clears component data between tests.
+
 ### Added
 
-- **True automatic cleanup system** - Zero boilerplate! Components auto-clear between tests
-  - Internal component registry (`src/registry.ts`) for tracking profiled components
-  - Auto-setup module (`src/auto-setup.ts`) that registers `afterEach` cleanup hook on import
-  - No manual `afterEach()` or `clearCounters()` calls needed in tests
-
-### Changed
-
-- Improved DX with automatic cleanup - eliminates 3-5 lines of boilerplate per test file
-- Updated all examples and tests to demonstrate automatic cleanup
+- Component registry system (`src/registry.ts`) - Internal tracking of all profiled components
+- Auto-setup module (`src/auto-setup.ts`) - Automatically registers `afterEach` cleanup hook on import
+- Automatic cleanup between tests - No manual intervention needed
 
 ### Removed
 
-- `clearCounters()` method removed from ProfiledComponent public API
-  - Cleanup is now fully automatic via internal registry
-  - Tests no longer need manual cleanup calls
+- **BREAKING:** `clearCounters()` method removed from `ProfiledComponent` public API
+  - Migration: Simply delete all `ProfiledComponent.clearCounters()` calls
+  - Migration: Remove `afterEach` hooks that only called `clearCounters()`
+  - Cleanup now happens automatically via internal registry
 
-### Fixed
+### Changed
 
-- Memory leak prevention with proper registry cleanup
-- Added `auto-setup.ts` to sideEffects in package.json for proper tree-shaking
+- All internal tests and examples updated to remove manual cleanup code
+- Eliminates 3-5 lines of boilerplate per test file
+- `sideEffects` in package.json now includes `auto-setup.ts` for proper tree-shaking
+
+### Migration from v1.0.0
+
+```diff
+ describe('MyComponent', () => {
+   const ProfiledComponent = withProfiler(MyComponent);
+
+-  afterEach(() => {
+-    ProfiledComponent.clearCounters();
+-  });
+
+   it('test', () => {
+     render(<ProfiledComponent />);
+     expect(ProfiledComponent).toHaveRenderedTimes(1);
+   });
+ });
+```
 
 ## [1.0.0] - 2025-10-26
 
