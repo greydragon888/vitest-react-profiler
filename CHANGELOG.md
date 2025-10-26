@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-10-26
+
+### Added
+
+- **True automatic cleanup system** - Zero boilerplate! Components auto-clear between tests
+  - Internal component registry (`src/registry.ts`) for tracking profiled components
+  - Auto-setup module (`src/auto-setup.ts`) that registers `afterEach` cleanup hook on import
+  - No manual `afterEach()` or `clearCounters()` calls needed in tests
+
+### Changed
+
+- Improved DX with automatic cleanup - eliminates 3-5 lines of boilerplate per test file
+- Updated all examples and tests to demonstrate automatic cleanup
+
+### Removed
+
+- `clearCounters()` method removed from ProfiledComponent public API
+  - Cleanup is now fully automatic via internal registry
+  - Tests no longer need manual cleanup calls
+
+### Fixed
+
+- Memory leak prevention with proper registry cleanup
+- Added `auto-setup.ts` to sideEffects in package.json for proper tree-shaking
+
 ## [1.0.0] - 2025-10-26
 
 ### Added
@@ -52,12 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for Vitest 1.0+
 - Compatible with @testing-library/react
 
-### Removed
-
-- `clearCounters()` method removed from public API (cleanup is now fully automatic)
-  - Tests no longer need manual cleanup calls
-  - Internal cleanup still happens automatically via registry system
-
 ### Infrastructure
 
 - Comprehensive test coverage (93 tests passing)
@@ -68,4 +87,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.1.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.1.0
 [1.0.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.0.0
