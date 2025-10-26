@@ -56,14 +56,14 @@ jobs:
       - name: Set version from input
         if: github.event_name == 'workflow_dispatch'
         run: |
-          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version --allow-same-version
           echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
       - name: Set version from tag
         if: github.event_name == 'push'
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          npm version $VERSION --no-git-tag-version
+          npm version $VERSION --no-git-tag-version --allow-same-version
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Publish to NPM
