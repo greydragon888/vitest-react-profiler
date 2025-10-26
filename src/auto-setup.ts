@@ -14,6 +14,7 @@ try {
       registry.clearAll();
     });
   }
+  /* c8 ignore next 3 */
 } catch {
   // Silently ignore if not in test context
 }
