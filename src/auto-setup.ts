@@ -8,8 +8,12 @@ import { registry } from "./registry";
  * All profiled components are automatically cleared between tests
  * No need for manual clearCounters() calls or afterEach hooks
  */
-if (typeof afterEach === "function") {
-  afterEach(() => {
-    registry.clearAll();
-  });
+try {
+  if (typeof afterEach === "function") {
+    afterEach(() => {
+      registry.clearAll();
+    });
+  }
+} catch {
+  // Silently ignore if not in test context
 }

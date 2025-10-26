@@ -173,13 +173,14 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Create test project
+      - name: Pack and create test project
         run: |
+          npm pack
           mkdir test-project
           cd test-project
           npm init -y
-          npm install react react-dom vitest @testing-library/react @types/react
-          npm install ../
+          npm install react react-dom vitest @testing-library/react
+          npm install ../vitest-react-profiler-*.tgz
           ls -la node_modules/vitest-react-profiler/dist/
 
       - name: Test ESM import

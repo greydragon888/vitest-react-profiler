@@ -82,3 +82,4 @@ Thumbs.db
 
 # Size limit
 .size-limit.json
+*.tgz

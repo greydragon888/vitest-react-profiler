@@ -13,9 +13,9 @@ export default defineConfig({
 
     /**
      * Setup files to run before tests
-     * This loads our custom matchers and automatic cleanup
+     * This loads jest-dom matchers
      */
-    // setupFiles: ["./src/test-utils/setup.ts"],
+    setupFiles: ["./tests/setup.ts"],
 
     /**
      * Enable global test APIs (describe, it, expect)
