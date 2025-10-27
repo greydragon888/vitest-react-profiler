@@ -504,7 +504,9 @@ describe("Basic vitest-react-profiler Examples", () => {
       console.log(`Total render time: ${totalRenderTime}ms`);
       console.log(`Overhead: ${totalTime - totalRenderTime}ms`);
 
-      expect(ProfiledCounter).toHaveRenderedTimes(12);
+      // Initial render (1) + 10 clicks (10) = 11 total renders
+      // Note: In React 19, automatic batching may combine some updates
+      expect(ProfiledCounter).toHaveRenderedTimes(11);
       expect(totalRenderTime).toBeLessThan(totalTime);
     });
   });
