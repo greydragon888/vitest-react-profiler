@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { useState, useEffect } from "react";
+import { describe, it, expect } from "vitest";
+
 import { profileHook } from "../../src";
 
 describe("profileHook - Integration with matchers", () => {

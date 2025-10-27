@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
-import { withProfiler } from "../../src";
 import { memo } from "react";
+import { describe, it, expect, vi } from "vitest";
+
+import { withProfiler } from "../../src";
 import { Counter } from "../fixtures/Counter";
 import { ExpensiveComponent } from "../fixtures/ExpensiveComponent";
 

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import type { JSX } from "react";
+
 /**
  * Example component: Simple counter with optional side effect
  */
@@ -11,7 +13,7 @@ export const Counter = ({
   initialCount?: number;
   onCountChange?: (count: number) => void;
   label?: string;
-}) => {
+}): JSX.Element => {
   const [count, setCount] = useState(initialCount);
 
   useEffect(() => {

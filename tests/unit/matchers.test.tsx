@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
+import { describe, it, expect, beforeEach } from "vitest";
+
 import { withProfiler } from "../../src"; // Import to register matchers
 
 // Simple test component
@@ -147,7 +148,7 @@ describe("Custom Matchers", () => {
       render(<ProfiledComponent />);
 
       // Use a very high threshold that will definitely pass
-      const highThreshold = 10000; // 10 seconds - definitely faster than this
+      const highThreshold = 10_000; // 10 seconds - definitely faster than this
 
       // First verify it passes
       expect(ProfiledComponent).toHaveRenderedWithin(highThreshold);
@@ -166,12 +167,12 @@ describe("Custom Matchers", () => {
       // Test positive case formatting - using impossible threshold
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedWithin(0.0001);
-      }).toThrow(new RegExp(`but it took \\d+\\.\\d{2}ms`));
+      }).toThrow(new RegExp(String.raw`but it took \d+\.\d{2}ms`));
 
       // Test negative case formatting - using very high threshold
       expect(() => {
-        expect(ProfiledComponent).not.toHaveRenderedWithin(10000);
-      }).toThrow(new RegExp(`but it took \\d+\\.\\d{2}ms`));
+        expect(ProfiledComponent).not.toHaveRenderedWithin(10_000);
+      }).toThrow(new RegExp(String.raw`but it took \d+\.\d{2}ms`));
     });
 
     it("should handle edge case durations correctly", () => {
@@ -366,7 +367,7 @@ describe("Custom Matchers", () => {
       render(<ProfiledComponent />);
 
       // Use a very high threshold that will definitely pass
-      const highThreshold = 10000;
+      const highThreshold = 10_000;
 
       // First verify it passes
       expect(ProfiledComponent).toHaveAverageRenderTime(highThreshold);
@@ -410,7 +411,7 @@ describe("Custom Matchers", () => {
 
       // Should fail with lower threshold - using a safe value that's always testable
       expect(() => {
-        expect(ProfiledComponent).toHaveAverageRenderTime(0.00001);
+        expect(ProfiledComponent).toHaveAverageRenderTime(0.000_01);
       }).toThrow(/Expected average render time to be at most/);
     });
   });
@@ -468,7 +469,7 @@ describe("Custom Matchers", () => {
           expect(input).toHaveRendered();
         }).toThrow(
           new RegExp(
-            `Expected a profiled component created with withProfiler\\(\\), received ${type}`,
+            String.raw`Expected a profiled component created with withProfiler\(\), received ${type}`,
           ),
         );
       });
@@ -507,7 +508,7 @@ describe("Custom Matchers", () => {
       }).not.toThrow(/Expected a profiled component created with withProfiler/);
 
       expect(() => {
-        expect(ProfiledTestComponent).toHaveRenderedWithin(10000);
+        expect(ProfiledTestComponent).toHaveRenderedWithin(10_000);
       }).not.toThrow(/Expected a profiled component created with withProfiler/);
 
       expect(() => {

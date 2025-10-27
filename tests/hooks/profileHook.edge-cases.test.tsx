@@ -1,5 +1,6 @@
-import { describe, it, expect, expectTypeOf } from "vitest";
 import { useState, useEffect } from "react";
+import { describe, it, expect, expectTypeOf } from "vitest";
+
 import { profileHook } from "../../src";
 
 describe("profileHook - Edge cases", () => {
@@ -24,10 +25,7 @@ describe("profileHook - Edge cases", () => {
 
   it("should handle hook that returns undefined", () => {
     const { result } = profileHook(() => {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       useEffect(() => {}, []);
-
-      return undefined;
     });
 
     expect(result.current).toBeUndefined();

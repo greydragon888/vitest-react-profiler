@@ -7,6 +7,7 @@ class ComponentRegistry {
 
   /**
    * Register a component for automatic cleanup
+   *
    * @internal
    */
   register(component: { clear: () => void }): void {
@@ -16,6 +17,7 @@ class ComponentRegistry {
   /**
    * Clear all registered components
    * Called automatically by afterEach hook
+   *
    * @internal
    */
   clearAll(): void {
@@ -29,6 +31,7 @@ class ComponentRegistry {
   /**
    * Get count of registered components
    * For debugging purposes only
+   *
    * @internal
    */
   /* c8 ignore next 3 */
@@ -39,6 +42,7 @@ class ComponentRegistry {
 
 /**
  * Global singleton registry
+ *
  * @internal
  */
 export const registry = new ComponentRegistry();

@@ -1,5 +1,7 @@
 import { render, act } from "@testing-library/react";
+
 import { withProfiler } from "../withProfiler";
+
 import type { ProfiledComponent } from "../types";
 
 /**

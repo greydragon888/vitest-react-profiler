@@ -1,4 +1,5 @@
 import { profileHook } from "./profileHook";
+
 import type { ProfiledComponent, RenderInfo } from "../types";
 
 /**
@@ -54,6 +55,7 @@ export function createHookProfiler<TProps, TResult>(
 };
 
 // Implementation
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function createHookProfiler<
   TProps extends object = object,
   TResult = unknown,

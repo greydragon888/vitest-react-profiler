@@ -1,7 +1,9 @@
 import { Profiler, useRef } from "react";
-import type { ProfilerOnRenderCallback, ComponentType } from "react";
-import type { RenderInfo, ProfiledComponent } from "./types";
+
 import { registry } from "./registry";
+
+import type { RenderInfo, ProfiledComponent } from "./types";
+import type { ProfilerOnRenderCallback, ComponentType } from "react";
 
 /**
  * WeakMap storage for render data isolation between component instances
@@ -128,6 +130,7 @@ export function withProfiler<P extends object>(
   /**
    * Internal cleanup method for automatic cleanup system
    * Called automatically by afterEach hook - not exposed in public API
+   *
    * @internal
    */
   const clearInternal = () => {
@@ -147,7 +150,7 @@ export function withProfiler<P extends object>(
   ProfiledComponent.getLastRender = () => {
     const history = ProfiledComponent.getRenderHistory();
 
-    return history[history.length - 1];
+    return history.at(-1);
   };
 
   /**

@@ -1,12 +1,14 @@
-import { describe, beforeEach, it, expectTypeOf, expect, vi } from "vitest";
-import { withProfiler } from "../../src";
 import { render, waitFor } from "@testing-library/react";
 import { useState, useEffect, memo, StrictMode } from "react";
+import { describe, beforeEach, it, expectTypeOf, expect, vi } from "vitest";
+
+import { withProfiler } from "../../src";
+import { MemoizedComponent } from "../fixtures/MemoizedComponent";
 import { SimpleComponent } from "../fixtures/SimpleComponent";
 import { StatefulComponent } from "../fixtures/StatefulComponent";
-import { MemoizedComponent } from "../fixtures/MemoizedComponent";
-import type { FC, ComponentType } from "react";
+
 import type { ProfiledComponent } from "../../src";
+import type { FC, ComponentType } from "react";
 
 // Test components
 

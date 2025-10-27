@@ -1,5 +1,6 @@
-import { describe, it, expect, expectTypeOf } from "vitest";
 import { useState, useEffect } from "react";
+import { describe, it, expect, expectTypeOf } from "vitest";
+
 import { createHookProfiler } from "../../src";
 
 // Helper hook that causes extra render

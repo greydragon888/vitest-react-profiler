@@ -2,6 +2,7 @@ import { defineConfig } from "vitest/config";
 
 /**
  * Vitest configuration with React Profiler testing support
+ *
  * @see https://vitest.dev/config/
  */
 export default defineConfig({

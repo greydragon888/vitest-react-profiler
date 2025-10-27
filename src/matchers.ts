@@ -1,4 +1,5 @@
 import { expect } from "vitest";
+
 import type { ProfiledComponent } from "./types";
 
 /**
@@ -22,6 +23,7 @@ function isProfiledComponent(
 expect.extend({
   /**
    * Assert that component has rendered at least once
+   *
    * @example
    * expect(ProfiledComponent).toHaveRendered()
    */
@@ -47,7 +49,8 @@ expect.extend({
 
   /**
    * Assert exact number of renders
-   * @param received
+   *
+   * @param received - The component to check (must be created with withProfiler)
    * @param expected - Expected number of renders
    * @example
    * expect(ProfiledComponent).toHaveRenderedTimes(3)
@@ -84,7 +87,8 @@ expect.extend({
 
   /**
    * Assert that the last render completed within specified duration
-   * @param received
+   *
+   * @param received - The component to check (must be created with withProfiler)
    * @param maxDuration - Maximum allowed render duration in milliseconds
    * @example
    * expect(ProfiledComponent).toHaveRenderedWithin(16) // 60fps = ~16ms per frame
@@ -132,6 +136,7 @@ expect.extend({
 
   /**
    * Assert that component mounted exactly once
+   *
    * @example
    * expect(ProfiledComponent).toHaveMountedOnce()
    */
@@ -166,6 +171,7 @@ expect.extend({
 
   /**
    * Assert that component never mounted
+   *
    * @example
    * expect(ProfiledComponent).toHaveNeverMounted()
    */
@@ -191,6 +197,7 @@ expect.extend({
 
   /**
    * Assert that component only updated (never mounted in current test)
+   *
    * @example
    * expect(ProfiledComponent).toHaveOnlyUpdated()
    */
@@ -230,7 +237,8 @@ expect.extend({
 
   /**
    * Assert average render time across all renders
-   * @param received
+   *
+   * @param received - The component to check (must be created with withProfiler)
    * @param maxAverage - Maximum allowed average render time in milliseconds
    * @example
    * expect(ProfiledComponent).toHaveAverageRenderTime(10)
