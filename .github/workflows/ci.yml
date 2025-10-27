@@ -204,4 +204,4 @@ jobs:
           const profiled: ProfiledComponent<{}> & React.ComponentType<{}> = withProfiler(Component);
           console.log('✅ TypeScript definitions work');
           EOF
-          npx tsc test.ts --noEmit --esModuleInterop --jsx react --moduleResolution node
+          npx tsc test.ts --noEmit --esModuleInterop --jsx react --moduleResolution node --lib ES2022,DOM,DOM.Iterable
