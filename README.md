@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
 [![npm downloads](https://img.shields.io/npm/dm/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
 [![CI](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml/badge.svg)](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml)
-[![Coverage Status](https://codecov.io/gh/greydragon888/vitest-react-profiler/branch/main/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/greydragon888/vitest-react-profiler)
+[![Coverage Status](https://codecov.io/gh/greydragon888/vitest-react-profiler/branch/master/graph/badge.svg)](https://codecov.io/gh/greydragon888/vitest-react-profiler)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
