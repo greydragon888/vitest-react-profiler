@@ -48,9 +48,9 @@ jobs:
             -Dsonar.tests=tests
             -Dsonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/tests/**,**/examples/**
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**,**/examples/**
-            -Dsonar.qualitygate.wait=false
+            -Dsonar.qualitygate.wait=true
 
       - name: Check Quality Gate
         run: |
-          # Quality Gate wait disabled until first analysis completes
+          # Quality Gate status is checked by sonar.qualitygate.wait=true
           echo "✅ SonarCloud analysis completed"
