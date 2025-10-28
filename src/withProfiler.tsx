@@ -75,13 +75,16 @@ export function withProfiler<P extends object>(
   };
 
   /**
+   * Counter for generating unique component IDs
+   */
+  let instanceCounter = 0;
+
+  /**
    * The wrapped component with Profiler
    */
   const ProfiledComponent = ((props: P) => {
     // Stable unique ID for this component instance
-    const idRef = useRef(
-      `${componentName}-${Math.random().toString(36).slice(2, 9)}`,
-    );
+    const idRef = useRef(`${componentName}-${++instanceCounter}`);
 
     return (
       <Profiler id={idRef.current} onRender={onRender}>
