@@ -3,7 +3,7 @@
  * Automatically cleared between tests via auto-setup
  */
 class ComponentRegistry {
-  private components = new Set<{ clear: () => void }>();
+  private readonly components = new Set<{ clear: () => void }>();
 
   /**
    * Register a component for automatic cleanup
@@ -21,9 +21,9 @@ class ComponentRegistry {
    * @internal
    */
   clearAll(): void {
-    this.components.forEach((c) => {
+    for (const c of this.components) {
       c.clear();
-    });
+    }
     // Note: We don't clear the Set itself to allow components
     // created in describe() blocks to persist their cleanup handlers
   }

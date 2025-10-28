@@ -2,9 +2,9 @@ name: Coverage Report
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
 
 jobs:
   coverage:
@@ -65,7 +65,7 @@ jobs:
           }
 
           # Generate badge URLs (for shields.io)
-          echo "[![Coverage Status](https://codecov.io/gh/${{ github.repository }}/branch/main/graph/badge.svg)](https://codecov.io/gh/${{ github.repository }})" > .github/badges/coverage.md
+          echo "[![Coverage Status](https://codecov.io/gh/${{ github.repository }}/branch/master/graph/badge.svg)](https://codecov.io/gh/${{ github.repository }})" > .github/badges/coverage.md
 
       - name: Comment PR with coverage report
         if: github.event_name == 'pull_request'
