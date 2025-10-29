@@ -68,7 +68,6 @@ export function withProfiler<P extends object>(
   ) => {
     const data = profilerDataMap.get(Component);
 
-    /* c8 ignore next 3 */
     if (!data) {
       return;
     }
@@ -123,7 +122,6 @@ export function withProfiler<P extends object>(
   ProfiledComponent.getRenderCount = () => {
     const profilerData = profilerDataMap.get(Component);
 
-    /* c8 ignore next 3 */
     if (!profilerData) {
       return 0;
     }
@@ -135,7 +133,6 @@ export function withProfiler<P extends object>(
   ProfiledComponent.getRenderHistory = () => {
     const profilerData = profilerDataMap.get(Component);
 
-    /* c8 ignore next 3 */
     if (!profilerData) {
       return [];
     }
