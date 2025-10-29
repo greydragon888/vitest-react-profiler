@@ -76,6 +76,29 @@ jobs:
           name: codecov-coverage
           fail_ci_if_error: false
 
+  mutation-test:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    # Run only on master branch to save CI time
+    if: github.ref == 'refs/heads/master' || github.event_name == 'push'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run mutation tests
+        run: npm run test:mutation
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+
   build:
     name: Build
     runs-on: ubuntu-latest

@@ -37,7 +37,7 @@ export default {
 
   // Mutation score thresholds
   thresholds: {
-    high: 85, // Plugin complexity - moderate threshold
+    high: 90, // Plugin complexity - moderate threshold
     low: 70,
     break: 60,
   },
@@ -48,9 +48,14 @@ export default {
   timeoutFactor: 3, // 3x safety margin
 
   // Reporters
-  reporters: ["progress", "clear-text", "html"],
+  reporters: ["progress", "clear-text", "html", "dashboard"],
   htmlReporter: {
     fileName: "reports/mutation-report.html",
+  },
+  dashboard: {
+    project: "github.com/greydragon888/vitest-react-profiler",
+    version: "master",
+    module: "vitest-react-profiler",
   },
 
   // ⚠️ CRITICAL: DO NOT exclude tests/ - they are needed in sandbox!
