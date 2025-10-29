@@ -2,19 +2,36 @@
 
 <div align="center">
 
+  <!-- Package Info -->
+
 [![npm version](https://img.shields.io/npm/v/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
 [![npm downloads](https://img.shields.io/npm/dm/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
 [![CI](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml/badge.svg)](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml)
+
+  <!-- Quality & Testing -->
+
+[![Enterprise Grade Testing](https://img.shields.io/badge/testing-enterprise%20grade-brightgreen?style=flat-square)](https://dashboard.stryker-mutator.io/reports/github.com/greydragon888/vitest-react-profiler/master)
 [![Coverage Status](https://codecov.io/gh/greydragon888/vitest-react-profiler/branch/master/graph/badge.svg)](https://codecov.io/gh/greydragon888/vitest-react-profiler)
 [![Mutation testing badge](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fgreydragon888%2Fvitest-react-profiler%2Fmaster)](https://dashboard.stryker-mutator.io/reports/github.com/greydragon888/vitest-react-profiler/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=greydragon888_vitest-react-profiler&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=greydragon888_vitest-react-profiler)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+
+  <!-- Framework & Testing Stack -->
+
+[![React](https://img.shields.io/badge/React-16.8--19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://reactjs.org/)
+[![React Testing Library](https://img.shields.io/badge/RTL-16.3-E33332?style=flat-square&logo=testing-library&logoColor=white)](https://testing-library.com/react)
 [![Tested with Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest)](https://vitest.dev/)
+
+  <!-- Code Quality Tools -->
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Built with tsup](https://img.shields.io/badge/built%20with-tsup-blue?style=flat-square)](https://tsup.egoist.dev)
 [![ESLint](https://img.shields.io/badge/eslint-9.38-4B32C3?style=flat-square&logo=eslint)](https://eslint.org/)
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
-[![Built with tsup](https://img.shields.io/badge/built%20with-tsup-blue?style=flat-square)](https://tsup.egoist.dev)
+
+  <!-- Community -->
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 **React component render tracking and performance testing utilities for Vitest**
 
@@ -31,8 +48,8 @@
 - ⏱️ **Async Testing** - Wait for renders with async utilities and matchers
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
+- 🧬 **Battle-Tested Quality** - more than 90% mutation score, not just line coverage
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
-- 📦 **Tiny Bundle** - Less than 10KB minified
 
 ## Why vitest-react-profiler?
 
