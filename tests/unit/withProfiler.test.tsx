@@ -105,6 +105,45 @@ describe("withProfiler", () => {
 
       expect(ProfiledSimple.getRenderCount()).toBe(2); // New mount adds to count
     });
+
+    it("should maintain stable instance ID across re-renders", () => {
+      // This tests that instanceCounter doesn't increment on re-renders
+      // by verifying render count behavior remains consistent
+      const { rerender } = render(<ProfiledSimple value="initial" />);
+
+      expect(ProfiledSimple.getRenderCount()).toBe(1);
+
+      // Multiple re-renders should increment count linearly, not exponentially
+      // If instanceCounter was incrementing on each render, we would see
+      // unexpected behavior in the render tracking
+      rerender(<ProfiledSimple value="updated-1" />);
+
+      expect(ProfiledSimple.getRenderCount()).toBe(2);
+
+      rerender(<ProfiledSimple value="updated-2" />);
+
+      expect(ProfiledSimple.getRenderCount()).toBe(3);
+
+      rerender(<ProfiledSimple value="updated-3" />);
+
+      expect(ProfiledSimple.getRenderCount()).toBe(4);
+
+      // All renders should be tracked properly with correct phases
+      const history = ProfiledSimple.getRenderHistory();
+
+      expect(history).toHaveLength(4);
+      expect(history[0]?.phase).toBe("mount");
+      expect(history[1]?.phase).toBe("update");
+      expect(history[2]?.phase).toBe("update");
+      expect(history[3]?.phase).toBe("update");
+
+      // Verify that each render has proper timing data
+      // (would be broken if instanceCounter was creating new Profiler instances)
+      history.forEach((render) => {
+        expect(render.timestamp).toBeGreaterThan(0);
+        expect(render.actualDuration).toBeGreaterThanOrEqual(0);
+      });
+    });
   });
 
   describe("Phase Tracking", () => {

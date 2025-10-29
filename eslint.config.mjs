@@ -30,6 +30,7 @@ export default tsEslint.config(
       "**/*.d.ts",
       "**/.DS_Store",
       "**/*.bak*",
+      "tests/benchmarks/**",
     ],
   },
 

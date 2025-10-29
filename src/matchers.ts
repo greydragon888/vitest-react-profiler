@@ -1,5 +1,10 @@
 import { expect } from "vitest";
 
+import {
+  formatRenderHistory,
+  formatRenderSummary,
+} from "./utils/formatRenderHistory";
+
 import type { ProfiledComponent } from "./types";
 
 /**
@@ -73,13 +78,22 @@ expect.extend({
     }
 
     const actual = received.getRenderCount();
+    const pass = actual === expected;
 
     return {
-      pass: actual === expected,
-      message: () =>
-        actual === expected
-          ? `Expected component not to render ${expected} time(s), but it did`
-          : `Expected component to render ${expected} time(s), but it rendered ${actual} time(s)`,
+      pass,
+      message: () => {
+        if (pass) {
+          return `Expected component not to render ${expected} time(s), but it did`;
+        }
+
+        // Show detailed render history on failure
+        const history = received.getRenderHistory();
+        const summary = formatRenderSummary(history);
+        const details = formatRenderHistory(history, 10);
+
+        return `Expected ${expected} renders, but got ${actual} (${summary})\n\n${details}`;
+      },
       actual,
       expected,
     };
@@ -125,10 +139,27 @@ expect.extend({
 
     return {
       pass,
-      message: () =>
-        pass
-          ? `Expected render to take more than ${maxDuration}ms, but it took ${duration.toFixed(2)}ms`
-          : `Expected render to take at most ${maxDuration}ms, but it took ${duration.toFixed(2)}ms`,
+      message: () => {
+        if (pass) {
+          return `Expected render to take more than ${maxDuration}ms, but it took ${duration.toFixed(2)}ms`;
+        }
+
+        // Show all slow renders for context
+        const history = received.getRenderHistory();
+        const slowRenders = history.filter(
+          (r) => r.actualDuration > maxDuration,
+        );
+
+        if (slowRenders.length > 1) {
+          const slowDetails = formatRenderHistory(slowRenders, 10);
+
+          return `Expected last render to take at most ${maxDuration}ms, but it took ${duration.toFixed(2)}ms\n\nSlow renders (${slowRenders.length} total):\n${slowDetails}`;
+        }
+
+        const details = formatRenderHistory(history, 5);
+
+        return `Expected last render to take at most ${maxDuration}ms, but it took ${duration.toFixed(2)}ms\n\nRecent renders:\n${details}`;
+      },
       actual: duration,
       expected: maxDuration,
     };
@@ -151,18 +182,22 @@ expect.extend({
 
     const mounts = received.getRendersByPhase("mount");
     const mountCount = mounts.length;
+    const pass = mountCount === 1;
 
     return {
-      pass: mountCount === 1,
+      pass,
       message: () => {
         if (mountCount === 0) {
           return `Expected component to mount once, but it never mounted`;
         }
-        if (mountCount === 1) {
+        if (pass) {
           return `Expected component not to mount, but it mounted once`;
         }
 
-        return `Expected component to mount once, but it mounted ${mountCount} times`;
+        // Show all mount renders
+        const mountDetails = formatRenderHistory(mounts, 10);
+
+        return `Expected component to mount once, but it mounted ${mountCount} times\n\nMount renders:\n${mountDetails}`;
       },
       actual: mountCount,
       expected: 1,
@@ -273,12 +308,225 @@ expect.extend({
 
     return {
       pass,
-      message: () =>
-        pass
-          ? `Expected average render time to be more than ${maxAverage}ms, but it was ${average.toFixed(2)}ms`
-          : `Expected average render time to be at most ${maxAverage}ms, but it was ${average.toFixed(2)}ms`,
+      message: () => {
+        if (pass) {
+          return `Expected average render time to be more than ${maxAverage}ms, but it was ${average.toFixed(2)}ms`;
+        }
+
+        // Show outlier renders that are significantly slower than average
+        const history = received.getRenderHistory();
+        const outliers = history.filter(
+          (r) => r.actualDuration > average * 1.5,
+        );
+
+        if (outliers.length > 0) {
+          const outlierDetails = formatRenderHistory(outliers, 5);
+
+          return `Expected average render time to be at most ${maxAverage}ms, but it was ${average.toFixed(2)}ms\n\nSlow outliers (${outliers.length} renders):\n${outlierDetails}`;
+        }
+
+        const details = formatRenderHistory(history, 5);
+
+        return `Expected average render time to be at most ${maxAverage}ms, but it was ${average.toFixed(2)}ms\n\nRender history:\n${details}`;
+      },
       actual: average,
       expected: maxAverage,
+    };
+  },
+
+  /**
+   * Assert that component eventually renders exact number of times (async)
+   *
+   * @param received - The component to check (must be created with withProfiler)
+   * @param expected - Expected number of renders
+   * @param options - Wait options
+   * @param options.timeout - Maximum wait time in milliseconds (default: 1000)
+   * @param options.interval - Polling interval in milliseconds (default: 50)
+   * @example
+   * await expect(ProfiledComponent).toEventuallyRenderTimes(3)
+   * await expect(ProfiledComponent).toEventuallyRenderTimes(5, { timeout: 2000 })
+   */
+  async toEventuallyRenderTimes(
+    received: unknown,
+    expected: number,
+    options?: { timeout?: number; interval?: number },
+  ) {
+    if (!isProfiledComponent(received)) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected a profiled component created with withProfiler(), received ${typeof received}`,
+      };
+    }
+
+    if (!Number.isInteger(expected) || expected < 0) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected render count must be a non-negative integer, received ${expected}`,
+      };
+    }
+
+    const { timeout = 1000, interval = 50 } = options ?? {};
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      const actual = received.getRenderCount();
+
+      if (actual === expected) {
+        return {
+          pass: true,
+          message: () =>
+            `Expected component not to eventually render ${expected} times within ${timeout}ms, but it did`,
+          actual,
+          expected,
+        };
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    const actual = received.getRenderCount();
+    const history = received.getRenderHistory();
+    const summary = formatRenderSummary(history);
+    const details = formatRenderHistory(history, 10);
+
+    return {
+      pass: false,
+      message: () =>
+        `Expected component to eventually render ${expected} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
+      actual,
+      expected,
+    };
+  },
+
+  /**
+   * Assert that component eventually renders at least N times (async)
+   *
+   * @param received - The component to check (must be created with withProfiler)
+   * @param minCount - Minimum expected number of renders
+   * @param options - Wait options
+   * @param options.timeout - Maximum wait time in milliseconds (default: 1000)
+   * @param options.interval - Polling interval in milliseconds (default: 50)
+   * @example
+   * await expect(ProfiledComponent).toEventuallyRenderAtLeast(2)
+   * await expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: 2000 })
+   */
+  async toEventuallyRenderAtLeast(
+    received: unknown,
+    minCount: number,
+    options?: { timeout?: number; interval?: number },
+  ) {
+    if (!isProfiledComponent(received)) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected a profiled component created with withProfiler(), received ${typeof received}`,
+      };
+    }
+
+    if (!Number.isInteger(minCount) || minCount < 0) {
+      return {
+        pass: false,
+        message: () =>
+          `Minimum render count must be a non-negative integer, received ${minCount}`,
+      };
+    }
+
+    const { timeout = 1000, interval = 50 } = options ?? {};
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      const actual = received.getRenderCount();
+
+      if (actual >= minCount) {
+        return {
+          pass: true,
+          message: () =>
+            `Expected component not to eventually render at least ${minCount} times within ${timeout}ms, but it rendered ${actual} times`,
+          actual,
+          expected: minCount,
+        };
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    const actual = received.getRenderCount();
+    const history = received.getRenderHistory();
+    const summary = formatRenderSummary(history);
+    const details = formatRenderHistory(history, 10);
+
+    return {
+      pass: false,
+      message: () =>
+        `Expected component to eventually render at least ${minCount} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
+      actual,
+      expected: minCount,
+    };
+  },
+
+  /**
+   * Assert that component eventually reaches specific render phase (async)
+   *
+   * @param received - The component to check (must be created with withProfiler)
+   * @param phase - Expected render phase ('mount', 'update', or 'nested-update')
+   * @param options - Wait options
+   * @param options.timeout - Maximum wait time in milliseconds (default: 1000)
+   * @param options.interval - Polling interval in milliseconds (default: 50)
+   * @example
+   * await expect(ProfiledComponent).toEventuallyReachPhase('update')
+   * await expect(ProfiledComponent).toEventuallyReachPhase('mount', { timeout: 2000 })
+   */
+  async toEventuallyReachPhase(
+    received: unknown,
+    phase: "mount" | "update" | "nested-update",
+    options?: { timeout?: number; interval?: number },
+  ) {
+    if (!isProfiledComponent(received)) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected a profiled component created with withProfiler(), received ${typeof received}`,
+      };
+    }
+
+    const validPhases = ["mount", "update", "nested-update"];
+
+    if (!validPhases.includes(phase)) {
+      return {
+        pass: false,
+        message: () =>
+          `Phase must be one of: ${validPhases.join(", ")}, received ${phase}`,
+      };
+    }
+
+    const { timeout = 1000, interval = 50 } = options ?? {};
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      const history = received.getRenderHistory();
+      const hasPhase = history.some((r) => r.phase === phase);
+
+      if (hasPhase) {
+        return {
+          pass: true,
+          message: () =>
+            `Expected component not to eventually reach phase "${phase}" within ${timeout}ms, but it did`,
+        };
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    const history = received.getRenderHistory();
+    const phases = history.map((r) => r.phase).join(", ");
+    const summary = formatRenderSummary(history);
+
+    return {
+      pass: false,
+      message: () =>
+        `Expected component to eventually reach phase "${phase}" within ${timeout}ms, but it didn't (${summary}).\n\nCurrent phases: [${phases}]`,
     };
   },
 });

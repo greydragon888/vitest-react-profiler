@@ -71,9 +71,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes(2);
-      }).toThrow(
-        /Expected component to render 2 time\(s\), but it rendered 1 time/,
-      );
+      }).toThrow(/Expected 2 renders, but got 1/);
     });
 
     it("should validate expected parameter", () => {
@@ -140,7 +138,7 @@ describe("Custom Matchers", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedWithin(0.0001);
       }).toThrow(
-        /Expected render to take at most 0\.0001ms.*but it took \d+\.\d+ms/,
+        /Expected last render to take at most 0\.0001ms.*but it took \d+\.\d+ms/,
       );
     });
 
@@ -175,6 +173,38 @@ describe("Custom Matchers", () => {
       }).toThrow(new RegExp(String.raw`but it took \d+\.\d{2}ms`));
     });
 
+    it("should show different error messages for exactly 1 vs multiple slow renders", () => {
+      // Component that renders slowly
+      const SlowComponent = ({ duration = 0 }: { duration?: number }) => {
+        // Simulate slow render by busy-waiting
+        const start = performance.now();
+
+        while (performance.now() - start < duration) {
+          // Busy wait
+        }
+
+        return <div>Slow</div>;
+      };
+
+      const ProfiledSlowComponent = withProfiler(SlowComponent);
+
+      // First render with duration 5ms
+      const { rerender } = render(<ProfiledSlowComponent duration={5} />);
+
+      // Test with exactly 1 slow render
+      expect(() => {
+        expect(ProfiledSlowComponent).toHaveRenderedWithin(0.001);
+      }).toThrow(/Recent renders:/);
+
+      // Add second slow render
+      rerender(<ProfiledSlowComponent duration={5} />);
+
+      // Test with 2 slow renders - should show "Slow renders (X total):"
+      expect(() => {
+        expect(ProfiledSlowComponent).toHaveRenderedWithin(0.001);
+      }).toThrow(/Slow renders \(2 total\):/);
+    });
+
     it("should handle edge case durations correctly", () => {
       render(<ProfiledComponent />);
 
@@ -192,6 +222,72 @@ describe("Custom Matchers", () => {
         new RegExp(
           `Expected render to take more than ${actualDuration}ms, but it took ${actualDuration.toFixed(2)}ms`,
         ),
+      );
+    });
+
+    it("should filter slow renders correctly (only actualDuration > maxDuration)", () => {
+      // Component with controlled render times
+      const MixedSpeedComponent = ({ duration = 0 }: { duration?: number }) => {
+        const start = performance.now();
+
+        while (performance.now() - start < duration) {
+          // Busy wait to simulate work
+        }
+
+        return <div>Mixed</div>;
+      };
+
+      const ProfiledMixedComponent = withProfiler(MixedSpeedComponent);
+
+      // Create renders with different durations: 1ms, 3ms, 5ms, 7ms
+      const { rerender } = render(<ProfiledMixedComponent duration={1} />);
+
+      rerender(<ProfiledMixedComponent duration={3} />);
+      rerender(<ProfiledMixedComponent duration={5} />);
+      rerender(<ProfiledMixedComponent duration={7} />);
+
+      const history = ProfiledMixedComponent.getRenderHistory();
+
+      // Find actual max duration from history
+      const maxActual = Math.max(...history.map((r) => r.actualDuration));
+
+      // Set threshold to exclude some renders
+      // Using maxActual - 2 should exclude only the fastest render(s)
+      const threshold = maxActual - 2;
+
+      let error: unknown;
+
+      try {
+        expect(ProfiledMixedComponent).toHaveRenderedWithin(threshold);
+
+        throw new Error("Should have thrown");
+      } catch (error_) {
+        error = error_;
+      }
+
+      const errorMessage = (error as Error).message;
+
+      // Should show "Slow renders (X total):" since multiple renders exceed threshold
+      expect(errorMessage).toMatch(/Slow renders \(\d+ total\):/);
+
+      // Verify that ONLY renders > threshold are shown
+      // Count how many renders should be in the slow list
+      const actualSlowCount = history.filter(
+        (r) => r.actualDuration > threshold,
+      ).length;
+
+      // The error message should reflect this count
+      expect(errorMessage).toContain(`Slow renders (${actualSlowCount} total)`);
+
+      // Verify boundary: renders equal to threshold should NOT be included
+      // Count should strictly be greater than threshold (not equal)
+      const strictlyGreaterCount = history.filter(
+        (r) => r.actualDuration > threshold,
+      ).length;
+
+      // Verify that the count in error message matches strictly greater count
+      expect(errorMessage).toContain(
+        `Slow renders (${strictlyGreaterCount} total)`,
       );
     });
   });
@@ -345,6 +441,51 @@ describe("Custom Matchers", () => {
         expect(regularComponent).toHaveOnlyUpdated();
       }).toThrow(/Expected a profiled component created with withProfiler/);
     });
+
+    it("should verify phase-specific logic (not all phases count)", () => {
+      // This test ensures that the matcher checks for specific "mount" and "update" phases
+      // Not just any phase value
+      const { rerender } = render(<ProfiledComponent />);
+
+      rerender(<ProfiledComponent />);
+
+      const history = ProfiledComponent.getRenderHistory();
+
+      // Verify we have both mount and update phases
+      const hasMountPhase = history.some((r) => r.phase === "mount");
+      const hasUpdatePhase = history.some((r) => r.phase === "update");
+
+      expect(hasMountPhase).toBe(true);
+      expect(hasUpdatePhase).toBe(true);
+
+      // The matcher should fail because hasMounts=true (even though hasUpdates=true too)
+      // This tests the logic: pass = !hasMounts && hasUpdates
+      expect(() => {
+        expect(ProfiledComponent).toHaveOnlyUpdated();
+      }).toThrow(
+        /Expected component to have only updates, but it also mounted/,
+      );
+    });
+
+    it("should correctly evaluate both conditions in pass logic", () => {
+      // This tests that BOTH conditions are required:
+      // - !hasMounts (no mount phase)
+      // - hasUpdates (has update phase)
+
+      // Case 1: has mount, no updates → should fail with "only mounted"
+      render(<ProfiledComponent />);
+
+      const history = ProfiledComponent.getRenderHistory();
+
+      expect(history.some((r) => r.phase === "mount")).toBe(true);
+      expect(history.some((r) => r.phase === "update")).toBe(false);
+
+      expect(() => {
+        expect(ProfiledComponent).toHaveOnlyUpdated();
+      }).toThrow(
+        /Expected component to have only updates, but it only mounted/,
+      );
+    });
   });
 
   describe("toHaveAverageRenderTime", () => {
@@ -414,6 +555,115 @@ describe("Custom Matchers", () => {
         expect(ProfiledComponent).toHaveAverageRenderTime(0.000_01);
       }).toThrow(/Expected average render time to be at most/);
     });
+
+    it("should show different error messages based on outliers presence", () => {
+      // Component with varying render times to test both code paths
+      const VaryingComponent = ({ duration = 0 }: { duration?: number }) => {
+        const start = performance.now();
+
+        while (performance.now() - start < duration) {
+          // Busy wait
+        }
+
+        return <div>Varying</div>;
+      };
+
+      const ProfiledVaryingComponent = withProfiler(VaryingComponent);
+
+      // Fast renders: 1ms, 1ms, 1ms (average ≈ 1ms)
+      const { rerender } = render(<ProfiledVaryingComponent duration={1} />);
+
+      rerender(<ProfiledVaryingComponent duration={1} />);
+      rerender(<ProfiledVaryingComponent duration={1} />);
+
+      // Add slow outlier: 10ms (10ms > 1.5 * average)
+      rerender(<ProfiledVaryingComponent duration={10} />);
+
+      const avg = ProfiledVaryingComponent.getAverageRenderTime();
+
+      // Force failure to see outlier message
+      expect(() => {
+        expect(ProfiledVaryingComponent).toHaveAverageRenderTime(avg - 1);
+      }).toThrow(/Slow outliers \(\d+ renders\):/);
+
+      // Test the alternative path with a simple component
+      // This will show "Render history:" when no outliers, or "Slow outliers:" when they exist
+      const SimpleComponent = withProfiler(() => <div>Simple</div>);
+      const { rerender: rerender2 } = render(<SimpleComponent />);
+
+      rerender2(<SimpleComponent />);
+      rerender2(<SimpleComponent />);
+
+      const simpleAvg = SimpleComponent.getAverageRenderTime();
+
+      // Force failure - should show either "Render history" or "Slow outliers" depending on variance
+      expect(() => {
+        expect(SimpleComponent).toHaveAverageRenderTime(simpleAvg * 0.9);
+      }).toThrow(/Render history:|Slow outliers \(\d+ renders\):/);
+    });
+
+    it("should correctly filter outliers (only actualDuration > average * 1.5)", () => {
+      // Component with controlled render times
+      const ControlledComponent = ({ duration = 0 }: { duration?: number }) => {
+        const start = performance.now();
+
+        while (performance.now() - start < duration) {
+          // Busy wait
+        }
+
+        return <div>Controlled</div>;
+      };
+
+      const ProfiledControlledComponent = withProfiler(ControlledComponent);
+
+      // Create renders: 2ms, 2ms, 2ms, 2ms, 8ms
+      // Average = (2+2+2+2+8)/5 = 3.2ms
+      // Threshold for outliers = 3.2 * 1.5 = 4.8ms
+      // Only 8ms should be an outlier (8 > 4.8)
+      const { rerender } = render(<ProfiledControlledComponent duration={2} />);
+
+      rerender(<ProfiledControlledComponent duration={2} />);
+      rerender(<ProfiledControlledComponent duration={2} />);
+      rerender(<ProfiledControlledComponent duration={2} />);
+      rerender(<ProfiledControlledComponent duration={8} />);
+
+      const history = ProfiledControlledComponent.getRenderHistory();
+      const average = ProfiledControlledComponent.getAverageRenderTime();
+      const threshold = average * 1.5;
+
+      // Count expected outliers (actualDuration > average * 1.5)
+      const expectedOutlierCount = history.filter(
+        (r) => r.actualDuration > threshold,
+      ).length;
+
+      let error: unknown;
+
+      try {
+        expect(ProfiledControlledComponent).toHaveAverageRenderTime(
+          average - 1,
+        );
+
+        throw new Error("Should have thrown");
+      } catch (error_) {
+        error = error_;
+      }
+
+      const errorMessage = (error as Error).message;
+
+      // Verify the count is correct - should only include strictly greater
+      const strictlyGreater = history.filter(
+        (r) => r.actualDuration > threshold,
+      ).length;
+
+      // The outlier count should match strictly greater count
+      expect(expectedOutlierCount).toBe(strictlyGreater);
+
+      // If outliers exist, verify they appear in error message
+      expect(expectedOutlierCount).toBeGreaterThan(0);
+      expect(errorMessage).toContain(
+        `Slow outliers (${expectedOutlierCount} renders)`,
+      );
+    });
   });
 
   describe("isProfiledComponent Validation", () => {
@@ -475,6 +725,60 @@ describe("Custom Matchers", () => {
       });
     });
 
+    it("should explicitly reject null for all matchers", () => {
+      // This test ensures that null check happens before type check
+      // to kill the mutation that replaces "received !== null" with "true"
+      const errorPattern =
+        /Expected a profiled component created with withProfiler.*received object/;
+
+      // Test all sync matchers
+      expect(() => {
+        expect(null).toHaveRendered();
+      }).toThrow(errorPattern);
+
+      expect(() => {
+        expect(null).toHaveRenderedTimes(1);
+      }).toThrow(errorPattern);
+
+      expect(() => {
+        expect(null).toHaveRenderedWithin(100);
+      }).toThrow(errorPattern);
+
+      expect(() => {
+        expect(null).toHaveMountedOnce();
+      }).toThrow(errorPattern);
+
+      expect(() => {
+        expect(null).toHaveNeverMounted();
+      }).toThrow(errorPattern);
+
+      expect(() => {
+        expect(null).toHaveOnlyUpdated();
+      }).toThrow(errorPattern);
+
+      expect(() => {
+        expect(null).toHaveAverageRenderTime(10);
+      }).toThrow(errorPattern);
+    });
+
+    it("should explicitly reject null for async matchers", async () => {
+      // Test async matchers with null
+      const errorPattern =
+        /Expected a profiled component created with withProfiler.*received object/;
+
+      await expect(expect(null).toEventuallyRenderTimes(1)).rejects.toThrow(
+        errorPattern,
+      );
+
+      await expect(expect(null).toEventuallyRenderAtLeast(1)).rejects.toThrow(
+        errorPattern,
+      );
+
+      await expect(
+        expect(null).toEventuallyReachPhase("mount"),
+      ).rejects.toThrow(errorPattern);
+    });
+
     it("should accept profiled components for all matchers", () => {
       const ProfiledTestComponent = withProfiler(TestComponent, "Test");
 
@@ -493,7 +797,7 @@ describe("Custom Matchers", () => {
       // toHaveRenderedTimes - will throw wrong count but not validation error
       expect(() => {
         expect(ProfiledTestComponent).toHaveRenderedTimes(5);
-      }).toThrow(/Expected component to render 5 time/);
+      }).toThrow(/Expected 5 renders, but got 0/);
 
       expect(() => {
         expect(ProfiledTestComponent).toHaveRenderedTimes(5);
@@ -558,9 +862,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes(5);
-      }).toThrow(
-        /Expected component to render 5 time\(s\), but it rendered 1 time\(s\)/,
-      );
+      }).toThrow(/Expected 5 renders, but got 1/);
     });
   });
 

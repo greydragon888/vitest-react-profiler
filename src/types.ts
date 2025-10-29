@@ -65,6 +65,48 @@ export interface ProfilerMatchers<R = unknown> {
    * @example expect(ProfiledComponent).toHaveAverageRenderTime(10)
    */
   toHaveAverageRenderTime: (ms: number) => R;
+
+  /**
+   * Assert that component eventually renders exact number of times (async)
+   *
+   * @param count - Expected number of renders
+   * @param options - Wait options (timeout, interval)
+   * @returns - Matcher result promise
+   * @example await expect(ProfiledComponent).toEventuallyRenderTimes(3)
+   * @example await expect(ProfiledComponent).toEventuallyRenderTimes(5, { timeout: 2000 })
+   */
+  toEventuallyRenderTimes: (
+    count: number,
+    options?: { timeout?: number; interval?: number },
+  ) => Promise<R>;
+
+  /**
+   * Assert that component eventually renders at least N times (async)
+   *
+   * @param minCount - Minimum expected number of renders
+   * @param options - Wait options (timeout, interval)
+   * @returns - Matcher result promise
+   * @example await expect(ProfiledComponent).toEventuallyRenderAtLeast(2)
+   * @example await expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: 2000 })
+   */
+  toEventuallyRenderAtLeast: (
+    minCount: number,
+    options?: { timeout?: number; interval?: number },
+  ) => Promise<R>;
+
+  /**
+   * Assert that component eventually reaches specific render phase (async)
+   *
+   * @param phase - Expected render phase ('mount', 'update', or 'nested-update')
+   * @param options - Wait options (timeout, interval)
+   * @returns - Matcher result promise
+   * @example await expect(ProfiledComponent).toEventuallyReachPhase('update')
+   * @example await expect(ProfiledComponent).toEventuallyReachPhase('mount', { timeout: 2000 })
+   */
+  toEventuallyReachPhase: (
+    phase: "mount" | "update" | "nested-update",
+    options?: { timeout?: number; interval?: number },
+  ) => Promise<R>;
 }
 
 /**
@@ -145,6 +187,9 @@ export interface ProfiledComponent<P> {
 
   /** Original component for reference */
   readonly OriginalComponent: FC<P>;
+
+  /** React component display name for debugging */
+  readonly displayName?: string;
 }
 
 /**
