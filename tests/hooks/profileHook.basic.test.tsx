@@ -64,4 +64,46 @@ describe("profileHook - Basic functionality", () => {
 
     expect(ProfiledHook).toHaveRenderedTimes(2);
   });
+
+  it("should use hook.name when available (named function)", () => {
+    // Named function hook
+    function useCustomHook() {
+      return useState(0);
+    }
+
+    const { ProfiledHook } = profileHook(useCustomHook);
+
+    // withProfiler wraps with "withProfiler(hookName)" format
+    expect(ProfiledHook.displayName).toBe("withProfiler(useCustomHook)");
+    // Verify hook name is used, not default fallback
+    expect(ProfiledHook.displayName).not.toContain("useHook");
+    expect(ProfiledHook.displayName).toContain("useCustomHook");
+  });
+
+  it("should use default name for anonymous hook (hook.name is empty)", () => {
+    // Anonymous arrow function - hook.name will be empty string
+    const { ProfiledHook } = profileHook(() => useState(0));
+
+    // Should fall back to "useHook" when hook.name is empty
+    expect(ProfiledHook.displayName).toBe("withProfiler(useHook)");
+    // Verify it's not an empty name
+    expect(ProfiledHook.displayName).not.toBe("withProfiler()");
+  });
+
+  it("should ensure displayName is never empty string", () => {
+    function useTestHook() {
+      return useState(0);
+    }
+
+    const { ProfiledHook } = profileHook(useTestHook);
+
+    // displayName should always be a non-empty string with withProfiler prefix
+    // eslint-disable-next-line vitest/prefer-strict-boolean-matchers -- checking string is truthy
+    expect(ProfiledHook.displayName).toBeTruthy();
+    expect(ProfiledHook.displayName).toMatch(/^withProfiler\(.+\)$/);
+    expect(ProfiledHook.displayName).not.toBe("withProfiler()");
+    expect(ProfiledHook.displayName).not.toBe("");
+    // Verify hook name is not empty in displayName
+    expect(ProfiledHook.displayName).toContain("useTestHook");
+  });
 });

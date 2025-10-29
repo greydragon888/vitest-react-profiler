@@ -22,6 +22,7 @@
 - ⚡ **Performance Monitoring** - Measure and assert render durations
 - 🎯 **Phase Detection** - Distinguish between mount, update, and nested update phases
 - 📊 **Statistical Analysis** - Get average, min, max render times across multiple renders
+- ⏱️ **Async Testing** - Wait for renders with async utilities and matchers
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
@@ -115,14 +116,93 @@ describe('MyComponent performance', () => {
 });
 ```
 
+### 3. Simplified API (Alternative)
+
+For a more streamlined experience, use `renderProfiled()` which combines `withProfiler()` and `render()` in one call:
+
+```typescript
+import { renderProfiled } from "vitest-react-profiler";
+import { MyComponent } from "./MyComponent";
+
+describe("MyComponent performance", () => {
+  it("should render only once on mount", () => {
+    const { component } = renderProfiled(MyComponent, { value: 42 });
+
+    expect(component).toHaveRenderedTimes(1);
+    expect(component).toHaveMountedOnce();
+  });
+
+  it("should handle prop updates correctly", () => {
+    const { component, rerender } = renderProfiled(MyComponent, { value: 1 });
+
+    expect(component).toHaveRenderedTimes(1);
+
+    // rerender automatically merges props
+    rerender({ value: 2 });
+
+    expect(component).toHaveRenderedTimes(2);
+  });
+});
+```
+
+#### When to use which approach?
+
+- **`withProfiler()` + `render()`**: More explicit, useful when you need fine-grained control or want to share the profiled component across tests
+- **`renderProfiled()`**: More concise, great for quick tests and when you only need profiling for a single test
+
+Both approaches are fully supported and work identically!
+
 ## API
 
-### `withProfiler(Component, displayName?)`
+### Core Functions
+
+#### `withProfiler(Component, displayName?)`
 
 Wraps a React component with profiling capabilities.
 
 ```typescript
 const ProfiledComponent = withProfiler(MyComponent, "MyComponent");
+```
+
+**Parameters:**
+
+- `Component`: React component to profile
+- `displayName` (optional): Custom name for debugging
+
+#### `renderProfiled(Component, props, options?)`
+
+Simplified helper that combines `withProfiler()` and `render()` in one call.
+
+```typescript
+const { component, rerender, ...rtl } = renderProfiled(MyComponent, {
+  value: 1,
+});
+```
+
+**Parameters:**
+
+- `Component`: React component to profile
+- `props`: Initial props for the component
+- `options` (optional):
+  - `displayName`: Custom name for the profiled component
+  - `renderOptions`: React Testing Library render options (e.g., `wrapper`)
+
+**Returns:**
+
+- `component`: The profiled component with all profiling methods
+- `rerender`: Enhanced rerender function that accepts partial props
+- All React Testing Library utilities (`container`, `unmount`, `debug`, etc.)
+
+**Example with wrapper:**
+
+```typescript
+const { component } = renderProfiled(
+  MyComponent,
+  { value: 1 },
+  {
+    renderOptions: { wrapper: ThemeProvider },
+  },
+);
 ```
 
 ### Matchers
@@ -154,6 +234,219 @@ Asserts that component only updated (no mounts).
 #### `toHaveAverageRenderTime(ms)`
 
 Asserts average render time across all renders.
+
+### Enhanced Error Messages
+
+vitest-react-profiler provides detailed, actionable error messages to help you debug render issues faster.
+
+#### Before and After
+
+**Before (typical matcher):**
+
+```
+Expected component to render 3 time(s), but it rendered 5 time(s)
+```
+
+**After (vitest-react-profiler):**
+
+```
+Expected 3 renders, but got 5 (1 mount, 4 updates)
+
+  #1 [mount       ] at   0.00ms (duration:  2.50ms)
+  #2 [update      ] at  10.50ms (duration:  1.20ms)
+  #3 [update      ] at  15.70ms (duration:  1.10ms)
+  #4 [update      ] at  20.30ms (duration:  1.00ms)
+  #5 [update      ] at  25.10ms (duration:  1.00ms)
+
+  💡 Tip: Use Component.getRenderHistory() to inspect all render details
+```
+
+#### Performance Issues Detection
+
+When a render is too slow, you get context about all slow renders:
+
+```
+Expected last render to take at most 16ms, but it took 45.23ms
+
+Slow renders (3 total):
+  #2 [update      ] at  10.50ms (duration: 45.23ms)
+  #5 [update      ] at  50.30ms (duration: 38.10ms)
+  #8 [update      ] at  90.00ms (duration: 42.50ms)
+
+  💡 Tip: Use Component.getRenderHistory() to inspect all render details
+```
+
+#### Unexpected Mount Detection
+
+When component mounts multiple times unexpectedly:
+
+```
+Expected component to mount once, but it mounted 3 times
+
+Mount renders:
+  #1 [mount       ] at   0.00ms (duration:  2.50ms)
+  #3 [mount       ] at  25.00ms (duration:  2.30ms)
+  #7 [mount       ] at  75.00ms (duration:  2.40ms)
+
+  💡 Tip: Use Component.getRenderHistory() to inspect all render details
+```
+
+These detailed messages help you:
+
+- **Identify patterns** - See which renders are problematic
+- **Understand timing** - Know when renders occur
+- **Debug performance** - Spot slow renders immediately
+- **Fix issues faster** - No more guessing what went wrong
+
+### Async Testing Utilities
+
+vitest-react-profiler provides async utilities and matchers for testing components with asynchronous state updates.
+
+#### Async Utilities
+
+**`waitForRenders(component, count, options?)`**
+
+Wait for a component to reach an exact render count:
+
+```typescript
+import { withProfiler, waitForRenders } from "vitest-react-profiler";
+
+it("should wait for async renders", async () => {
+  const AsyncComponent = () => {
+    const [count, setCount] = useState(0);
+
+    // Trigger async re-render
+    useEffect(() => {
+      setTimeout(() => setCount(1), 100);
+    }, []);
+
+    return <div>{count}</div>;
+  };
+
+  const ProfiledComponent = withProfiler(AsyncComponent);
+  render(<ProfiledComponent />);
+
+  // Wait for 2 renders (mount + update)
+  await waitForRenders(ProfiledComponent, 2);
+
+  expect(ProfiledComponent.getRenderCount()).toBe(2);
+});
+```
+
+**`waitForMinimumRenders(component, minCount, options?)`**
+
+Wait for at least N renders (useful when exact count is uncertain):
+
+```typescript
+// Wait for at least 2 renders
+await waitForMinimumRenders(ProfiledComponent, 2);
+
+expect(ProfiledComponent.getRenderCount()).toBeGreaterThanOrEqual(2);
+```
+
+**`waitForPhase(component, phase, options?)`**
+
+Wait for a specific render phase:
+
+```typescript
+// Wait for component to update
+await waitForPhase(ProfiledComponent, "update");
+
+expect(ProfiledComponent.getRendersByPhase("update").length).toBeGreaterThan(0);
+```
+
+#### Async Matchers
+
+**`toEventuallyRenderTimes(count, options?)`**
+
+Assert that component eventually renders exact number of times:
+
+```typescript
+// Default 1000ms timeout
+await expect(ProfiledComponent).toEventuallyRenderTimes(3);
+
+// Custom timeout
+await expect(ProfiledComponent).toEventuallyRenderTimes(5, { timeout: 2000 });
+```
+
+**`toEventuallyRenderAtLeast(minCount, options?)`**
+
+Assert that component eventually renders at least N times:
+
+```typescript
+await expect(ProfiledComponent).toEventuallyRenderAtLeast(2);
+
+// With custom interval
+await expect(ProfiledComponent).toEventuallyRenderAtLeast(3, {
+  timeout: 2000,
+  interval: 100,
+});
+```
+
+**`toEventuallyReachPhase(phase, options?)`**
+
+Assert that component eventually reaches a specific render phase:
+
+```typescript
+// Wait for component to update
+await expect(ProfiledComponent).toEventuallyReachPhase("update");
+
+// Or wait for mount
+await expect(ProfiledComponent).toEventuallyReachPhase("mount", {
+  timeout: 500,
+});
+```
+
+#### Real-World Example
+
+Testing a component with multiple async state updates:
+
+```typescript
+it("should handle complex async updates", async () => {
+  const ComplexComponent = () => {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      // Simulate API call
+      setTimeout(() => {
+        setLoading(false);
+      }, 50);
+
+      setTimeout(() => {
+        setData({ result: "success" });
+      }, 100);
+    }, []);
+
+    return <div>{loading ? "Loading..." : data?.result}</div>;
+  };
+
+  const ProfiledComponent = withProfiler(ComplexComponent);
+  render(<ProfiledComponent />);
+
+  // Wait for all updates to complete
+  await expect(ProfiledComponent).toEventuallyRenderTimes(3);
+
+  // Verify render phases
+  expect(ProfiledComponent).toHaveMountedOnce();
+  expect(ProfiledComponent.getRendersByPhase("update")).toHaveLength(2);
+
+  // Check final state
+  const history = ProfiledComponent.getRenderHistory();
+  expect(history.length).toBe(3);
+});
+```
+
+#### Options
+
+All async utilities and matchers accept options:
+
+```typescript
+interface WaitOptions {
+  timeout?: number; // Maximum wait time in ms (default: 1000)
+  interval?: number; // Polling interval in ms (default: 50)
+}
+```
 
 ### Profiled Component API
 

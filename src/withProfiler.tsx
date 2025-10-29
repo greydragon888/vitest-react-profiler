@@ -6,15 +6,22 @@ import type { RenderInfo, ProfiledComponent } from "./types";
 import type { ProfilerOnRenderCallback, ComponentType } from "react";
 
 /**
+ * Internal data structure for profiling
+ */
+interface ProfilerData {
+  renderHistory: RenderInfo[];
+  frozenHistoryCache?: readonly RenderInfo[] | undefined;
+  historyVersion: number;
+}
+
+/**
  * WeakMap storage for render data isolation between component instances
  * This prevents memory leaks and ensures data isolation in tests
  */
 const profilerDataMap = new WeakMap<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ComponentType<any>,
-  {
-    renderHistory: RenderInfo[];
-  }
+  ProfilerData
 >();
 
 /**
@@ -43,6 +50,8 @@ export function withProfiler<P extends object>(
   if (!profilerDataMap.has(Component)) {
     profilerDataMap.set(Component, {
       renderHistory: [],
+      frozenHistoryCache: undefined,
+      historyVersion: 0,
     });
   }
 
@@ -64,6 +73,10 @@ export function withProfiler<P extends object>(
       return;
     }
 
+    // Invalidate cache on new render
+    data.frozenHistoryCache = undefined;
+    data.historyVersion++;
+
     data.renderHistory.push({
       phase: phase,
       actualDuration,
@@ -84,7 +97,9 @@ export function withProfiler<P extends object>(
    */
   const ProfiledComponent = ((props: P) => {
     // Stable unique ID for this component instance
-    const idRef = useRef(`${componentName}-${++instanceCounter}`);
+    const idRef = useRef<string | undefined>(undefined);
+
+    idRef.current ??= `${componentName}-${++instanceCounter}`;
 
     return (
       <Profiler id={idRef.current} onRender={onRender}>
@@ -125,9 +140,17 @@ export function withProfiler<P extends object>(
       return [];
     }
 
-    const history = profilerData.renderHistory;
+    // Return cached version if available
+    if (profilerData.frozenHistoryCache) {
+      return profilerData.frozenHistoryCache;
+    }
 
-    return Object.freeze([...history]);
+    // Create and cache frozen copy
+    const frozenCopy = Object.freeze([...profilerData.renderHistory]);
+
+    profilerData.frozenHistoryCache = frozenCopy;
+
+    return frozenCopy;
   };
 
   /**
@@ -141,6 +164,8 @@ export function withProfiler<P extends object>(
 
     if (data) {
       data.renderHistory = [];
+      data.frozenHistoryCache = undefined;
+      data.historyVersion = 0;
     }
   };
 

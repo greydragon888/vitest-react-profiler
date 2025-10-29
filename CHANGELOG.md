@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-10-28
+
+### Added
+
+- **Async testing support** - Test components with asynchronous state updates
+  - `waitForRenders(component, count)` - Wait for exact render count
+  - `waitForMinimumRenders(component, minCount)` - Wait for at least N renders
+  - `waitForPhase(component, phase)` - Wait for specific render phase
+  - `toEventuallyRenderTimes(count)` - Async matcher for exact render count
+  - `toEventuallyRenderAtLeast(minCount)` - Async matcher for minimum renders
+  - `toEventuallyReachPhase(phase)` - Async matcher for render phase
+  - Configurable timeout and polling intervals for all async utilities
+
+- **Simplified API** - More concise testing experience
+  - `renderProfiled(Component, props, options)` - Combines `withProfiler()` + `render()` in one call
+  - Enhanced `rerender()` function with automatic prop merging
+  - Support for React Testing Library options (wrapper, container, etc.)
+
+- **Enhanced error messages** - Detailed, actionable failure information
+  - Visual render history table showing phase, timing, and duration
+  - Slow render detection with aggregate statistics
+  - Unexpected mount detection with detailed breakdown
+  - Contextual tips for debugging render issues
+
+- **Performance benchmarking** - Track library performance over time
+  - Benchmarks for `getRenderHistory()` operations
+  - Memory optimization benchmarks
+  - Stable benchmark configuration for consistent CI results
+
+### Changed
+
+- Improved documentation with:
+  - Complete async testing guide with real-world examples
+  - `renderProfiled()` usage patterns and best practices
+  - Enhanced error message examples showing before/after comparison
+  - Integration testing patterns for complex scenarios
+
+### Fixed
+
+- Flaky performance tests in CI environment with tolerance adjustments
+- SonarCloud security hotspots and quality gate issues
+
+### Infrastructure
+
+- **Mutation testing with Stryker** - Advanced test quality analysis (93.40% mutation score)
+  - Automated detection of weak test cases and untested edge cases
+  - 245 comprehensive tests covering critical logic paths
+  - Incremental mode for fast CI/CD integration
+- **SonarCloud integration** - Automated code quality and security analysis
+- **Codecov integration** - Visual coverage tracking and reporting
+- Quality gate badges for project health monitoring
+- Improved CI/CD pipeline reliability
+
 ## [1.2.0] - 2025-10-27
 
 ### Added
@@ -104,5 +157,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.3.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.0
+[1.2.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.2.0
 [1.1.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.1.0
 [1.0.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.0.0
