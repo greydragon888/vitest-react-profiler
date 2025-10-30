@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
 [![npm downloads](https://img.shields.io/npm/dm/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
-[![CI](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml/badge.svg)](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml)
+[![CI](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml)
 
   <!-- Quality & Testing -->
 
@@ -14,12 +14,13 @@
 [![Coverage Status](https://codecov.io/gh/greydragon888/vitest-react-profiler/branch/master/graph/badge.svg)](https://codecov.io/gh/greydragon888/vitest-react-profiler)
 [![Mutation testing badge](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fgreydragon888%2Fvitest-react-profiler%2Fmaster)](https://dashboard.stryker-mutator.io/reports/github.com/greydragon888/vitest-react-profiler/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=greydragon888_vitest-react-profiler&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=greydragon888_vitest-react-profiler)
+[![Property-Based Testing](https://img.shields.io/badge/PBT-fast--check-FF4785?style=flat-square)](https://fast-check.dev/)
 
   <!-- Framework & Testing Stack -->
 
 [![React](https://img.shields.io/badge/React-16.8--19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://reactjs.org/)
 [![React Testing Library](https://img.shields.io/badge/RTL-16.3-E33332?style=flat-square&logo=testing-library&logoColor=white)](https://testing-library.com/react)
-[![Tested with Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest)](https://vitest.dev/)
 
   <!-- Code Quality Tools -->
 
@@ -72,12 +73,12 @@ expect(ProfiledComponent).toHaveRenderedWithin(16); // 60fps
 
 ## Requirements
 
-- **Node.js** >= 20.0.0
-- **npm** >= 9.0.0 (or equivalent yarn/pnpm versions)
-- **React** >= 16.8.0 (with Hooks support)
+- **Node.js** >= 18.0.0 (for ES2022 features)
+- **npm** >= 8.0.0 (or equivalent yarn/pnpm versions)
+- **React** >= 16.8.0 (Hooks and Profiler API support required)
 - **React DOM** >= 16.8.0
 - **Vitest** >= 1.0.0
-- **@testing-library/react** >= 12.0.0
+- **@testing-library/react** >= 12.0.0 (v13.0.0+ required for React 18+, v16.0.0+ for React 19+)
 
 ## Installation
 
@@ -803,32 +804,6 @@ describe('Performance Regression Tests', () => {
     });
   });
 });
-```
-
-## Migration Guide
-
-### From Jest to Vitest
-
-```typescript
-// Before (Jest)
-import { renderHook } from "@testing-library/react-hooks";
-
-// After (Vitest)
-import { renderHook } from "@testing-library/react";
-import { withProfiler } from "vitest-react-profiler";
-```
-
-### From Enzyme
-
-```typescript
-// Before (Enzyme)
-const wrapper = mount(<Component />);
-expect(wrapper.render.mock.calls.length).toBe(1);
-
-// After (vitest-react-profiler)
-const ProfiledComponent = withProfiler(Component);
-render(<ProfiledComponent />);
-expect(ProfiledComponent).toHaveRenderedTimes(1);
 ```
 
 ## Best Practices

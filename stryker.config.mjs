@@ -75,4 +75,8 @@ export default {
 
   // Clean temp dir between runs
   cleanTempDir: true,
+
+  // 🎯 Strict type checking for each mutant
+  disableTypeChecks: false,
+  maxTestRunnerReuse: 0, // Fresh runner for each mutant
 };
