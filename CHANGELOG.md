@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2025-11-01
+
+### Fixed
+
+- **Critical memory leak in ComponentRegistry** - Components were never removed from registry, causing memory accumulation in large test suites
+  - **Impact**: 99% memory reduction (from ~14 MB to ~0.3 MB overhead in 10,000 test scenarios)
+  - Introduced `WeakSet` for automatic garbage collection of unused components
+  - Added `activeComponents` Set for managing active component lifecycle
+  - Added `unregister()` method for explicit component cleanup
+  - `clearAll()` now properly clears render data while preserving reusable components from `describe()` blocks
+  - 100% backward compatible - no breaking changes to public API
+
+### Added
+
+- 7 comprehensive unit tests for `ComponentRegistry` (`tests/unit/registry.test.tsx`)
+  - Verifies render data cleanup between tests
+  - Confirms no memory accumulation across 1,000+ test iterations
+  - Validates component reusability from `describe()` blocks
+  - Tests render history memory deallocation
+
+### Infrastructure
+
+- **CI/CD reliability improvements**
+  - Fixed property-based test timeouts by limiting worker pool to 2 threads
+  - Removed duplicate "Check formatting" task from GitHub Actions workflow
+  - Improved test stability in CI environment
+- All 252 tests passing with enhanced memory efficiency
+
 ## [1.3.0] - 2025-10-28
 
 ### Added
@@ -157,6 +185,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.3.1]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.1
 [1.3.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.0
 [1.2.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.2.0
 [1.1.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.1.0
