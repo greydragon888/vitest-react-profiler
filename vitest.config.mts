@@ -1,5 +1,6 @@
-import { defineConfig } from "vitest/config";
 import path from "path";
+
+import { defineConfig } from "vitest/config";
 
 /**
  * Vitest configuration with React Profiler testing support

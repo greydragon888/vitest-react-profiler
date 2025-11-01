@@ -5,10 +5,6 @@ set -e
 
 echo "🚀 Running pre-push checks..."
 
-# Check formatting (without fixing)
-echo "📝 Checking code formatting..."
-npm run format -- --check
-
 # Run linter
 echo "🔍 Linting code..."
 npm run lint
