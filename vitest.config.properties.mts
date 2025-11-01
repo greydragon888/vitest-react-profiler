@@ -73,6 +73,27 @@ export default defineConfig({
      */
     testTimeout: 30000, // 30 seconds per test
     hookTimeout: 10000, // 10 seconds for hooks
+    teardownTimeout: 10000, // 10 seconds for cleanup
+
+    /**
+     * Pool options for worker threads
+     * Limit parallelism to prevent "Timeout calling onTaskUpdate" errors
+     * during long-running property-based tests
+     */
+    poolOptions: {
+      threads: {
+        // Limit number of concurrent workers to reduce load
+        maxThreads: 2,
+        minThreads: 1,
+        // Enable isolation for accurate profiling
+        isolate: true,
+        // Use lower priority for worker threads
+        execArgv: [],
+      },
+    },
+
+    // Use threads pool for better performance with async tests
+    pool: "threads",
   },
 
   /**
