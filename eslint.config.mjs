@@ -350,6 +350,7 @@ export default tsEslint.config(
       ],
       "unicorn/no-typeof-undefined": "off",
       "unicorn/expiring-todo-comments": "off",
+      "unicorn/no-array-sort": "off",
     },
   },
 
@@ -423,7 +424,7 @@ export default tsEslint.config(
   // 12. VITEST CONFIGURATION (Test Files and Fixtures)
   // ============================================
   {
-    files: ["**/tests/**/*.ts?(x)"],
+    files: ["**/tests/**/*.test.ts?(x)"],
     plugins: {
       vitest: vitestPlugin,
     },
@@ -448,6 +449,38 @@ export default tsEslint.config(
       "vitest/padding-around-expect-groups": "warn",
       "vitest/consistent-test-filename": "warn",
       "vitest/prefer-strict-equal": "error",
+      // Disable some TypeScript rules for tests
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/prefer-promise-reject-errors": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/no-shadow": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "sonarjs/no-commented-code": "warn",
+      "sonarjs/no-duplicate-string": "off",
+      "sonarjs/function-return-type": "off",
+      "sonarjs/different-types-comparison": "off",
+      "sonarjs/no-unused-collection": "off",
+      "unicorn/consistent-function-scoping": "off",
+      "import/no-default-export": "off",
+      "import/no-unresolved": "off",
+      "prefer-const": "off",
+      "prefer-rest-params": "off",
+    },
+  },
+
+  {
+    files: ["**/tests/**/*.properties.ts?(x)"],
+    rules: {
+      "unicorn/no-array-sort": "off",
       // Disable some TypeScript rules for tests
       "@typescript-eslint/consistent-type-assertions": "off",
       "@typescript-eslint/prefer-promise-reject-errors": "off",

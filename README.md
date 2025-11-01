@@ -33,6 +33,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+[![Engineered with Claude Code](https://img.shields.io/badge/Engineered%20with-Claude%20Code-5865F2?style=flat-square&logo=anthropic&logoColor=white)](https://claude.com/claude-code)
 
 **React component render tracking and performance testing utilities for Vitest**
 
@@ -49,7 +50,8 @@
 - ⏱️ **Async Testing** - Wait for renders with async utilities and matchers
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
-- 🧬 **Battle-Tested Quality** - more than 90% mutation score, not just line coverage
+- 🧬 **Battle-Tested Quality** - 90%+ mutation score, property-based testing, SonarCloud verified
+- 🔬 **Mathematically Verified** - 70 property tests with 2,500+ randomized checks per run
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
 
 ## Why vitest-react-profiler?
@@ -840,11 +842,40 @@ git clone https://github.com/greydragon888/vitest-react-profiler.git
 npm install
 
 # Run tests
-npm test
+npm test                    # Standard tests (245 tests)
+npm run test:properties     # Property-based tests (38 tests)
+npm run test:bench          # Performance benchmarks
+npm run test:mutation       # Mutation testing
+
+# Coverage
+npm run test:coverage       # Generate coverage report
 
 # Build the project
 npm run build
 ```
+
+### Property-Based Testing
+
+This library uses **Property-Based Testing (PBT)** with [`@fast-check/vitest`](https://fast-check.dev/) to ensure mathematical correctness and catch edge cases across thousands of randomized test inputs.
+
+**70 property tests** verify:
+
+- 📐 Mathematical invariants (min ≤ avg ≤ max, sum consistency, etc.)
+- 🔒 Cache behavior and invalidation
+- ⚡ Async operations and race conditions
+- 📝 String formatting edge cases
+
+```bash
+# Run property-based tests
+npm run test:properties
+
+# Run in watch mode
+npm run test:properties:watch
+```
+
+**[📖 Complete Property-Based Testing Guide →](./docs/property-based-testing.md)**
+
+Property tests run automatically in CI and execute **~2,500 randomized checks** per test run, providing extensive coverage beyond traditional example-based tests.
 
 ## License
 

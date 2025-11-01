@@ -1,7 +1,16 @@
 // vitest.config.bench.mts
 import { defineConfig } from "vitest/config";
+import path from "path";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "@test-utils": path.resolve(__dirname, "./src/test-utils"),
+      "@components": path.resolve(__dirname, "./src/components"),
+    },
+  },
+
   cacheDir: "./.vitest-bench", // Separate cache for benchmarks
   test: {
     // Settings for benchmark stability

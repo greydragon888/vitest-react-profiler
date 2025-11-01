@@ -76,6 +76,35 @@ jobs:
           name: codecov-coverage
           fail_ci_if_error: false
 
+  property-test:
+    name: Property-Based Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run property-based tests
+        run: npm run test:properties
+
+      - name: Upload property test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-test-results
+          path: |
+            test-results/
+            coverage/
+          retention-days: 7
+
   mutation-test:
     name: Mutation Testing
     runs-on: ubuntu-latest

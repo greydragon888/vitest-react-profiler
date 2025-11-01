@@ -87,13 +87,12 @@ Thumbs.db
 *.tgz
 
 reports
+docs
 stryker-reports/
 .stryker-tmp/
-stryker.log
 .vitest-stryker/
 packages/*/reports/
 packages/**/.vitest-stryker
 stryker.temp.config.mjs
 stryker*.config.mjs.map
-survived-mutants.txt
 *-mutation*.log

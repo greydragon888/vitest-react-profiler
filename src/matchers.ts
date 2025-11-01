@@ -116,7 +116,11 @@ expect.extend({
       };
     }
 
-    if (typeof maxDuration !== "number" || maxDuration <= 0) {
+    if (
+      typeof maxDuration !== "number" ||
+      !Number.isFinite(maxDuration) ||
+      maxDuration <= 0
+    ) {
       return {
         pass: false,
         message: () =>
@@ -285,7 +289,11 @@ expect.extend({
       };
     }
 
-    if (typeof maxAverage !== "number" || maxAverage <= 0) {
+    if (
+      typeof maxAverage !== "number" ||
+      !Number.isFinite(maxAverage) ||
+      maxAverage <= 0
+    ) {
       return {
         pass: false,
         message: () =>
