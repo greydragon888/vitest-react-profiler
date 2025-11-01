@@ -178,4 +178,38 @@ describe("ComponentRegistry", () => {
       // ✅ Component works correctly after clearAll()
     });
   });
+
+  describe("unregister() removes component from registry", () => {
+    it("should exclude unregistered component from clearAll()", () => {
+      let clearCount1 = 0;
+      let clearCount2 = 0;
+
+      const component1 = {
+        clear: () => {
+          clearCount1++;
+        },
+      };
+
+      const component2 = {
+        clear: () => {
+          clearCount2++;
+        },
+      };
+
+      // Register both components
+      registry.register(component1);
+      registry.register(component2);
+
+      // Unregister component1
+      registry.unregister(component1);
+
+      // clearAll() should only clear component2
+      registry.clearAll();
+
+      // ✅ component1.clear() was NOT called (unregistered)
+      expect(clearCount1).toBe(0);
+      // ✅ component2.clear() was called (still registered)
+      expect(clearCount2).toBe(1);
+    });
+  });
 });
