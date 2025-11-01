@@ -13,7 +13,6 @@ Runs **before** every commit to ensure code quality on staged files.
 - 📝 **Formatting and Linting** (via `lint-staged`)
   - Auto-fixes and formats only staged files
   - Runs ESLint with `--fix`
-  - Runs Prettier with `--write`
 - 🔷 **Type Checking** (`npm run typecheck`)
   - Validates TypeScript types across the entire project
 - 🧪 **Tests** (`npm run test`)

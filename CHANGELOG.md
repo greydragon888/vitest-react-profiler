@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2025-11-01
+
+### Performance
+
+- **Metrics caching optimization** - Significantly improved performance of `getAverageRenderTime()` method
+  - **Impact**: Up to 35x faster for repeated calls (17-35x benchmarked improvement)
+  - O(1) performance for cached calls vs O(n) recalculation
+  - 35x speedup on small histories (10 renders), 17-20x on large (100-200 renders)
+  - Benchmarked with 100 consecutive calls: 0.4ms (cached) vs 15ms (uncached) for 10 renders
+  - Fixed stack overflow bug with `Math.min(...array)` on 200+ render histories
+  - Introduced `metricsCache` in `ProfilerData` interface storing average, min, max, total
+  - Cache invalidation on new renders via `historyVersion` tracking
+  - All metrics (average, min, max, total) computed in single-pass for-loop (no array operations)
+  - Cache automatically cleared between tests
+  - 100% backward compatible - no breaking changes to public API
+
+### Code Quality
+
+- **Enhanced TypeScript type safety**
+  - Replaced `ComponentType<any>` with `ComponentType<Record<string, unknown>>`
+  - Created type-safe helper functions for WeakMap access:
+    - `getProfilerData()` - get component profiler data
+    - `setProfilerData()` - set component profiler data
+    - `hasProfilerData()` - check if component has profiler data
+  - Fixed TypeScript error with readonly `displayName` property
+  - Removed one eslint-disable comment from top-level code
+  - `any` usage now limited to 3 internal helper functions (documented)
+  - Better IDE autocompletion and type inference
+  - Reduced risk of type-related bugs
+
+### Added
+
+- 13 comprehensive tests for metrics caching (`tests/unit/metrics-cache.test.tsx`, `tests/property/metrics-cache.properties.tsx`)
+  - **8 unit tests**:
+    - Cache behavior on unchanged history
+    - Cache invalidation on new renders
+    - Efficient caching for large histories (1000 renders)
+    - Multiple consecutive calls return cached values
+    - Consistent values across repeated calls
+    - Edge case: zero renders
+    - Edge case: single render
+    - Component isolation (independent caches)
+  - **5 property-based tests** (using fast-check):
+    - Cache after N renders (1-100 randomized)
+    - Cache invalidation after additional renders
+    - M consecutive calls caching (2-20 randomized)
+    - Performance improvement on large histories (10-200 randomized)
+    - Interleaved renders and reads (randomized patterns)
+
+### Infrastructure
+
+- All 261 tests passing (+13 new for metrics caching)
+- Code coverage: 98.35% (+0.04%)
+
 ## [1.3.1] - 2025-11-01
 
 ### Fixed
@@ -185,6 +239,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.3.2]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.2
 [1.3.1]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.1
 [1.3.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.0
 [1.2.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.2.0

@@ -12,17 +12,64 @@ interface ProfilerData {
   renderHistory: RenderInfo[];
   frozenHistoryCache?: readonly RenderInfo[] | undefined;
   historyVersion: number;
+  // Performance metrics cache to avoid O(n) recalculation on every call
+  metricsCache?:
+    | {
+        version: number;
+        average: number;
+        min: number;
+        max: number;
+        total: number;
+      }
+    | undefined;
 }
+
+/**
+ * Helper type for WeakMap key to avoid using `any`
+ * Uses Record<string, unknown> for better type safety while maintaining
+ * compatibility with generic component types
+ */
+type AnyComponentType = ComponentType<Record<string, unknown>>;
 
 /**
  * WeakMap storage for render data isolation between component instances
  * This prevents memory leaks and ensures data isolation in tests
  */
-const profilerDataMap = new WeakMap<
+const profilerDataMap = new WeakMap<AnyComponentType, ProfilerData>();
+
+/**
+ * Type-safe helper to get profiler data for a component
+ * Uses any for component parameter to accept generic components
+ */
+function getProfilerData(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ComponentType<any>,
-  ProfilerData
->();
+  component: ComponentType<any>,
+): ProfilerData | undefined {
+  return profilerDataMap.get(component as AnyComponentType);
+}
+
+/**
+ * Type-safe helper to set profiler data for a component
+ * Uses any for component parameter to accept generic components
+ */
+function setProfilerData(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: ComponentType<any>,
+  data: ProfilerData,
+): void {
+  profilerDataMap.set(component as AnyComponentType, data);
+}
+
+/**
+ * Type-safe helper to check if component has profiler data
+ * Uses any for component parameter to accept generic components
+ */
+function hasProfilerData(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: ComponentType<any>,
+): boolean {
+  return profilerDataMap.has(component as AnyComponentType);
+}
 
 /**
  * Wraps a React component with profiling capabilities for testing
@@ -47,8 +94,8 @@ export function withProfiler<P extends object>(
     displayName ?? Component.displayName ?? Component.name ?? "Component";
 
   // Initialize storage for this component if not exists
-  if (!profilerDataMap.has(Component)) {
-    profilerDataMap.set(Component, {
+  if (!hasProfilerData(Component)) {
+    setProfilerData(Component, {
       renderHistory: [],
       frozenHistoryCache: undefined,
       historyVersion: 0,
@@ -66,14 +113,15 @@ export function withProfiler<P extends object>(
     startTime,
     commitTime,
   ) => {
-    const data = profilerDataMap.get(Component);
+    const data = getProfilerData(Component);
 
     if (!data) {
       return;
     }
 
-    // Invalidate cache on new render
+    // Invalidate caches on new render
     data.frozenHistoryCache = undefined;
+    data.metricsCache = undefined;
     data.historyVersion++;
 
     data.renderHistory.push({
@@ -108,7 +156,12 @@ export function withProfiler<P extends object>(
   }) as ProfiledComponent<P> & ComponentType<P>;
 
   // Set display name for React DevTools
-  ProfiledComponent.displayName = `withProfiler(${componentName})`;
+  Object.defineProperty(ProfiledComponent, "displayName", {
+    value: `withProfiler(${componentName})`,
+    writable: false,
+    enumerable: true,
+    configurable: false,
+  });
 
   // Add reference to original component
   Object.defineProperty(ProfiledComponent, "OriginalComponent", {
@@ -120,7 +173,7 @@ export function withProfiler<P extends object>(
 
   // Get complete history of all renders
   ProfiledComponent.getRenderCount = () => {
-    const profilerData = profilerDataMap.get(Component);
+    const profilerData = getProfilerData(Component);
 
     if (!profilerData) {
       return 0;
@@ -131,7 +184,7 @@ export function withProfiler<P extends object>(
 
   // Get total number of renders
   ProfiledComponent.getRenderHistory = () => {
-    const profilerData = profilerDataMap.get(Component);
+    const profilerData = getProfilerData(Component);
 
     if (!profilerData) {
       return [];
@@ -157,11 +210,12 @@ export function withProfiler<P extends object>(
    * @internal
    */
   const clearInternal = () => {
-    const data = profilerDataMap.get(Component);
+    const data = getProfilerData(Component);
 
     if (data) {
       data.renderHistory = [];
       data.frozenHistoryCache = undefined;
+      data.metricsCache = undefined;
       data.historyVersion = 0;
     }
   };
@@ -196,20 +250,51 @@ export function withProfiler<P extends object>(
 
   /**
    * Calculate average render time across all renders
+   * Results are cached until render history changes
    */
   ProfiledComponent.getAverageRenderTime = () => {
-    const history = ProfiledComponent.getRenderHistory();
+    const data = getProfilerData(Component);
 
-    if (history.length === 0) {
+    if (!data || data.renderHistory.length === 0) {
       return 0;
     }
 
-    const total = history.reduce(
-      (sum, render) => sum + render.actualDuration,
-      0,
-    );
+    // Return cached value if available and valid
+    if (data.metricsCache?.version === data.historyVersion) {
+      return data.metricsCache.average;
+    }
 
-    return total / history.length;
+    // Calculate all metrics in one pass for efficiency
+    let total = 0;
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+
+    for (const render of data.renderHistory) {
+      const duration = render.actualDuration;
+
+      total += duration;
+
+      if (duration < min) {
+        min = duration;
+      }
+
+      if (duration > max) {
+        max = duration;
+      }
+    }
+
+    const average = total / data.renderHistory.length;
+
+    // Cache metrics for future calls
+    data.metricsCache = {
+      version: data.historyVersion,
+      average,
+      min,
+      max,
+      total,
+    };
+
+    return average;
   };
 
   /**

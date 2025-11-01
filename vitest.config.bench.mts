@@ -55,10 +55,9 @@ export default defineConfig({
 
       // Output results
       outputJson: "./.bench/results.json",
-      // compare: "./.bench/baseline.json", // Comparison file
 
       // Benchmark paths
-      include: ["./benchmarks/**/*.bench.ts", "./benchmarks/**/*.bench.tsx"],
+      include: ["./tests/benchmarks/**/*.bench.ts", "./tests/benchmarks/**/*.bench.tsx"],
       exclude: ["node_modules", "dist", "**/*.test.ts"],
 
       // Result verbosity

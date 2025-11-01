@@ -13,8 +13,8 @@ npx lint-staged
 echo "🔷 Type checking..."
 npm run typecheck
 
-# Run tests (without coverage for speed)
-echo "🧪 Running tests..."
-npm run test
+# Run tests with coverage
+echo "🧪 Running tests with coverage..."
+npm run test:coverage
 
 echo "✅ Pre-commit checks passed!"
