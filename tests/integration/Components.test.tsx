@@ -65,13 +65,13 @@ describe("Profiler Usage Examples", () => {
       // First render is a mount
       const firstRender = ProfiledCounter.getRenderAt(0);
 
-      expect(firstRender?.phase).toBe("mount");
+      expect(firstRender).toBe("mount");
 
       // Subsequent renders are updates
       rerender(<ProfiledCounter initialCount={5} />);
       const secondRender = ProfiledCounter.getRenderAt(1);
 
-      expect(secondRender?.phase).toBe("update");
+      expect(secondRender).toBe("update");
 
       // Check phase-specific assertions
       expect(ProfiledCounter).toHaveMountedOnce();
@@ -137,8 +137,8 @@ describe("Profiler Usage Examples", () => {
       const history = ProfiledCounter.getRenderHistory();
 
       expect(history).toHaveLength(2);
-      expect(history[0]?.phase).toBe("mount");
-      expect(history[1]?.phase).toBe("update");
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update");
     });
 
     it("should handle multiple instances correctly", () => {

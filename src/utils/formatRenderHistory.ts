@@ -1,9 +1,13 @@
-import type { RenderInfo } from "../types";
+import type { PhaseType } from "../types";
+
+const getPluralEnding = (number: number): string => {
+  return number === 1 ? "" : "s";
+};
 
 /**
  * Formats render history into a human-readable string for error messages
  *
- * @param history - Array of render information
+ * @param history - Array of render phases
  * @param maxItems - Maximum number of items to display (default: 10)
  * @returns Formatted string with render details
  *
@@ -12,27 +16,24 @@ import type { RenderInfo } from "../types";
  * const history = component.getRenderHistory();
  * const formatted = formatRenderHistory(history);
  * // Output:
- * //   #1 [mount       ] at 2025-01-15T10:30:45.123Z
- * //   #2 [update      ] at 2025-01-15T10:30:45.456Z
+ * //   #1 [mount        phase]
+ * //   #2 [update       phase]
  * //   💡 Tip: Use Component.getRenderHistory() to inspect all render details
  * ```
  */
 export function formatRenderHistory(
-  history: readonly RenderInfo[],
+  history: readonly PhaseType[],
   maxItems = 10,
 ): string {
   if (history.length === 0) {
     return "No renders";
   }
 
-  const items = history.slice(0, maxItems).map((render, index) => {
+  const items = history.slice(0, maxItems).map((phase, index) => {
     // Format phase with padding for alignment
-    const phase = render.phase.padEnd(12);
+    const paddedPhase = phase.padEnd(12);
 
-    // Format timestamp as ISO string
-    const timestamp = new Date(render.timestamp).toISOString();
-
-    return `  #${index + 1} [${phase}] at ${timestamp}`;
+    return `  #${index + 1} [${paddedPhase} phase]`;
   });
 
   const result = items.join("\n");
@@ -53,7 +54,7 @@ export function formatRenderHistory(
 /**
  * Formats a short summary of render statistics
  *
- * @param history - Array of render information
+ * @param history - Array of render phases
  * @returns Brief statistics summary
  *
  * @example
@@ -62,26 +63,26 @@ export function formatRenderHistory(
  * // "3 renders (1 mount, 2 updates)"
  * ```
  */
-export function formatRenderSummary(history: readonly RenderInfo[]): string {
+export function formatRenderSummary(history: readonly PhaseType[]): string {
   if (history.length === 0) {
     return "0 renders";
   }
 
-  const mounts = history.filter((r) => r.phase === "mount").length;
-  const updates = history.filter((r) => r.phase === "update").length;
-  const nested = history.filter((r) => r.phase === "nested-update").length;
+  const mounts = history.filter((phase) => phase === "mount").length;
+  const updates = history.filter((phase) => phase === "update").length;
+  const nested = history.filter((phase) => phase === "nested-update").length;
 
   const parts: string[] = [];
 
   if (mounts > 0) {
-    parts.push(`${mounts} mount${mounts === 1 ? "" : "s"}`);
+    parts.push(`${mounts} mount${getPluralEnding(mounts)}`);
   }
   if (updates > 0) {
-    parts.push(`${updates} update${updates === 1 ? "" : "s"}`);
+    parts.push(`${updates} update${getPluralEnding(updates)}`);
   }
   if (nested > 0) {
-    parts.push(`${nested} nested update${nested === 1 ? "" : "s"}`);
+    parts.push(`${nested} nested update${getPluralEnding(nested)}`);
   }
 
-  return `${history.length} render${history.length === 1 ? "" : "s"} (${parts.join(", ")})`;
+  return `${history.length} render${getPluralEnding(history.length)} (${parts.join(", ")})`;
 }

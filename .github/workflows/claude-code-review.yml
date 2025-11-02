@@ -7,50 +7,142 @@ on:
     # paths:
     #   - "src/**/*.ts"
     #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    #   - "tests/**/*.test.ts"
+    #   - "tests/**/*.test.tsx"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
+    name: AI Code Review
+    # Optional: Filter by PR author - uncomment to run only for specific users
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write # Changed from read to write for commenting
       issues: read
       id-token: write
+      actions: read # For progress tracking
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          # Fetch full PR history for better context
+          fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Use sticky comments to consolidate feedback into single comment
+          use_sticky_comment: true
+
+          # Track progress for better visibility
+          track_progress: true
+
+          # Custom prompt with structured review guidelines
           prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            ## Pull Request Context
+            - **Repository**: ${{ github.repository }}
+            - **PR Number**: #${{ github.event.pull_request.number }}
+            - **PR Title**: ${{ github.event.pull_request.title }}
+            - **Author**: @${{ github.event.pull_request.user.login }}
+            - **Branch**: ${{ github.event.pull_request.head.ref }} → ${{ github.event.pull_request.base.ref }}
 
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            ## Review Task
 
-            Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
+            Please perform a comprehensive code review of this pull request. Use the repository's `CLAUDE.md` (if exists) for project-specific guidance on style and conventions.
 
-            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
+            ### Focus Areas
 
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+            1. **Code Quality**
+               - Best practices adherence
+               - Code clarity and maintainability
+               - Proper use of TypeScript features
+               - Adherence to React patterns
+
+            2. **Potential Issues**
+               - Bugs or logic errors
+               - Edge cases not handled
+               - Race conditions or async issues
+               - Memory leaks
+
+            3. **Performance**
+               - Inefficient algorithms or data structures
+               - Unnecessary re-renders
+               - Bundle size impact
+               - Profiling opportunities
+
+            4. **Security**
+               - Input validation
+               - XSS vulnerabilities
+               - Dependency security issues
+               - Secrets exposure
+
+            5. **Testing**
+               - Test coverage completeness
+               - Test quality and meaningfulness
+               - Edge cases coverage
+               - Missing test scenarios
+
+            6. **Documentation**
+               - JSDoc comments where needed
+               - README updates if required
+               - Type definitions clarity
+
+            ### Review Process
+
+            1. First, examine the PR diff using `gh pr diff ${{ github.event.pull_request.number }}`
+            2. Analyze changed files for issues
+            3. Check if tests are included and adequate
+            4. Verify TypeScript types are properly defined
+            5. Look for potential breaking changes
+
+            ### Providing Feedback
+
+            - Be constructive and helpful
+            - Prioritize critical issues first
+            - Suggest specific improvements with code examples
+            - Acknowledge good practices when you see them
+            - Use `gh pr comment ${{ github.event.pull_request.number }} --body "your review"` to post your review
+
+            ### Review Format
+
+            Structure your review as:
+            ```
+            ## 🤖 Claude Code Review
+
+            ### ✅ Strengths
+            [Positive aspects]
+
+            ### 🔴 Critical Issues
+            [Must-fix items]
+
+            ### 🟡 Suggestions
+            [Nice-to-have improvements]
+
+            ### 📝 Notes
+            [Additional observations]
+            ```
+
+          # Advanced CLI arguments for optimal performance
+          claude_args: |
+            --model claude-sonnet-4-5-20250929
+            --max-turns 15
+            --allowed-tools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr comment:*),Bash(gh pr checks:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*)"
+
+      # Optional: Add a summary comment on completion
+      - name: Review Completed
+        if: always()
+        run: |
+          echo "✅ Claude Code Review completed"
+          echo "Status: ${{ steps.claude-review.outcome }}"

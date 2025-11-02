@@ -1,6 +1,6 @@
 import { profileHook } from "./profileHook";
 
-import type { ProfiledComponent, RenderInfo } from "../types";
+import type { PhaseType, ProfiledComponent } from "../types";
 
 /**
  * Simplified API for hook profiling with built-in assertions
@@ -33,8 +33,8 @@ export function createHookProfiler<TResult>(hook: () => TResult): {
   ProfiledHook: ProfiledComponent<object>;
   expectRenderCount: (expected: number) => void;
   getRenderCount: () => number;
-  getRenderHistory: () => readonly RenderInfo[];
-  getLastRender: () => RenderInfo | undefined;
+  getRenderHistory: () => readonly PhaseType[];
+  getLastRender: () => PhaseType | undefined;
 };
 
 // Type overload for hooks with parameters
@@ -48,8 +48,8 @@ export function createHookProfiler<TProps, TResult>(
   ProfiledHook: ProfiledComponent<TProps>;
   expectRenderCount: (expected: number) => void;
   getRenderCount: () => number;
-  getRenderHistory: () => readonly RenderInfo[];
-  getLastRender: () => RenderInfo | undefined;
+  getRenderHistory: () => readonly PhaseType[];
+  getLastRender: () => PhaseType | undefined;
 };
 
 // Implementation

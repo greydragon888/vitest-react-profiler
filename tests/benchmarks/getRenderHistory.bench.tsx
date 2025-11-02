@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { bench, describe } from "vitest";
 
-import { withProfiler } from "@/withProfiler.tsx";
+import { withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -34,7 +34,7 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
     }
 
     // First call - cache miss
-    const _history = ProfiledComponent.getRenderHistory();
+    void ProfiledComponent.getRenderHistory();
   });
 
   bench("10 renders - 100 calls (cache hit)", () => {
@@ -54,7 +54,7 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
 
     // 100 cached calls
     for (let i = 0; i < 100; i++) {
-      const _history = ProfiledComponent.getRenderHistory();
+      void ProfiledComponent.getRenderHistory();
     }
   });
 
@@ -71,7 +71,7 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
       rerender(<ProfiledComponent value={i} />);
     }
 
-    const _history = ProfiledComponent.getRenderHistory();
+    void ProfiledComponent.getRenderHistory();
   });
 
   bench("50 renders - 100 calls (cache hit)", () => {
@@ -89,7 +89,7 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
     ProfiledComponent.getRenderHistory();
 
     for (let i = 0; i < 100; i++) {
-      const _history = ProfiledComponent.getRenderHistory();
+      void ProfiledComponent.getRenderHistory();
     }
   });
 
@@ -106,7 +106,7 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
       rerender(<ProfiledComponent value={i} />);
     }
 
-    const _history = ProfiledComponent.getRenderHistory();
+    void ProfiledComponent.getRenderHistory();
   });
 
   bench("100 renders - 100 calls (cache hit)", () => {
@@ -124,7 +124,7 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
     ProfiledComponent.getRenderHistory();
 
     for (let i = 0; i < 100; i++) {
-      const _history = ProfiledComponent.getRenderHistory();
+      void ProfiledComponent.getRenderHistory();
     }
   });
 });
@@ -142,7 +142,7 @@ describe("getRenderHistory - Methods Using Cache", () => {
       rerender(<ProfiledComponent value={i} />);
     }
 
-    const _updates = ProfiledComponent.getRendersByPhase("update");
+    void ProfiledComponent.getRendersByPhase("update");
   });
 
   bench("getRendersByPhase - 100 renders, 100 calls", () => {
@@ -158,7 +158,7 @@ describe("getRenderHistory - Methods Using Cache", () => {
     }
 
     for (let i = 0; i < 100; i++) {
-      const _updates = ProfiledComponent.getRendersByPhase("update");
+      void ProfiledComponent.getRendersByPhase("update");
     }
   });
 });
@@ -177,9 +177,9 @@ describe("getRenderHistory - Realistic Test Patterns", () => {
     }
 
     // Typical test pattern: check history, average, and phases
-    const _history = ProfiledComponent.getRenderHistory();
-    const _mounts = ProfiledComponent.getRendersByPhase("mount");
-    const _updates = ProfiledComponent.getRendersByPhase("update");
+    void ProfiledComponent.getRenderHistory();
+    void ProfiledComponent.getRendersByPhase("mount");
+    void ProfiledComponent.getRendersByPhase("update");
   });
 
   bench("Stress test - heavy repeated access", () => {
@@ -196,8 +196,8 @@ describe("getRenderHistory - Realistic Test Patterns", () => {
 
     // Simulate heavy usage
     for (let i = 0; i < 20; i++) {
-      const _history = ProfiledComponent.getRenderHistory();
-      const _updates = ProfiledComponent.getRendersByPhase("update");
+      void ProfiledComponent.getRenderHistory();
+      void ProfiledComponent.getRendersByPhase("update");
     }
   });
 });
@@ -220,7 +220,7 @@ describe("getRenderHistory - Cache Invalidation Pattern", () => {
 
       // Multiple reads (should use cache after first)
       for (let i = 0; i < 5; i++) {
-        const _history = ProfiledComponent.getRenderHistory();
+        void ProfiledComponent.getRenderHistory();
       }
     }
   });

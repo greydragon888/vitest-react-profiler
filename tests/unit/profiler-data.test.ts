@@ -1,0 +1,475 @@
+import { describe, it, expect } from "vitest";
+
+import { ProfilerData } from "../../src/profiler/core/ProfilerData";
+
+import type { PhaseType } from "../../src/types";
+
+describe("ProfilerData", () => {
+  describe("constructor", () => {
+    it("should initialize with empty history", () => {
+      const data = new ProfilerData();
+
+      expect(data.getRenderCount()).toBe(0);
+      expect(data.getHistory()).toStrictEqual([]);
+    });
+  });
+
+  describe("addRender", () => {
+    it("should add render to history", () => {
+      const data = new ProfilerData();
+      const render: PhaseType = "mount";
+
+      data.addRender(render);
+
+      expect(data.getRenderCount()).toBe(1);
+      expect(data.getHistory()).toStrictEqual([render]);
+    });
+
+    it("should add multiple renders in order", () => {
+      const data = new ProfilerData();
+      const render1: PhaseType = "mount";
+      const render2: PhaseType = "update";
+      const render3: PhaseType = "update";
+
+      data.addRender(render1);
+      data.addRender(render2);
+      data.addRender(render3);
+
+      expect(data.getRenderCount()).toBe(3);
+      expect(data.getHistory()).toStrictEqual([render1, render2, render3]);
+    });
+
+    it("should invalidate caches when adding render", () => {
+      const data = new ProfilerData();
+      const render1: PhaseType = "mount";
+
+      // Get history to populate cache
+      data.addRender(render1);
+      const history1 = data.getHistory();
+
+      // Add another render (should invalidate cache)
+      const render2: PhaseType = "update";
+
+      data.addRender(render2);
+      const history2 = data.getHistory();
+
+      // Should be different references (new frozen array)
+      expect(history1).not.toBe(history2);
+      expect(history2).toStrictEqual([render1, render2]);
+    });
+  });
+
+  describe("getRenderCount", () => {
+    it("should return 0 for empty history", () => {
+      const data = new ProfilerData();
+
+      expect(data.getRenderCount()).toBe(0);
+    });
+
+    it("should return correct count", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      expect(data.getRenderCount()).toBe(1);
+
+      data.addRender("update");
+
+      expect(data.getRenderCount()).toBe(2);
+
+      data.addRender("update");
+
+      expect(data.getRenderCount()).toBe(3);
+    });
+  });
+
+  describe("getHistory", () => {
+    it("should return immutable array", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const history = data.getHistory();
+
+      // Should be frozen
+      expect(Object.isFrozen(history)).toBe(true);
+    });
+
+    it("should return same reference on multiple calls (caching)", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const history1 = data.getHistory();
+      const history2 = data.getHistory();
+      const history3 = data.getHistory();
+
+      expect(history1).toBe(history2);
+      expect(history2).toBe(history3);
+    });
+
+    it("should return new reference after addRender (cache invalidation)", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const history1 = data.getHistory();
+
+      data.addRender("update");
+      const history2 = data.getHistory();
+
+      expect(history1).not.toBe(history2);
+    });
+
+    it("should return empty array for empty history", () => {
+      const data = new ProfilerData();
+
+      expect(data.getHistory()).toStrictEqual([]);
+    });
+  });
+
+  describe("getLastRender", () => {
+    it("should return undefined for empty history", () => {
+      const data = new ProfilerData();
+
+      expect(data.getLastRender()).toBeUndefined();
+    });
+
+    it("should return last render", () => {
+      const data = new ProfilerData();
+      const render1: PhaseType = "mount";
+      const render2: PhaseType = "update";
+      const render3: PhaseType = "update";
+
+      data.addRender(render1);
+
+      expect(data.getLastRender()).toStrictEqual(render1);
+
+      data.addRender(render2);
+
+      expect(data.getLastRender()).toStrictEqual(render2);
+
+      data.addRender(render3);
+
+      expect(data.getLastRender()).toStrictEqual(render3);
+    });
+
+    it("should use cached history", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const last1 = data.getLastRender();
+      const last2 = data.getLastRender();
+
+      // Should return same object from cached history
+      expect(last1).toBe(last2);
+    });
+  });
+
+  describe("getRenderAt", () => {
+    it("should return undefined for empty history", () => {
+      const data = new ProfilerData();
+
+      expect(data.getRenderAt(0)).toBeUndefined();
+      expect(data.getRenderAt(5)).toBeUndefined();
+    });
+
+    it("should return undefined for out of range index", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      expect(data.getRenderAt(1)).toBeUndefined();
+      expect(data.getRenderAt(10)).toBeUndefined();
+      expect(data.getRenderAt(-1)).toBeUndefined();
+    });
+
+    it("should return render at specific index", () => {
+      const data = new ProfilerData();
+      const render0: PhaseType = "mount";
+      const render1: PhaseType = "update";
+      const render2: PhaseType = "update";
+
+      data.addRender(render0);
+      data.addRender(render1);
+      data.addRender(render2);
+
+      expect(data.getRenderAt(0)).toStrictEqual(render0);
+      expect(data.getRenderAt(1)).toStrictEqual(render1);
+      expect(data.getRenderAt(2)).toStrictEqual(render2);
+    });
+  });
+
+  describe("getRendersByPhase", () => {
+    it("should return empty array when no renders match phase", () => {
+      const data = new ProfilerData();
+
+      expect(data.getRendersByPhase("mount")).toStrictEqual([]);
+
+      data.addRender("update");
+
+      expect(data.getRendersByPhase("mount")).toStrictEqual([]);
+    });
+
+    it("should filter renders by mount phase", () => {
+      const data = new ProfilerData();
+      const mount1: PhaseType = "mount";
+      const update1: PhaseType = "update";
+      const mount2: PhaseType = "mount";
+
+      data.addRender(mount1);
+      data.addRender(update1);
+      data.addRender(mount2);
+
+      const mountRenders = data.getRendersByPhase("mount");
+
+      expect(mountRenders).toStrictEqual([mount1, mount2]);
+    });
+
+    it("should filter renders by update phase", () => {
+      const data = new ProfilerData();
+      const mount: PhaseType = "mount";
+      const update1: PhaseType = "update";
+      const update2: PhaseType = "update";
+
+      data.addRender(mount);
+      data.addRender(update1);
+      data.addRender(update2);
+
+      const updateRenders = data.getRendersByPhase("update");
+
+      expect(updateRenders).toStrictEqual([update1, update2]);
+    });
+
+    it("should filter renders by nested-update phase", () => {
+      const data = new ProfilerData();
+      const mount: PhaseType = "mount";
+      const nested: PhaseType = "nested-update";
+
+      data.addRender(mount);
+      data.addRender(nested);
+
+      const nestedRenders = data.getRendersByPhase("nested-update");
+
+      expect(nestedRenders).toStrictEqual([nested]);
+    });
+
+    it("should return frozen array", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const mountRenders = data.getRendersByPhase("mount");
+
+      expect(Object.isFrozen(mountRenders)).toBe(true);
+    });
+
+    it("should cache results per phase", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.addRender("update");
+
+      const mount1 = data.getRendersByPhase("mount");
+      const mount2 = data.getRendersByPhase("mount");
+      const update1 = data.getRendersByPhase("update");
+      const update2 = data.getRendersByPhase("update");
+
+      // Same phase should return same reference
+      expect(mount1).toBe(mount2);
+      expect(update1).toBe(update2);
+
+      // Different phases should be different references
+      expect(mount1).not.toBe(update1);
+    });
+
+    it("should invalidate cache after addRender", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const mount1 = data.getRendersByPhase("mount");
+
+      data.addRender("mount");
+      const mount2 = data.getRendersByPhase("mount");
+
+      // Should be different references (cache invalidated)
+      expect(mount1).not.toBe(mount2);
+      expect(mount2).toHaveLength(2);
+    });
+  });
+
+  describe("hasMounted", () => {
+    it("should return false for empty history", () => {
+      const data = new ProfilerData();
+
+      expect(data.hasMounted()).toBe(false);
+    });
+
+    it("should return false when no mount renders", () => {
+      const data = new ProfilerData();
+
+      data.addRender("update");
+      data.addRender("nested-update");
+
+      expect(data.hasMounted()).toBe(false);
+    });
+
+    it("should return true when mount render exists", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      expect(data.hasMounted()).toBe(true);
+    });
+
+    it("should return true even with other phase renders", () => {
+      const data = new ProfilerData();
+
+      data.addRender("update");
+      data.addRender("mount");
+      data.addRender("update");
+
+      expect(data.hasMounted()).toBe(true);
+    });
+
+    it("should cache result", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+
+      const result1 = data.hasMounted();
+      const result2 = data.hasMounted();
+      const result3 = data.hasMounted();
+
+      expect(result1).toBe(true);
+      expect(result2).toBe(true);
+      expect(result3).toBe(true);
+    });
+
+    it("should update after addRender", () => {
+      const data = new ProfilerData();
+
+      expect(data.hasMounted()).toBe(false);
+
+      data.addRender("update");
+
+      expect(data.hasMounted()).toBe(false);
+
+      data.addRender("mount");
+
+      expect(data.hasMounted()).toBe(true);
+    });
+  });
+
+  describe("clear", () => {
+    it("should clear empty history", () => {
+      const data = new ProfilerData();
+
+      data.clear();
+
+      expect(data.getRenderCount()).toBe(0);
+      expect(data.getHistory()).toStrictEqual([]);
+    });
+
+    it("should clear all history", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.addRender("update");
+      data.addRender("update");
+
+      expect(data.getRenderCount()).toBe(3);
+
+      data.clear();
+
+      expect(data.getRenderCount()).toBe(0);
+      expect(data.getHistory()).toStrictEqual([]);
+      expect(data.getLastRender()).toBeUndefined();
+      expect(data.hasMounted()).toBe(false);
+    });
+
+    it("should clear all caches", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.addRender("update");
+
+      // Populate caches
+      const history1 = data.getHistory();
+      const mount1 = data.getRendersByPhase("mount");
+      const hasMounted1 = data.hasMounted();
+
+      expect(history1).toHaveLength(2);
+      expect(mount1).toHaveLength(1);
+      expect(hasMounted1).toBe(true);
+
+      data.clear();
+
+      // Verify caches are cleared
+      expect(data.getHistory()).toStrictEqual([]);
+      expect(data.getRendersByPhase("mount")).toStrictEqual([]);
+      expect(data.hasMounted()).toBe(false);
+    });
+
+    it("should allow adding renders after clear", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.clear();
+
+      data.addRender("update");
+
+      expect(data.getRenderCount()).toBe(1);
+      expect(data.getHistory()).toStrictEqual(["update"]);
+      expect(data.hasMounted()).toBe(false);
+    });
+  });
+
+  describe("integration scenarios", () => {
+    it("should handle typical component lifecycle", () => {
+      const data = new ProfilerData();
+
+      // Mount
+      data.addRender("mount");
+
+      expect(data.getRenderCount()).toBe(1);
+      expect(data.hasMounted()).toBe(true);
+      expect(data.getRendersByPhase("mount")).toHaveLength(1);
+
+      // Updates
+      data.addRender("update");
+      data.addRender("update");
+
+      expect(data.getRenderCount()).toBe(3);
+      expect(data.getRendersByPhase("update")).toHaveLength(2);
+
+      // Nested update
+      data.addRender("nested-update");
+
+      expect(data.getRenderCount()).toBe(4);
+      expect(data.getRendersByPhase("nested-update")).toHaveLength(1);
+    });
+
+    it("should maintain cache performance across multiple operations", () => {
+      const data = new ProfilerData();
+
+      // Add renders
+      for (let i = 0; i < 10; i++) {
+        data.addRender(i === 0 ? "mount" : "update");
+      }
+
+      // Multiple reads should use cache
+      const history1 = data.getHistory();
+      const history2 = data.getHistory();
+
+      expect(history1).toBe(history2);
+
+      const mount1 = data.getRendersByPhase("mount");
+      const mount2 = data.getRendersByPhase("mount");
+
+      expect(mount1).toBe(mount2);
+    });
+  });
+});

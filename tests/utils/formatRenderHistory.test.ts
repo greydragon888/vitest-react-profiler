@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import type { RenderInfo } from "@/types.ts";
 import {
   formatRenderHistory,
   formatRenderSummary,
 } from "@/utils/formatRenderHistory.ts";
+
+import type { PhaseType } from "@/types.ts";
 
 describe("formatRenderHistory", () => {
   it("should return 'No renders' for empty history", () => {
@@ -14,35 +15,17 @@ describe("formatRenderHistory", () => {
   });
 
   it("should format a single render correctly", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount"];
 
     const result = formatRenderHistory(history);
 
     expect(result).toContain("#1 [mount");
-    expect(result).toContain("at");
+    expect(result).toContain("phase");
     expect(result).toContain("💡 Tip:");
   });
 
   it("should format multiple renders correctly", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount", "update", "update"];
 
     const result = formatRenderHistory(history);
 
@@ -56,16 +39,7 @@ describe("formatRenderHistory", () => {
   });
 
   it("should separate items with newlines", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount", "update"];
 
     const result = formatRenderHistory(history);
 
@@ -80,10 +54,9 @@ describe("formatRenderHistory", () => {
 
   it("should handle exact maxItems boundary", () => {
     // Test edge case: history.length === maxItems
-    const history: RenderInfo[] = Array.from({ length: 5 }, (_, i) => ({
-      phase: i === 0 ? ("mount" as const) : ("update" as const),
-      timestamp: Date.now() + i,
-    }));
+    const history: PhaseType[] = Array.from({ length: 5 }, (_, i) =>
+      i === 0 ? "mount" : "update",
+    );
 
     const result = formatRenderHistory(history, 5);
 
@@ -93,10 +66,7 @@ describe("formatRenderHistory", () => {
   });
 
   it("should not show more indicator when history length equals maxItems", () => {
-    const history: RenderInfo[] = Array.from({ length: 10 }, (_, i) => ({
-      phase: "update" as const,
-      timestamp: Date.now() + i,
-    }));
+    const history: PhaseType[] = Array.from({ length: 10 }, () => "update");
 
     const result = formatRenderHistory(history, 10);
 
@@ -106,10 +76,9 @@ describe("formatRenderHistory", () => {
   });
 
   it("should truncate to maxItems and show 'and X more' message", () => {
-    const history: RenderInfo[] = Array.from({ length: 15 }, (_, i) => ({
-      phase: i === 0 ? ("mount" as const) : ("update" as const),
-      timestamp: Date.now() + i,
-    }));
+    const history: PhaseType[] = Array.from({ length: 15 }, (_, i) =>
+      i === 0 ? "mount" : "update",
+    );
 
     const result = formatRenderHistory(history, 10);
 
@@ -119,12 +88,7 @@ describe("formatRenderHistory", () => {
   });
 
   it("should handle nested-update phase", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "nested-update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["nested-update"];
 
     const result = formatRenderHistory(history);
 
@@ -140,12 +104,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should format single mount correctly", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount"];
 
     const result = formatRenderSummary(history);
 
@@ -153,20 +112,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should format multiple renders with different phases", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount", "update", "update"];
 
     const result = formatRenderSummary(history);
 
@@ -174,16 +120,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should handle nested updates", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "nested-update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount", "nested-update"];
 
     const result = formatRenderSummary(history);
 
@@ -191,12 +128,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should use singular forms correctly", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount"];
 
     const result = formatRenderSummary(history);
 
@@ -206,16 +138,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should use plural forms correctly", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount", "mount"];
 
     const result = formatRenderSummary(history);
 
@@ -224,16 +147,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should handle only updates (no mounts)", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["update", "update"];
 
     const result = formatRenderSummary(history);
 
@@ -244,12 +158,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should handle singular update form", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["update"];
 
     const result = formatRenderSummary(history);
 
@@ -260,12 +169,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should handle singular nested update form", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "nested-update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["nested-update"];
 
     const result = formatRenderSummary(history);
 
@@ -276,16 +180,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should handle only nested updates (no mounts or regular updates)", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "nested-update",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "nested-update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["nested-update", "nested-update"];
 
     const result = formatRenderSummary(history);
 
@@ -297,20 +192,7 @@ describe("formatRenderSummary", () => {
   });
 
   it("should handle mix of all phase types with correct pluralization", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        timestamp: Date.now(),
-      },
-      {
-        phase: "nested-update",
-        timestamp: Date.now(),
-      },
-    ];
+    const history: PhaseType[] = ["mount", "update", "nested-update"];
 
     const result = formatRenderSummary(history);
 

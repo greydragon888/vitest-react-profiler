@@ -78,13 +78,13 @@ describe("Property-Based Tests: Mathematical Invariants", () => {
         const nested = component.getRendersByPhase("nested-update");
 
         // All mounts should have phase "mount"
-        const allMountsValid = mounts.every((r) => r.phase === "mount");
+        const allMountsValid = mounts.every((r) => r === "mount");
 
         // All updates should have phase "update"
-        const allUpdatesValid = updates.every((r) => r.phase === "update");
+        const allUpdatesValid = updates.every((r) => r === "update");
 
         // All nested should have phase "nested-update"
-        const allNestedValid = nested.every((r) => r.phase === "nested-update");
+        const allNestedValid = nested.every((r) => r === "nested-update");
 
         return allMountsValid && allUpdatesValid && allNestedValid;
       },
@@ -155,7 +155,7 @@ describe("Property-Based Tests: Mathematical Invariants", () => {
           if (!current || !previous) {
             return false;
           }
-          if (current.timestamp < previous.timestamp) {
+          if (current < previous) {
             return false;
           }
         }

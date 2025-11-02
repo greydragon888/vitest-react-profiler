@@ -12,27 +12,24 @@
 import { fc, test } from "@fast-check/vitest";
 import { describe, expect, expectTypeOf } from "vitest";
 
-import type { RenderInfo } from "@/types.ts";
 import {
   formatRenderHistory,
   formatRenderSummary,
 } from "@/utils/formatRenderHistory.ts";
 
+import type { PhaseType } from "@/types.ts";
+
 const RENDER_PHASES = ["mount", "update", "nested-update"] as const;
 
-// Simplified RenderInfo generator without timing fields
-const renderInfoArbitrary = fc.record({
-  phase: fc.constantFrom(...RENDER_PHASES),
-  timestamp: fc.integer({ min: 0, max: Date.now() }),
-});
+// PhaseType generator - generates phase strings directly
+const phaseArbitrary = fc.constantFrom(...RENDER_PHASES);
 
 describe("Property-Based Tests: Formatting Invariants", () => {
   describe("formatRenderHistory", () => {
-    test.prop(
-      [fc.array(renderInfoArbitrary, { minLength: 1, maxLength: 100 })],
-      { numRuns: 1000 },
-    )("all formatted render lines have consistent structure", (renders) => {
-      const formatted = formatRenderHistory(renders as RenderInfo[]);
+    test.prop([fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 })], {
+      numRuns: 1000,
+    })("all formatted render lines have consistent structure", (renders) => {
+      const formatted = formatRenderHistory(renders);
       const lines = formatted.split("\n");
       const renderLines = lines.filter((l) => l.startsWith("  #"));
 
@@ -40,34 +37,30 @@ describe("Property-Based Tests: Formatting Invariants", () => {
         return true;
       }
 
-      // All render lines should follow the same structure pattern (ISO timestamp)
-      const pattern = /^ {2}#\d+ \[.+\] at .+$/;
+      // All render lines should follow the same structure pattern (phase only)
+      const pattern = /^ {2}#\d+ \[.+ phase\]$/;
 
       return renderLines.every((line) => pattern.test(line));
     });
 
-    test.prop(
-      [fc.array(renderInfoArbitrary, { minLength: 1, maxLength: 100 })],
-      { numRuns: 1000 },
-    )("formatted output never contains NaN or Infinity", (renders) => {
-      const formatted = formatRenderHistory(renders as RenderInfo[]);
+    test.prop([fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 })], {
+      numRuns: 1000,
+    })("formatted output never contains NaN or Infinity", (renders) => {
+      const formatted = formatRenderHistory(renders);
 
       return !formatted.includes("NaN") && !formatted.includes("Infinity");
     });
 
     test.prop(
       [
-        fc.array(renderInfoArbitrary, { minLength: 1, maxLength: 100 }),
+        fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 }),
         fc.integer({ min: 1, max: 50 }),
       ],
       { numRuns: 1000 },
     )(
       "maxItems parameter limits number of displayed lines",
       (renders, maxItems) => {
-        const formatted = formatRenderHistory(
-          renders as RenderInfo[],
-          maxItems,
-        );
+        const formatted = formatRenderHistory(renders, maxItems);
         const lines = formatted.split("\n");
         const renderLines = lines.filter((l) => l.startsWith("  #"));
 
@@ -76,17 +69,13 @@ describe("Property-Based Tests: Formatting Invariants", () => {
       },
     );
 
-    test.prop(
-      [fc.array(renderInfoArbitrary, { minLength: 11, maxLength: 50 })],
-      { numRuns: 1000 },
-    )(
+    test.prop([fc.array(phaseArbitrary, { minLength: 11, maxLength: 50 })], {
+      numRuns: 1000,
+    })(
       "shows 'and X more' indicator when renders exceed maxItems",
       (renders) => {
         const maxItems = 10;
-        const formatted = formatRenderHistory(
-          renders as RenderInfo[],
-          maxItems,
-        );
+        const formatted = formatRenderHistory(renders, maxItems);
 
         if (renders.length > maxItems) {
           const expectedText = `and ${renders.length - maxItems} more`;
@@ -109,11 +98,10 @@ describe("Property-Based Tests: Formatting Invariants", () => {
   });
 
   describe("formatRenderSummary", () => {
-    test.prop(
-      [fc.array(renderInfoArbitrary, { minLength: 1, maxLength: 100 })],
-      { numRuns: 1000 },
-    )("sum of phases in summary equals total number of renders", (renders) => {
-      const summary = formatRenderSummary(renders as RenderInfo[]);
+    test.prop([fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 })], {
+      numRuns: 1000,
+    })("sum of phases in summary equals total number of renders", (renders) => {
+      const summary = formatRenderSummary(renders);
 
       const totalMatch = /^(\d+) render/.exec(summary);
 
@@ -126,11 +114,10 @@ describe("Property-Based Tests: Formatting Invariants", () => {
       return total === renders.length;
     });
 
-    test.prop(
-      [fc.array(renderInfoArbitrary, { minLength: 1, maxLength: 100 })],
-      { numRuns: 1000 },
-    )("summary correctly uses singular/plural forms", (renders) => {
-      const summary = formatRenderSummary(renders as RenderInfo[]);
+    test.prop([fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 })], {
+      numRuns: 1000,
+    })("summary correctly uses singular/plural forms", (renders) => {
+      const summary = formatRenderSummary(renders);
 
       if (renders.length === 1) {
         return summary.includes("1 render") && !summary.includes("renders");
@@ -148,15 +135,14 @@ describe("Property-Based Tests: Formatting Invariants", () => {
       },
     );
 
-    test.prop(
-      [fc.array(renderInfoArbitrary, { minLength: 1, maxLength: 100 })],
-      { numRuns: 1000 },
-    )("summary contains only existing phases", (renders) => {
-      const summary = formatRenderSummary(renders as RenderInfo[]);
+    test.prop([fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 })], {
+      numRuns: 1000,
+    })("summary contains only existing phases", (renders) => {
+      const summary = formatRenderSummary(renders);
 
-      const hasMounts = renders.some((r) => r.phase === "mount");
-      const hasUpdates = renders.some((r) => r.phase === "update");
-      const hasNested = renders.some((r) => r.phase === "nested-update");
+      const hasMounts = renders.includes("mount");
+      const hasUpdates = renders.includes("update");
+      const hasNested = renders.includes("nested-update");
 
       const mentionsMounts = summary.includes("mount");
       const mentionsUpdates = summary.includes("update");
@@ -179,13 +165,12 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
     })(
       "formatRenderHistory handles very long histories efficiently",
       (numRenders) => {
-        const renders = Array.from({ length: numRenders }, (_, i) => ({
-          phase: i === 0 ? ("mount" as const) : ("update" as const),
-          timestamp: Date.now() + i * 100,
-        }));
+        const renders = Array.from({ length: numRenders }, (_, i) =>
+          i === 0 ? "mount" : "update",
+        );
 
         // Should complete without errors
-        const formatted = formatRenderHistory(renders as RenderInfo[]);
+        const formatted = formatRenderHistory(renders);
 
         // Should be a string
         expectTypeOf(formatted).toBeString();
@@ -201,12 +186,11 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
       numRuns: 5,
       timeout: 60_000,
     })("formatRenderSummary handles very long histories", (numRenders) => {
-      const renders = Array.from({ length: numRenders }, (_, i) => ({
-        phase: i === 0 ? ("mount" as const) : ("update" as const),
-        timestamp: Date.now() + i * 100,
-      }));
+      const renders = Array.from({ length: numRenders }, (_, i) =>
+        i === 0 ? "mount" : "update",
+      );
 
-      const summary = formatRenderSummary(renders as RenderInfo[]);
+      const summary = formatRenderSummary(renders);
 
       // Should contain correct count
       expect(summary).toContain(`${numRenders} render`);
@@ -222,15 +206,11 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
     )(
       "maxItems correctly limits output with large histories",
       (historyLength, maxItems) => {
-        const renders = Array.from({ length: historyLength }, (_, i) => ({
-          phase: i === 0 ? ("mount" as const) : ("update" as const),
-          timestamp: Date.now() + i * 100,
-        }));
-
-        const formatted = formatRenderHistory(
-          renders as RenderInfo[],
-          maxItems,
+        const renders = Array.from({ length: historyLength }, (_, i) =>
+          i === 0 ? "mount" : "update",
         );
+
+        const formatted = formatRenderHistory(renders, maxItems);
         const lines = formatted.split("\n");
         const renderLines = lines.filter((l) => l.startsWith("  #"));
 
@@ -250,15 +230,11 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
           return true;
         }
 
-        const renders = Array.from({ length: historyLength }, (_, i) => ({
-          phase: i === 0 ? ("mount" as const) : ("update" as const),
-          timestamp: Date.now() + i * 100,
-        }));
-
-        const formatted = formatRenderHistory(
-          renders as RenderInfo[],
-          maxItems,
+        const renders = Array.from({ length: historyLength }, (_, i) =>
+          i === 0 ? "mount" : "update",
         );
+
+        const formatted = formatRenderHistory(renders, maxItems);
 
         const expectedRemaining = historyLength - maxItems;
 
@@ -272,31 +248,26 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
       "formatRenderSummary correctly counts phases in large histories",
       (numRenders) => {
         // Create mix of phases
-        const renders = Array.from({ length: numRenders }, (_, i) => {
-          let phase: "mount" | "update" | "nested-update";
+        const renders: PhaseType[] = Array.from(
+          { length: numRenders },
+          (_, i) => {
+            if (i === 0) {
+              return "mount";
+            }
+            if (i % 5 === 0) {
+              return "nested-update";
+            }
 
-          if (i === 0) {
-            phase = "mount";
-          } else if (i % 5 === 0) {
-            phase = "nested-update";
-          } else {
-            phase = "update";
-          }
+            return "update";
+          },
+        );
 
-          return {
-            phase,
-            timestamp: Date.now() + i * 100,
-          };
-        });
-
-        const summary = formatRenderSummary(renders as RenderInfo[]);
+        const summary = formatRenderSummary(renders);
 
         // Count expected phases
-        const mounts = renders.filter((r) => r.phase === "mount").length;
-        const updates = renders.filter((r) => r.phase === "update").length;
-        const nested = renders.filter(
-          (r) => r.phase === "nested-update",
-        ).length;
+        const mounts = renders.filter((r) => r === "mount").length;
+        const updates = renders.filter((r) => r === "update").length;
+        const nested = renders.filter((r) => r === "nested-update").length;
 
         // All phases should be mentioned if present
         if (mounts > 0 && !summary.includes("mount")) {
@@ -321,16 +292,12 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
     })(
       "formatted output size is bounded regardless of history length",
       (numRenders) => {
-        const renders = Array.from({ length: numRenders }, (_, i) => ({
-          phase: i === 0 ? ("mount" as const) : ("update" as const),
-          timestamp: Date.now() + i * 100,
-        }));
+        const renders = Array.from({ length: numRenders }, (_, i) =>
+          i === 0 ? "mount" : "update",
+        );
 
         const maxItems = 50;
-        const formatted = formatRenderHistory(
-          renders as RenderInfo[],
-          maxItems,
-        );
+        const formatted = formatRenderHistory(renders, maxItems);
 
         // Output should be bounded by maxItems (rough estimate)
         const maxExpectedLines = maxItems + 5; // header + footer
@@ -343,12 +310,11 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
     test.prop([fc.integer({ min: 100, max: 1000 })], { numRuns: 100 })(
       "summary output remains concise with large histories",
       (numRenders) => {
-        const renders = Array.from({ length: numRenders }, (_, i) => ({
-          phase: i === 0 ? ("mount" as const) : ("update" as const),
-          timestamp: Date.now() + i * 100,
-        }));
+        const renders = Array.from({ length: numRenders }, (_, i) =>
+          i === 0 ? "mount" : "update",
+        );
 
-        const summary = formatRenderSummary(renders as RenderInfo[]);
+        const summary = formatRenderSummary(renders);
 
         // Summary should be a single line
         const lines = summary.split("\n");

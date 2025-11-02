@@ -30,7 +30,6 @@ export default tsEslint.config(
       "**/*.d.ts",
       "**/.DS_Store",
       "**/*.bak*",
-      "tests/benchmarks/**",
     ],
   },
 
@@ -262,7 +261,10 @@ export default tsEslint.config(
               position: "after",
             },
           ],
-          pathGroupsExcludedImportTypes: ["builtin"],
+          // Exclude type imports from pathGroups processing
+          // This makes all types go to the "type" group, but sorted alphabetically
+          // Result: @/ types come before external types (like 'react')
+          pathGroupsExcludedImportTypes: ["builtin", "type"],
           alphabetize: {
             order: "asc",
             caseInsensitive: true,
@@ -501,6 +503,39 @@ export default tsEslint.config(
       "sonarjs/function-return-type": "off",
       "sonarjs/different-types-comparison": "off",
       "sonarjs/no-unused-collection": "off",
+      "unicorn/consistent-function-scoping": "off",
+      "import/no-default-export": "off",
+      "import/no-unresolved": "off",
+      "prefer-const": "off",
+      "prefer-rest-params": "off",
+    },
+  },
+
+  {
+    files: ["**/tests/**/*.bench.ts?(x)"],
+    rules: {
+      "unicorn/no-array-sort": "off",
+      // Disable some TypeScript rules for benchmarks
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/prefer-promise-reject-errors": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/no-shadow": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "sonarjs/no-commented-code": "off",
+      "sonarjs/no-duplicate-string": "off",
+      "sonarjs/function-return-type": "off",
+      "sonarjs/different-types-comparison": "off",
+      "sonarjs/no-unused-collection": "off",
+      "sonarjs/void-use": "off",
       "unicorn/consistent-function-scoping": "off",
       "import/no-default-export": "off",
       "import/no-unresolved": "off",

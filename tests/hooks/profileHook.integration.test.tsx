@@ -31,7 +31,7 @@ describe("profileHook - Integration with matchers", () => {
     const history = ProfiledHook.getRenderHistory();
 
     expect(history).toHaveLength(2);
-    expect(history[0]!.phase).toBe("mount");
-    expect(history[1]!.phase).toBe("update");
+    expect(history[0]!).toBe("mount");
+    expect(history[1]!).toBe("update");
   });
 });

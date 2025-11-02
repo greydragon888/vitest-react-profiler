@@ -1,6 +1,21 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-import type { FC } from "react";
+import type { ComponentType } from "react";
+
+/**
+ * Component type that accepts any props
+ *
+ * We use `any` here instead of `unknown` due to TypeScript contravariance:
+ * - ComponentType<T> is contravariant in T
+ * - ComponentType<{text?: string}> is NOT assignable to ComponentType<unknown>
+ * - But ComponentType<{text?: string}> IS assignable to ComponentType<any>
+ *
+ * This type is used internally for profiling any React component regardless of its props.
+ *
+ * @internal
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyComponentType = ComponentType<any>;
 
 /**
  * Custom Vitest matchers for profiled React components
@@ -39,6 +54,14 @@ export interface ProfilerMatchers<R = unknown> {
    * @example expect(ProfiledComponent).toHaveNeverMounted()
    */
   toHaveNeverMounted: () => R;
+
+  /**
+   * Assert that component only mounted (never updated in current test)
+   *
+   * @returns - Matcher result
+   * @example expect(ProfiledComponent).toHaveOnlyMounted()
+   */
+  toHaveOnlyMounted: () => R;
 
   /**
    * Assert that component only updated (never mounted in current test)
@@ -86,20 +109,19 @@ export interface ProfilerMatchers<R = unknown> {
    * @example await expect(ProfiledComponent).toEventuallyReachPhase('mount', { timeout: 2000 })
    */
   toEventuallyReachPhase: (
-    phase: "mount" | "update" | "nested-update",
+    phase: PhaseType,
     options?: { timeout?: number; interval?: number },
   ) => Promise<R>;
 }
 
 /**
- * Information about a single render
+ * Render phase type
+ *
+ * - `mount` - Initial render when component first appears
+ * - `update` - Re-render when props or state change
+ * - `nested-update` - Update triggered during another component's render
  */
-export interface RenderInfo {
-  /** Mount for initial render, update for re-renders */
-  phase: "mount" | "update" | "nested-update";
-  /** Timestamp when this render was recorded */
-  timestamp: number;
-}
+export type PhaseType = "mount" | "update" | "nested-update";
 
 /**
  * Extended component with profiling capabilities
@@ -118,24 +140,24 @@ export interface ProfiledComponent<P> {
   /**
    * Get complete history of all renders
    *
-   * @returns - Array of all render information
+   * @returns - Array of render phases
    */
-  getRenderHistory: () => readonly RenderInfo[];
+  getRenderHistory: () => readonly PhaseType[];
 
   /**
-   * Get information about the most recent render
+   * Get the most recent render phase
    *
-   * @returns - Last render info or undefined if never rendered
+   * @returns - Last render phase or undefined if never rendered
    */
-  getLastRender: () => RenderInfo | undefined;
+  getLastRender: () => PhaseType | undefined;
 
   /**
-   * Get information about a specific render by index
+   * Get render phase at a specific index
    *
    * @param index - Zero-based index of the render
-   * @returns - Render info at the specified index or undefined
+   * @returns - Render phase at the specified index or undefined
    */
-  getRenderAt: (index: number) => RenderInfo | undefined;
+  getRenderAt: (index: number) => PhaseType | undefined;
 
   /**
    * Get renders filtered by phase
@@ -143,7 +165,7 @@ export interface ProfiledComponent<P> {
    * @param phase - Render phase to filter by
    * @returns - Array of renders matching the specified phase
    */
-  getRendersByPhase: (phase: RenderInfo["phase"]) => readonly RenderInfo[];
+  getRendersByPhase: (phase: PhaseType) => readonly PhaseType[];
 
   /**
    * Check if component has ever mounted
@@ -153,11 +175,17 @@ export interface ProfiledComponent<P> {
   hasMounted: () => boolean;
 
   /** Original component for reference */
-  readonly OriginalComponent: FC<P>;
+  OriginalComponent: ComponentType<P>;
 
   /** React component display name for debugging */
-  readonly displayName?: string;
+  displayName?: string;
 }
+
+/**
+ * Profiled component that is also a valid React ComponentType
+ * This combines profiling capabilities with the ability to render the component
+ */
+export type ProfiledComponentType<P> = ProfiledComponent<P> & ComponentType<P>;
 
 /**
  * Extend Vitest's expect matchers

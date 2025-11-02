@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",
@@ -45,7 +45,7 @@
     }
   },
   "sideEffects": [
-    "./src/matchers.ts",
+    "./src/matchers/index.ts",
     "./src/auto-setup.ts",
     "./dist/index.js",
     "./dist/index.cjs"
@@ -66,9 +66,14 @@
     "test:mutation:report": "open reports/mutation-report.html",
     "test:properties": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --config vitest.config.properties.mts",
     "test:bench": "vitest bench --config vitest.config.bench.mts",
-    "test:bench:stable": "NODE_OPTIONS='--expose-gc --max-old-space-size=4096' vitest bench --config vitest.config.bench.mts",
+    "test:bench:stable": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx --fix",
+    "bundle:analyze": "npm run build && npx @codecov/bundle-analyzer ./dist --bundle-name=vitest-react-profiler",
+    "bundle:size": "npm run build && du -sh dist/* | sort -h",
+    "sonar": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN",
+    "sonar:debug": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.log.level=DEBUG -Dsonar.verbose=true",
+    "sonar:local": "npm run typecheck && npm run test:coverage && npm run sonar",
     "prepare": "node -e \"try { require('husky') } catch (e) {}\""
   },
   "peerDependencies": {
@@ -76,6 +81,7 @@
     "vitest": ">=1.0.0"
   },
   "devDependencies": {
+    "@codecov/bundle-analyzer": "1.9.1",
     "@commitlint/cli": "20.0.0",
     "@commitlint/config-conventional": "20.0.0",
     "@eslint/js": "9.36.0",
@@ -109,6 +115,7 @@
     "prettier": "3.6.2",
     "react": "19.1.1",
     "react-dom": "19.1.1",
+    "sonarqube-scanner": "4.3.2",
     "tsup": "8.5.0",
     "typescript": "5.9.2",
     "typescript-eslint": "8.44.1",
@@ -116,5 +123,8 @@
   },
   "workspaces": [
     "examples/*"
-  ]
+  ],
+  "dependencies": {
+    "dotenv-cli": "^11.0.0"
+  }
 }

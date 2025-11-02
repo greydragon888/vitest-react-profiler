@@ -2,8 +2,193 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.5.0] - 2025-11-06
+
+### BREAKING CHANGES
+
+- **RenderInfo → PhaseType simplification**
+  - `RenderInfo` interface removed (contained unused `timestamp` field)
+  - Replaced with simple `PhaseType` union: `"mount" | "update" | "nested-update"`
+  - Affected methods now return phase strings directly instead of objects:
+    - `getRenderHistory()` - returns `PhaseType[]` instead of `RenderInfo[]`
+    - `getLastRender()` - returns `PhaseType | undefined` instead of `RenderInfo | undefined`
+    - `getRenderAt(index)` - returns `PhaseType | undefined` instead of `RenderInfo | undefined`
+    - `getRendersByPhase(phase)` - returns `readonly PhaseType[]` instead of `readonly RenderInfo[]`
+
+  **Migration:** Replace `.map(r => r.phase)` with direct array access, replace `render.phase` with direct string comparison.
+
+### Architecture
+
+- **Complete code reorganization** - Improved modularity and maintainability
+  - **Impact**: 83 files changed, ~5,900 additions, ~5,477 deletions
+  - Reorganized `src/matchers/` into logical structure:
+    - `async/` - Async matchers (`toEventuallyRenderTimes`, `toEventuallyRenderAtLeast`, `toEventuallyReachPhase`)
+    - `sync/` - Sync matchers (`toHaveRendered`, `toHaveRenderedTimes`, etc.)
+    - `type-guards.ts` - Type validation utilities
+    - `types.ts` - Shared matcher types
+    - `index.ts` - Centralized exports
+  - Reorganized `src/profiler/` for better separation of concerns:
+    - `api/ProfilerAPI.ts` - Public profiling API
+    - `components/` - React component profiling (`withProfiler`, `ProfiledComponent`, callbacks)
+    - `core/` - Core data structures (`ProfilerData`, `ProfilerCache`, `ProfilerStorage`)
+  - Removed monolithic files: `src/matchers.ts`, `src/withProfiler.tsx`
+  - Clear separation between public API and internal implementation
+  - Each module has single, well-defined responsibility
+
+### Added
+
+- **Enhanced test coverage for async matchers** - Comprehensive `.not` modifier support
+  - Added 3 tests for negated async assertions:
+    - `toEventuallyRenderTimes` - Verify failure when exact count IS reached
+    - `toEventuallyRenderAtLeast` - Verify failure when minimum IS reached
+    - `toEventuallyReachPhase` - Verify failure when phase IS reached
+  - **Impact**: 100% code coverage (was 97.84% for async matchers)
+  - **Result**: All 378 tests passing, 242/242 branches covered
+
+- **Enhanced CI/CD infrastructure** - Production-grade automation and code quality
+  - **SonarCloud integration improvements**
+    - Type checking step before analysis
+    - SonarCloud package caching for faster builds
+    - Official `sonarcloud-github-action` for reliability
+    - Centralized configuration in `sonar-project.properties`
+    - NPM scripts: `sonar` and `sonar:local` for local analysis
+
+  - **Project guidelines for AI** (`CLAUDE.md`)
+    - Code conventions and TypeScript standards
+    - Testing requirements (unit, integration, property-based)
+    - Performance optimization guidelines
+    - Security best practices
+    - Documentation standards
+    - Serves as context for Claude AI workflows
+
+- **New test utilities** - Better test organization and reusability
+  - Unit tests for new architecture:
+    - `tests/unit/profiled-component.test.tsx` - ProfiledComponent behavior
+    - `tests/unit/profiler-api.test.ts` - Public API contracts
+    - `tests/unit/profiler-cache.test.ts` - Cache invalidation logic
+    - `tests/unit/profiler-data.test.ts` - Data structure integrity
+    - `tests/unit/profiler-storage.test.ts` - Component storage isolation
+  - `tests/benchmarks/realistic-patterns.bench.tsx` - Real-world usage benchmarks
+
+- **CI/CD infrastructure improvements**
+  - SonarCloud integration with type checking and caching
+  - Official `sonarcloud-github-action` for reliability
+  - NPM scripts: `sonar` and `sonar:local` for local analysis
+  - Codecov bundle analyzer integration
+
+### Changed
+
+- **Simplified render history API** - More intuitive and efficient
+  - **Public API methods** (ProfiledComponent interface):
+    - `getRenderHistory()` returns `PhaseType[]` instead of `RenderInfo[]`
+    - `getLastRender()` returns `PhaseType | undefined` instead of `RenderInfo | undefined`
+    - `getRenderAt(index)` returns `PhaseType | undefined` instead of `RenderInfo | undefined`
+    - `getRendersByPhase(phase)` returns `readonly PhaseType[]` instead of `readonly RenderInfo[]`
+  - **Internal utilities** (not documented, no breaking change):
+    - `formatRenderHistory()` and `formatRenderSummary()` updated to work with `PhaseType[]`
+    - Used only for matcher error messages
+  - Direct string comparisons replace object property access
+  - Better TypeScript type narrowing and inference
+
+- **Optimized `withProfiler` initialization** - Removed redundant storage check
+  - Eliminated unnecessary `globalStorage.has()` check before `getOrCreate()`
+  - `createOnRenderCallback` already calls `getOrCreate()` internally
+  - **Impact**: Cleaner code, identical functionality
+  - Simplified from 9 steps to 8 steps in component wrapping flow
+
+- **CI/CD workflow improvements** - Faster, more reliable automation
+  - **All workflows enhanced** with:
+    - Concurrency control - Cancel duplicate runs to save CI minutes
+    - Full git history (`fetch-depth: 0`) - Accurate diff comparisons
+    - Enhanced permissions - Granular access control
+    - Latest actions versions - Security and performance improvements
+
+  - **Coverage workflow** (`.github/workflows/coverage.yml`)
+    - Threshold checking step - Fail CI if coverage < 90%
+    - Step summary in Actions tab - Quick visibility
+    - Improved PR comments with badges and links
+    - Multiple file uploads for comprehensive reports
+
+  - **SonarCloud workflow** (`.github/workflows/sonarcloud.yml`)
+    - Type checking before analysis - Catch errors early
+    - Official action for better reliability
+    - Simplified configuration
+
+  - **Claude workflows** (`.github/workflows/claude*.yml`)
+    - Latest model (Sonnet 4.5) - Better code understanding
+    - Sticky comments - Single updating comment vs spam
+    - Progress tracking - Real-time visibility
+    - Enhanced tool access - More capabilities
+
+- **Test organization** - Better structure and maintainability
+  - All property-based tests updated for `PhaseType`
+  - Stress tests refactored to validate phase strings:
+    - "timestamps remain monotonically increasing" → "phase types remain valid throughout history"
+    - "all history entries have valid structure" → validates `PhaseType` strings
+  - Removed 3 unused helper functions from `tests/property/helpers.tsx`:
+    - `createComponentWithPhases()` - Not used in any tests
+    - `createNestedUpdateComponent()` - Not used in any tests
+    - `waitForRenderCount()` - Replaced by async utilities
+  - File reduced from ~163 lines to 86 lines (-47%)
+  - Cleaner, more maintainable test helpers
+
+### Fixed
+
+- **Bundle configuration for tree-shaking** - Matchers now correctly included in production builds
+  - Updated `sideEffects` in package.json: `./src/matchers.ts` → `./src/matchers/index.ts`
+  - Resolved esbuild warning: "Ignoring import because file was marked as having no side effects"
+  - **Impact**: Bundle size increased from ~6.5KB to ~12KB (matchers properly included)
+  - Fixed bundle:analyze command syntax for Codecov bundle analyzer
+
+- **Frozen array edge case** - Empty arrays now consistently frozen
+  - Added `EMPTY_FROZEN_ARRAY` constant in `ProfilerAPI.ts`
+  - Methods return frozen empty array when no profiler data exists:
+    - `getRenderHistory()` - was returning unfrozen `[]`
+    - `getRendersByPhase()` - was returning unfrozen `[]`
+  - **Impact**: API consistency - all arrays frozen regardless of component state
+  - Fixed failing test: "should return empty array when no profiler data exists"
+
+- **Property-based stress tests** - Updated for PhaseType API
+  - Fixed "timestamps remain monotonically increasing" test
+    - Now validates phase types instead of non-existent timestamps
+    - Checks all entries are valid `PhaseType` values
+  - Fixed "all history entries have valid structure" test
+    - Updated from checking `Number.isFinite(entry)` to validating phase strings
+    - Removed unnecessary falsy checks (strings are always truthy)
+  - All 135 property-based tests now passing ✅
+
+### Infrastructure
+
+- **Test suite status** - Perfect test coverage achieved
+  - **378 unit/integration tests** ✅ (was 367)
+  - **135 property-based tests** ✅
+  - **100% code coverage** - All lines, functions, branches, statements
+    - Lines: 729/729 (100%)
+    - Functions: 96/96 (100%)
+    - Branches: 242/242 (100%)
+    - Statements: 729/729 (100%)
+  - Comprehensive benchmark suite
+  - Property tests validate PhaseType invariants at scale (1,000-10,000 renders)
+
+- **Code quality gates** - Multiple layers of verification
+  - **Stryker Mutation Testing** - 96.31% score (improved from 93.40%)
+    - 313 mutants killed
+    - 12 mutants survived (all non-critical: formatting, timeout boundaries)
+    - 3 mutants timeout (edge cases in async polling)
+  - SonarCloud - Code quality and security analysis
+  - Codecov - Coverage tracking and bundle analysis
+  - ESLint - TypeScript strict mode
+  - Prettier - Consistent formatting
+  - Claude AI - Automated code review on PRs
+
+- **Developer experience** - Improved workflow efficiency
+  - Bundle analyzer for size monitoring
+  - NPM scripts for local quality checks
+  - Type-safe API with excellent IDE support
+  - Consistent frozen arrays for immutability guarantees
 
 ## [1.4.0] - 2025-11-02
 
@@ -301,6 +486,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.5.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.5.0
 [1.4.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.4.0
 [1.3.2]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.2
 [1.3.1]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.1

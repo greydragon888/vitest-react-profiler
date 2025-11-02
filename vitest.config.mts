@@ -39,13 +39,7 @@ export default defineConfig({
      */
     coverage: {
       provider: "v8",
-      reporter: [
-        ["text", { skipFull: true }],
-        "json",
-        "json-summary",
-        "html",
-        "lcov",
-      ],
+      reporter: [["text", { skipFull: true }], "json", "json-summary", "lcov"],
       exclude: [
         "node_modules/",
         "dist/",

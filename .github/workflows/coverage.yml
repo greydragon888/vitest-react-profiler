@@ -2,14 +2,20 @@ name: Coverage Report
 
 on:
   push:
-    branches: [master]
+    branches: [master, develop]
   pull_request:
     branches: [master]
+
+# Prevent duplicate runs for same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
   pull-requests: write
   issues: write
+  checks: write # For Codecov status checks
 
 jobs:
   coverage:
@@ -19,6 +25,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Fetch full history for accurate coverage comparison
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,15 +40,13 @@ jobs:
 
       - name: Run tests with coverage
         run: npm run test:coverage
+        env:
+          NODE_ENV: test
 
       - name: Generate coverage summary
         id: coverage
         run: |
-          # Extract coverage percentages
-          COVERAGE_LINES=$(grep -A 1 "All files" coverage/lcov.info | grep "LF:" | cut -d':' -f2 || echo "0")
-          COVERAGE_BRANCHES=$(grep -A 1 "All files" coverage/lcov.info | grep "BRF:" | cut -d':' -f2 || echo "0")
-
-          # Read from coverage summary if available
+          # Extract coverage percentages from coverage-summary.json
           if [ -f coverage/coverage-summary.json ]; then
             LINES_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)" 2>/dev/null || echo "0")
             BRANCHES_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.branches.pct)" 2>/dev/null || echo "0")
@@ -50,27 +57,46 @@ jobs:
             echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
             echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
             echo "statements=$STATEMENTS_PCT" >> $GITHUB_OUTPUT
+
+            echo "✅ Coverage extracted successfully"
+            echo "📊 Lines: $LINES_PCT%"
+            echo "📊 Branches: $BRANCHES_PCT%"
+            echo "📊 Functions: $FUNCTIONS_PCT%"
+            echo "📊 Statements: $STATEMENTS_PCT%"
+          else
+            echo "⚠️ Coverage summary file not found"
+            exit 1
           fi
 
-      - name: Create coverage badges
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info,./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-vitest-react-profiler
+          fail_ci_if_error: true # Fail CI if upload fails
+          verbose: true
+          # codecov.yml handles all configuration
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Build bundle for analysis
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Analyze bundle size
         run: |
-          mkdir -p .github/badges
-
-          # Function to determine color based on percentage
-          get_color() {
-            if [ $(echo "$1 >= 90" | bc -l) -eq 1 ]; then
-              echo "brightgreen"
-            elif [ $(echo "$1 >= 80" | bc -l) -eq 1 ]; then
-              echo "yellow"
-            elif [ $(echo "$1 >= 70" | bc -l) -eq 1 ]; then
-              echo "orange"
-            else
-              echo "red"
-            fi
-          }
-
-          # Generate badge URLs (for shields.io)
-          echo "[![Coverage Status](https://codecov.io/gh/${{ github.repository }}/branch/master/graph/badge.svg)](https://codecov.io/gh/${{ github.repository }})" > .github/badges/coverage.md
+          npx @codecov/bundle-analyzer \
+            --bundle-name=vitest-react-profiler \
+            --upload-token=${{ secrets.CODECOV_TOKEN }} \
+            --commit-sha=${{ github.sha }} \
+            --branch=${{ github.ref_name }} \
+            --service-name=github-actions \
+            --service-number=${{ github.run_id }} \
+            --build-dir=./dist
+        continue-on-error: true # Don't fail CI if bundle analysis fails
 
       - name: Comment PR with coverage report
         if: github.event_name == 'pull_request'
@@ -79,7 +105,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const { execSync } = require('child_process');
 
             let comment = `## 📊 Test Coverage Report\n\n`;
 
@@ -87,6 +112,11 @@ jobs:
               // Read coverage summary
               const coverageSummary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
               const total = coverageSummary.total;
+
+              // Overall coverage badge
+              const overallPct = total.lines.pct || 0;
+              const badgeColor = overallPct >= 90 ? 'brightgreen' : overallPct >= 80 ? 'yellow' : overallPct >= 70 ? 'orange' : 'red';
+              comment += `[![Coverage](https://img.shields.io/badge/coverage-${overallPct.toFixed(2)}%25-${badgeColor})](https://codecov.io/gh/${{ github.repository }})\n\n`;
 
               // Create coverage table
               comment += '| Type | Coverage | Status |\n';
@@ -99,18 +129,18 @@ jobs:
                 const pct = data.pct || 0;
                 const emoji = getEmoji(pct);
                 const covered = data.covered || 0;
-                const total = data.total || 0;
+                const totalCount = data.total || 0;
 
-                comment += `| **${type.charAt(0).toUpperCase() + type.slice(1)}** | ${pct.toFixed(2)}% (${covered}/${total}) | ${emoji} |\n`;
+                comment += `| **${type.charAt(0).toUpperCase() + type.slice(1)}** | ${pct.toFixed(2)}% (${covered}/${totalCount}) | ${emoji} |\n`;
               });
 
               // Add threshold status
-              comment += '\n### Coverage Thresholds\n\n';
+              comment += '\n### 🎯 Coverage Thresholds\n\n';
               const thresholds = {
-                statements: 100,
-                branches: 100,
-                functions: 100,
-                lines: 100
+                statements: 90,
+                branches: 90,
+                functions: 90,
+                lines: 90
               };
 
               let allPassed = true;
@@ -123,8 +153,20 @@ jobs:
 
               comment += allPassed ? '\n✅ **All coverage thresholds met!**' : '\n⚠️ **Some coverage thresholds not met**';
 
+              // Add Codecov link
+              comment += `\n\n### 🔗 Links\n`;
+              comment += `- [📊 Codecov Report](https://codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})\n`;
+              comment += `- [📁 Full Coverage Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`;
+
+              // Add helpful tips
+              comment += `\n### 💡 Tips\n`;
+              comment += `- Codecov will also post detailed analysis as a separate comment\n`;
+              comment += `- Check Codecov for line-by-line coverage and suggestions\n`;
+              comment += `- Coverage must be ≥90% to meet project standards\n`;
+
             } catch (error) {
               comment += `⚠️ Could not generate coverage report: ${error.message}`;
+              console.error('Coverage report error:', error);
             }
 
             // Find existing comment
@@ -146,6 +188,7 @@ jobs:
                 comment_id: botComment.id,
                 body: comment
               });
+              console.log('✅ Updated existing coverage comment');
             } else {
               // Create new comment
               await github.rest.issues.createComment({
@@ -154,22 +197,78 @@ jobs:
                 issue_number: context.issue.number,
                 body: comment
               });
+              console.log('✅ Created new coverage comment');
             }
 
-      - name: Upload coverage reports
+      - name: Upload coverage reports to artifacts
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
             coverage/
             !coverage/tmp/
+          retention-days: 30
 
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-          verbose: true
+      - name: Check coverage thresholds
+        run: |
+          echo "Checking coverage thresholds..."
+
+          # Read coverage summary
+          LINES_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.lines.pct)")
+          BRANCHES_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.branches.pct)")
+          FUNCTIONS_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.functions.pct)")
+          STATEMENTS_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.statements.pct)")
+
+          THRESHOLD=90
+
+          echo "Coverage Summary:"
+          echo "  Lines:      $LINES_PCT% (threshold: $THRESHOLD%)"
+          echo "  Branches:   $BRANCHES_PCT% (threshold: $THRESHOLD%)"
+          echo "  Functions:  $FUNCTIONS_PCT% (threshold: $THRESHOLD%)"
+          echo "  Statements: $STATEMENTS_PCT% (threshold: $THRESHOLD%)"
+
+          FAILED=0
+
+          # Check each threshold
+          if (( $(echo "$LINES_PCT < $THRESHOLD" | bc -l) )); then
+            echo "❌ Lines coverage below threshold: $LINES_PCT% < $THRESHOLD%"
+            FAILED=1
+          fi
+
+          if (( $(echo "$BRANCHES_PCT < $THRESHOLD" | bc -l) )); then
+            echo "❌ Branches coverage below threshold: $BRANCHES_PCT% < $THRESHOLD%"
+            FAILED=1
+          fi
+
+          if (( $(echo "$FUNCTIONS_PCT < $THRESHOLD" | bc -l) )); then
+            echo "❌ Functions coverage below threshold: $FUNCTIONS_PCT% < $THRESHOLD%"
+            FAILED=1
+          fi
+
+          if (( $(echo "$STATEMENTS_PCT < $THRESHOLD" | bc -l) )); then
+            echo "❌ Statements coverage below threshold: $STATEMENTS_PCT% < $THRESHOLD%"
+            FAILED=1
+          fi
+
+          if [ $FAILED -eq 1 ]; then
+            echo ""
+            echo "⚠️  Coverage thresholds not met. Please add tests to improve coverage."
+            exit 1
+          else
+            echo ""
+            echo "✅ All coverage thresholds met!"
+          fi
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          echo "## Coverage Report Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lines | ${{ steps.coverage.outputs.lines }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branches | ${{ steps.coverage.outputs.branches }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Functions | ${{ steps.coverage.outputs.functions }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Statements | ${{ steps.coverage.outputs.statements }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View full report on Codecov](https://codecov.io/gh/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY

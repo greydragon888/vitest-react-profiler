@@ -96,3 +96,5 @@ packages/**/.vitest-stryker
 stryker.temp.config.mjs
 stryker*.config.mjs.map
 *-mutation*.log
+.scannerwork
+.sonarlint

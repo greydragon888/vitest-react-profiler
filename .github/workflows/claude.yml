@@ -9,41 +9,82 @@ on:
     types: [opened, assigned]
   pull_request_review:
     types: [submitted]
+  pull_request:
+    types: [opened]
+
+# Prevent multiple concurrent Claude runs for the same context
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false # Keep running, queue new requests
 
 jobs:
   claude:
+    name: Interactive Claude Assistant
+    # Trigger on @claude mentions or when issues/PRs are opened with @claude
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
+      (github.event_name == 'pull_request' && (contains(github.event.pull_request.body, '@claude') || contains(github.event.pull_request.title, '@claude')))
+
     runs-on: ubuntu-latest
+
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
-      id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+      contents: write # Allow Claude to create branches and commits
+      pull-requests: write # Allow Claude to comment and create PRs
+      issues: write # Allow Claude to comment on issues
+      id-token: write # OAuth authentication
+      actions: read # Read CI results on PRs
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          # Full history for better context and accurate analysis
+          fetch-depth: 0
+          # Use token with broader permissions for Claude operations
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
+          # Authentication
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-          # This is an optional setting that allows Claude to read CI results on PRs
+          # Use sticky comments to consolidate responses
+          use_sticky_comment: true
+
+          # Track progress for long-running tasks
+          track_progress: true
+
+          # Allow Claude to view CI/CD results
           additional_permissions: |
             actions: read
 
-          # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
-          # prompt: 'Update the pull request description to include a summary of changes.'
+          # Advanced configuration for optimal performance
+          claude_args: |
+            --model claude-sonnet-4-5-20250929
+            --max-turns 20
+            --allowed-tools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(node:*),Bash(cat:*),Bash(ls:*),Bash(pwd:*),Bash(echo:*),Bash(mkdir:*),Bash(rm:*),Bash(mv:*),Bash(cp:*),Bash(find:*),Bash(grep:*),Bash(wc:*),Bash(head:*),Bash(tail:*)"
 
-          # Optional: Add claude_args to customize behavior and configuration
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
-          # claude_args: '--allowed-tools Bash(gh pr:*)'
+          # Optional: Provide system instructions for Claude
+          # Uncomment and customize if you want to give Claude default instructions
+          # prompt: |
+          #   You are a helpful AI assistant for the vitest-react-profiler project.
+          #   Follow the guidelines in CLAUDE.md when working on this codebase.
+          #   Be constructive, helpful, and prioritize code quality and test coverage.
+
+      - name: Claude Task Completed
+        if: always()
+        run: |
+          echo "🤖 Claude task completed"
+          echo "Status: ${{ steps.claude.outcome }}"
+          if [ "${{ steps.claude.outcome }}" = "success" ]; then
+            echo "✅ Task completed successfully"
+          elif [ "${{ steps.claude.outcome }}" = "failure" ]; then
+            echo "❌ Task failed - check logs for details"
+          elif [ "${{ steps.claude.outcome }}" = "cancelled" ]; then
+            echo "⚠️ Task was cancelled"
+          fi

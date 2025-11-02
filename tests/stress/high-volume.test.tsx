@@ -45,10 +45,10 @@ describe("Stress Tests - High Volume Renders", () => {
     const lastRender = ProfiledComponent.getRenderAt(999);
 
     expect(firstRender).toBeDefined();
-    expect(firstRender?.phase).toBe("mount");
+    expect(firstRender).toBe("mount");
 
     expect(lastRender).toBeDefined();
-    expect(lastRender?.phase).toBe("update");
+    expect(lastRender).toBe("update");
 
     // Assert phase counts
     expect(ProfiledComponent.getRendersByPhase("mount")).toHaveLength(1);
@@ -105,7 +105,7 @@ describe("Stress Tests - High Volume Renders", () => {
     const lastRender = ProfiledComponent.getLastRender();
 
     expect(lastRender).toBeDefined();
-    expect(lastRender?.phase).toBe("update");
+    expect(lastRender).toBe("update");
 
     // Cache invalidation should still work
     rerender(<ProfiledComponent count={2000} />);
@@ -291,7 +291,7 @@ describe("Stress Tests - Multiple Components", () => {
     components.forEach((C) => {
       const lastRender = C.getLastRender();
 
-      expect(lastRender?.phase).toBe("update");
+      expect(lastRender).toBe("update");
     });
   });
 
@@ -386,7 +386,7 @@ describe("Stress Tests - Mixed Scenarios", () => {
     // Verify correctness
     components.forEach((C) => {
       expect(C.getRenderCount()).toBe(101);
-      expect(C.getLastRender()?.phase).toBe("update");
+      expect(C.getLastRender()).toBe("update");
       expect(C.hasMounted()).toBe(true);
     });
 

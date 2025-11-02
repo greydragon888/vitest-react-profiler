@@ -30,11 +30,11 @@ describe("Stable Instance IDs", () => {
       const history = ProfiledTest.getRenderHistory();
 
       expect(history).toHaveLength(20);
-      expect(history[0]?.phase).toBe("mount");
+      expect(history[0]).toBe("mount");
 
       // All subsequent renders should be updates
       for (let i = 1; i < 20; i++) {
-        expect(history[i]?.phase).toBe("update");
+        expect(history[i]).toBe("update");
       }
     });
 
@@ -72,10 +72,10 @@ describe("Stable Instance IDs", () => {
       const history = ProfiledChild.getRenderHistory();
 
       expect(history).toHaveLength(4);
-      expect(history[0]?.phase).toBe("mount");
-      expect(history[1]?.phase).toBe("update");
-      expect(history[2]?.phase).toBe("update");
-      expect(history[3]?.phase).toBe("update");
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update");
+      expect(history[2]).toBe("update");
+      expect(history[3]).toBe("update");
     });
   });
 
@@ -101,7 +101,7 @@ describe("Stable Instance IDs", () => {
       expect(history).toHaveLength(3);
 
       // All should be mount phase
-      expect(history.every((r) => r.phase === "mount")).toBe(true);
+      expect(history.every((r) => r === "mount")).toBe(true);
     });
 
     it("should handle sequential rendering of instances", () => {
@@ -157,11 +157,11 @@ describe("Stable Instance IDs", () => {
       const history = ProfiledFast.getRenderHistory();
 
       expect(history).toHaveLength(101);
-      expect(history[0]?.phase).toBe("mount");
+      expect(history[0]).toBe("mount");
 
       // All others should be updates
       for (let i = 1; i <= 100; i++) {
-        expect(history[i]?.phase).toBe("update");
+        expect(history[i]).toBe("update");
       }
     });
 
@@ -205,10 +205,10 @@ describe("Stable Instance IDs", () => {
       expect(history).toHaveLength(4);
 
       // Check phases: mount, update, mount, update
-      expect(history[0]?.phase).toBe("mount");
-      expect(history[1]?.phase).toBe("update");
-      expect(history[2]?.phase).toBe("mount");
-      expect(history[3]?.phase).toBe("update");
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update");
+      expect(history[2]).toBe("mount");
+      expect(history[3]).toBe("update");
     });
   });
 });

@@ -1,6 +1,6 @@
 import { waitFor } from "@testing-library/react";
 
-import type { ProfiledComponent } from "../types";
+import type { PhaseType, ProfiledComponent } from "../types";
 
 /**
  * Options for async waiting utilities
@@ -124,22 +124,19 @@ export async function waitForMinimumRenders<P>(
  */
 export async function waitForPhase<P>(
   component: ProfiledComponent<P>,
-  phase: "mount" | "update" | "nested-update",
+  phase: PhaseType,
   options?: WaitOptions,
 ): Promise<void> {
   const { timeout = 1000, interval = 50 } = options ?? {};
 
   await waitFor(
     () => {
-      const hasPhase = component
-        .getRenderHistory()
-        .some((r) => r.phase === phase);
+      const hasPhase = component.getRenderHistory().includes(phase);
 
       if (!hasPhase) {
         throw new Error(
           `Expected component to reach phase "${phase}", but it hasn't yet. Current phases: [${component
             .getRenderHistory()
-            .map((r) => r.phase)
             .join(", ")}]`,
         );
       }

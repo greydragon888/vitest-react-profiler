@@ -12,7 +12,7 @@ import "./matchers";
 // Auto-setup - registers afterEach cleanup hook
 import "./auto-setup";
 
-export { withProfiler } from "./withProfiler";
+export { withProfiler } from "./profiler/components/withProfiler";
 
 // Hook profiling
 export { profileHook, createHookProfiler } from "./hooks";
@@ -41,7 +41,11 @@ export type {
 } from "./utils/renderProfiled";
 
 // Types
-export type { ProfiledComponent, RenderInfo } from "./types";
+export type {
+  PhaseType,
+  ProfiledComponent,
+  ProfiledComponentType,
+} from "./types";
 
 // Version info
 export const VERSION = process.env.npm_package_version ?? "0.0.0";

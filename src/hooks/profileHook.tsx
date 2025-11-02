@@ -1,6 +1,6 @@
 import { render, act } from "@testing-library/react";
 
-import { withProfiler } from "../withProfiler";
+import { withProfiler } from "../profiler/components/withProfiler";
 
 import type { ProfiledComponent } from "../types";
 

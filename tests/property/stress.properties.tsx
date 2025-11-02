@@ -45,8 +45,8 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
         expect(history).toHaveLength(numRenders);
 
         // Verify first and last entries
-        expect(history[0]?.phase).toBe("mount");
-        expect(history.at(-1)?.phase).toBe("update");
+        expect(history[0]).toBe("mount");
+        expect(history.at(-1)).toBe("update");
 
         return true;
       },
@@ -83,7 +83,7 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
       numRuns: 5,
       timeout: 60_000,
     })(
-      "timestamps remain monotonically increasing with many renders",
+      "phase types remain valid throughout render history at scale",
       (numRenders) => {
         const Component = createSimpleProfiledComponent();
         const { rerender } = render(<Component value={0} />);
@@ -93,17 +93,11 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
         }
 
         const history = Component.getRenderHistory();
+        const validPhases = new Set(["mount", "update", "nested-update"]);
 
-        // Check monotonicity
-        for (let i = 1; i < history.length; i++) {
-          const current = history[i];
-          const previous = history[i - 1];
-
-          if (!current || !previous) {
-            return false;
-          }
-
-          if (current.timestamp < previous.timestamp) {
+        // Check all entries are valid phase types
+        for (const entry of history) {
+          if (!validPhases.has(entry)) {
             return false;
           }
         }
@@ -230,14 +224,11 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
       }
 
       const history = Component.getRenderHistory();
+      const validPhases = new Set<string>(["mount", "update", "nested-update"]);
 
-      // Verify every entry has required fields
+      // Verify every entry is a valid PhaseType string
       return history.every(
-        (entry) =>
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          entry &&
-          typeof entry.phase === "string" &&
-          Number.isFinite(entry.timestamp),
+        (entry) => typeof entry === "string" && validPhases.has(entry),
       );
     });
   });

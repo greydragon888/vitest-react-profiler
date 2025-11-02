@@ -1,0 +1,147 @@
+import { render } from "@testing-library/react";
+import { bench, describe } from "vitest";
+
+import { withProfiler } from "../../src";
+
+import type { FC } from "react";
+
+/**
+ * Benchmark suite for core ProfiledComponent methods
+ *
+ * This benchmark measures the performance of the three basic accessor methods:
+ * - getRenderCount() - Returns total number of renders (O(1) expected)
+ * - getLastRender() - Returns the most recent render info (O(1) expected)
+ * - getRenderAt() - Returns render info at specific index (O(1) expected)
+ *
+ * Purpose: Establish baseline performance metrics before v1.5.0 architecture refactoring
+ *
+ * What we measure:
+ * - Throughput (calls per second)
+ * - Latency (time per single call)
+ * - Scalability (performance with 10 vs 100 vs 500 renders)
+ */
+
+const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
+
+describe("Core Methods - Performance", () => {
+  describe("getRenderCount()", () => {
+    bench("10 renders - single call", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 10; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      void ProfiledComponent.getRenderCount();
+    });
+
+    bench("10 renders - 100 calls", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 10; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 100; i++) {
+        void ProfiledComponent.getRenderCount();
+      }
+    });
+
+    bench("100 renders - 100 calls", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 100; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 100; i++) {
+        void ProfiledComponent.getRenderCount();
+      }
+    });
+
+    bench("500 renders - 1000 calls (stress)", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 1000; i++) {
+        void ProfiledComponent.getRenderCount();
+      }
+    });
+  });
+
+  describe("getLastRender()", () => {
+    bench("10 renders - single call", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 10; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      void ProfiledComponent.getLastRender();
+    });
+
+    bench("10 renders - 100 calls", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 10; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 100; i++) {
+        void ProfiledComponent.getLastRender();
+      }
+    });
+
+    bench("500 renders - 1000 calls (stress)", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 1000; i++) {
+        void ProfiledComponent.getLastRender();
+      }
+    });
+  });
+
+  describe("getRenderAt()", () => {
+    bench("100 renders - random access (100 calls)", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 100; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 100; i++) {
+        const index = Math.floor(Math.random() * 100);
+
+        void ProfiledComponent.getRenderAt(index);
+      }
+    });
+
+    bench("100 renders - sequential access (100 calls)", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 100; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      for (let i = 0; i < 100; i++) {
+        void ProfiledComponent.getRenderAt(i);
+      }
+    });
+  });
+});

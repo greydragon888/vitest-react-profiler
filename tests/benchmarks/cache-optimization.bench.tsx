@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { bench, describe } from "vitest";
 
-import { withProfiler } from "@/withProfiler.tsx";
+import { withProfiler } from "../../src";
 
 /**
  * Benchmark for getRendersByPhase() and hasMounted() caching

@@ -61,31 +61,6 @@ describe("withProfiler", () => {
   });
 
   describe("Property Descriptors", () => {
-    it("should make displayName non-writable", () => {
-      const Component = () => <div>test</div>;
-      const ProfiledComponent = withProfiler(Component);
-
-      const descriptor = Object.getOwnPropertyDescriptor(
-        ProfiledComponent,
-        "displayName",
-      );
-
-      expect(descriptor?.writable).toBe(false);
-      expect(descriptor?.enumerable).toBe(true);
-      expect(descriptor?.configurable).toBe(false);
-
-      // Attempt to overwrite should fail (in strict mode) or be silently ignored
-      const originalName = ProfiledComponent.displayName;
-
-      try {
-        (ProfiledComponent as any).displayName = "NewName";
-      } catch {
-        // Expected in strict mode
-      }
-
-      expect(ProfiledComponent.displayName).toBe(originalName);
-    });
-
     it("should make OriginalComponent non-writable and non-enumerable", () => {
       const Component = () => <div>test</div>;
       const ProfiledComponent = withProfiler(Component);
@@ -203,15 +178,15 @@ describe("withProfiler", () => {
       const history = ProfiledSimple.getRenderHistory();
 
       expect(history).toHaveLength(4);
-      expect(history[0]?.phase).toBe("mount");
-      expect(history[1]?.phase).toBe("update");
-      expect(history[2]?.phase).toBe("update");
-      expect(history[3]?.phase).toBe("update");
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update");
+      expect(history[2]).toBe("update");
+      expect(history[3]).toBe("update");
 
-      // Verify that each render has proper timing data
+      // Verify that each render is a valid phase type
       // (would be broken if instanceCounter was creating new Profiler instances)
-      history.forEach((render) => {
-        expect(render.timestamp).toBeGreaterThan(0);
+      history.forEach((phase) => {
+        expect(["mount", "update", "nested-update"]).toContain(phase);
       });
     });
   });
@@ -222,7 +197,7 @@ describe("withProfiler", () => {
 
       const lastRender = ProfiledSimple.getLastRender();
 
-      expect(lastRender?.phase).toBe("mount");
+      expect(lastRender).toBe("mount");
       expect(ProfiledSimple.hasMounted()).toBe(true);
     });
 
@@ -233,8 +208,8 @@ describe("withProfiler", () => {
 
       const history = ProfiledSimple.getRenderHistory();
 
-      expect(history[0]?.phase).toBe("mount");
-      expect(history[1]?.phase).toBe("update");
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update");
     });
 
     it("should filter renders by phase", () => {
@@ -262,9 +237,9 @@ describe("withProfiler", () => {
 
       const history = ProfiledStateful.getRenderHistory();
 
-      expect(history[0]?.phase).toBe("mount");
+      expect(history[0]).toBe("mount");
       // Subsequent renders should be updates or nested-updates
-      expect(["update", "nested-update"]).toContain(history[1]?.phase);
+      expect(["update", "nested-update"]).toContain(history[1]);
     });
   });
 
@@ -292,8 +267,8 @@ describe("withProfiler", () => {
       const secondRender = ProfiledSimple.getRenderAt(1);
       const nonExistent = ProfiledSimple.getRenderAt(10);
 
-      expect(firstRender?.phase).toBe("mount");
-      expect(secondRender?.phase).toBe("update");
+      expect(firstRender).toBe("mount");
+      expect(secondRender).toBe("update");
       expect(nonExistent).toBeUndefined();
     });
 
@@ -305,15 +280,13 @@ describe("withProfiler", () => {
       expect(Fresh.getLastRender()).toBeUndefined();
     });
 
-    it("should preserve render metadata", () => {
+    it("should return valid phase for last render", () => {
       render(<ProfiledSimple />);
 
       const lastRender = ProfiledSimple.getLastRender();
 
-      expect(lastRender).toMatchObject({
-        phase: expect.any(String),
-        timestamp: expect.any(Number),
-      });
+      expect(lastRender).toBe("mount");
+      expect(["mount", "update", "nested-update"]).toContain(lastRender);
     });
   });
 

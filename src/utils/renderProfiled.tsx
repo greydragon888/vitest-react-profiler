@@ -1,8 +1,8 @@
 import { render } from "@testing-library/react";
 
-import { withProfiler } from "../withProfiler";
+import { withProfiler } from "../profiler/components/withProfiler";
 
-import type { ProfiledComponent } from "../types";
+import type { ProfiledComponentType } from "../types";
 import type { RenderOptions, RenderResult } from "@testing-library/react";
 import type { ComponentType } from "react";
 
@@ -29,7 +29,7 @@ export interface RenderProfiledResult<P extends object>
   /**
    * The profiled component with profiling API methods
    */
-  component: ProfiledComponent<P> & ComponentType<P>;
+  component: ProfiledComponentType<P>;
 
   /**
    * Enhanced rerender function that accepts partial props

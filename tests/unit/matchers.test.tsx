@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { withProfiler } from "../../src"; // Import to register matchers
 
@@ -146,6 +146,103 @@ describe("Custom Matchers", () => {
     });
   });
 
+  describe("toHaveOnlyMounted", () => {
+    it("should pass when component only mounted", () => {
+      render(<ProfiledComponent />);
+
+      expect(ProfiledComponent).toHaveOnlyMounted();
+    });
+
+    it("should fail with non-profiled component", () => {
+      const regularComponent = () => <div />;
+
+      expect(() => {
+        expect(regularComponent).toHaveOnlyMounted();
+      }).toThrow(/Expected a profiled component created with withProfiler/);
+    });
+
+    it("should fail when component never rendered", () => {
+      expect(() => {
+        expect(ProfiledComponent).toHaveOnlyMounted();
+      }).toThrow(
+        /Expected component to have only mounts, but it never rendered/,
+      );
+    });
+
+    it("should fail when component has updates", () => {
+      const Component = ({ count }: { count: number }) => <div>{count}</div>;
+      const TestProfiledComponent = withProfiler(Component, "UpdateTest");
+
+      const { rerender } = render(<TestProfiledComponent count={1} />);
+
+      rerender(<TestProfiledComponent count={2} />);
+
+      expect(() => {
+        expect(TestProfiledComponent).toHaveOnlyMounted();
+      }).toThrow(/Expected component to have only mounts, but it also updated/);
+    });
+
+    it("should fail when component only updated (edge case)", () => {
+      // This is a theoretical edge case where a component somehow has only updates
+      // We can simulate this by mocking getRenderHistory
+      const Component = () => <div>test</div>;
+      const TestProfiledComponent = withProfiler(Component);
+
+      // Mock the history to return only update phases (no mount)
+      vi.spyOn(TestProfiledComponent, "getRenderHistory").mockReturnValue([
+        "update",
+        "update",
+      ]);
+
+      expect(() => {
+        expect(TestProfiledComponent).toHaveOnlyMounted();
+      }).toThrow(/Expected component to have only mounts, but it only updated/);
+
+      // Restore the mock
+      vi.restoreAllMocks();
+    });
+
+    it("should provide correct negative message when component only mounted", () => {
+      render(<ProfiledComponent />);
+
+      // First verify it passes
+      expect(ProfiledComponent).toHaveOnlyMounted();
+
+      // Test the negative case
+      expect(() => {
+        expect(ProfiledComponent).not.toHaveOnlyMounted();
+      }).toThrow(/Expected component not to have only mounts, but it did/);
+    });
+
+    it("should only check for mount phases (ignore updates)", () => {
+      // Verify that component with mount + updates fails
+      const Component = ({ n }: { n: number }) => <div>{n}</div>;
+      const TestProfiledComponent = withProfiler(Component, "MixedPhases");
+
+      const { rerender } = render(<TestProfiledComponent n={1} />);
+
+      rerender(<TestProfiledComponent n={2} />);
+      rerender(<TestProfiledComponent n={3} />);
+
+      // Despite 3 renders (1 mount + 2 updates), should fail because has updates
+      expect(() => {
+        expect(TestProfiledComponent).toHaveOnlyMounted();
+      }).toThrow(/Expected component to have only mounts, but it also updated/);
+    });
+
+    it("should work with .not matcher when component updated", () => {
+      const Component = ({ value }: { value: string }) => <div>{value}</div>;
+      const TestProfiledComponent = withProfiler(Component, "NotTest");
+
+      const { rerender } = render(<TestProfiledComponent value="a" />);
+
+      rerender(<TestProfiledComponent value="b" />);
+
+      // Component has both mount and update, so .not.toHaveOnlyMounted should pass
+      expect(TestProfiledComponent).not.toHaveOnlyMounted();
+    });
+  });
+
   describe("toHaveNeverMounted", () => {
     it("should pass when never mounted", () => {
       expect(ProfiledComponent).toHaveNeverMounted();
@@ -253,8 +350,8 @@ describe("Custom Matchers", () => {
       const history = ProfiledComponent.getRenderHistory();
 
       // Verify we have both mount and update phases
-      const hasMountPhase = history.some((r) => r.phase === "mount");
-      const hasUpdatePhase = history.some((r) => r.phase === "update");
+      const hasMountPhase = history.includes("mount");
+      const hasUpdatePhase = history.includes("update");
 
       expect(hasMountPhase).toBe(true);
       expect(hasUpdatePhase).toBe(true);
@@ -276,8 +373,8 @@ describe("Custom Matchers", () => {
 
       // Mock the history to return only update phases (no mount)
       vi.spyOn(TestProfiledComponent, "getRenderHistory").mockReturnValue([
-        { phase: "update", timestamp: Date.now() },
-        { phase: "update", timestamp: Date.now() + 1 },
+        "update",
+        "update",
       ]);
 
       // This should pass: !hasMounts (true) && hasUpdates (true)
@@ -297,14 +394,45 @@ describe("Custom Matchers", () => {
 
       const history = ProfiledComponent.getRenderHistory();
 
-      expect(history.some((r) => r.phase === "mount")).toBe(true);
-      expect(history.some((r) => r.phase === "update")).toBe(false);
+      expect(history).toContain("mount");
+      expect(history).not.toContain("update");
 
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
       }).toThrow(
         /Expected component to have only updates, but it only mounted/,
       );
+    });
+
+    it("should handle edge case with nested-updates but no mount or update phases", () => {
+      // This is an edge case where component has only nested-update phases
+      // without mount or update phases. This should fail with the fallback message.
+      // This test kills mutants on line 196 (ConditionalExpression and LogicalOperator)
+      const Component = () => <div>test</div>;
+      const TestProfiledComponent = withProfiler(Component);
+
+      // Mock the history to return only nested-update phases
+      vi.spyOn(TestProfiledComponent, "getRenderHistory").mockReturnValue([
+        "nested-update",
+        "nested-update",
+      ]);
+
+      // hasMounts = false, hasUpdates = false, history.length > 0
+      // Should fail with fallback message, NOT "only mounted"
+      // This exact check kills both mutants on line 196:
+      // - ConditionalExpression: if (hasMounts && !hasUpdates) → if (true)
+      // - LogicalOperator: hasMounts && !hasUpdates → hasMounts || !hasUpdates
+      expect(() => {
+        expect(TestProfiledComponent).toHaveOnlyUpdated();
+      }).toThrow(/Expected component not to have only updates, but it did/);
+
+      // Also verify it's NOT the "only mounted" message (which mutants would produce)
+      expect(() => {
+        expect(TestProfiledComponent).toHaveOnlyUpdated();
+      }).not.toThrow(/only mounted/);
+
+      // Restore the mock
+      vi.restoreAllMocks();
     });
   });
 

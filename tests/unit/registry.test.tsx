@@ -14,8 +14,8 @@ import { render } from "@testing-library/react";
 import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 
+import { withProfiler } from "@/profiler/components/withProfiler";
 import { registry } from "@/registry";
-import { withProfiler } from "@/withProfiler";
 
 describe("ComponentRegistry", () => {
   beforeEach(() => {

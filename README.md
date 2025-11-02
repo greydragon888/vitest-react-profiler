@@ -262,11 +262,11 @@ Expected component to render 3 time(s), but it rendered 5 time(s)
 ```
 Expected 3 renders, but got 5 (1 mount, 4 updates)
 
-  #1 [mount       ] at 2025-01-15T10:30:45.123Z
-  #2 [update      ] at 2025-01-15T10:30:45.456Z
-  #3 [update      ] at 2025-01-15T10:30:45.789Z
-  #4 [update      ] at 2025-01-15T10:30:46.012Z
-  #5 [update      ] at 2025-01-15T10:30:46.345Z
+  #1 [mount phase]
+  #2 [update phase]
+  #3 [update phase]
+  #4 [update phase]
+  #5 [update phase]
 
   💡 Tip: Use Component.getRenderHistory() to inspect all render details
 ```
@@ -279,9 +279,9 @@ When component mounts multiple times unexpectedly:
 Expected component to mount once, but it mounted 3 times
 
 Mount renders:
-  #1 [mount       ] at 2025-01-15T10:30:45.123Z
-  #3 [mount       ] at 2025-01-15T10:30:45.456Z
-  #7 [mount       ] at 2025-01-15T10:30:46.012Z
+  #1 [mount phase]
+  #3 [mount phase]
+  #7 [mount phase]
 
   💡 Tip: Use Component.getRenderHistory() to inspect all render details
 ```

@@ -14,12 +14,12 @@ import { fc, test } from "@fast-check/vitest";
 import { render, cleanup } from "@testing-library/react";
 import { describe, afterEach } from "vitest";
 
-import type { RenderInfo } from "@/types.ts";
-
 import {
   createComponentWithRenders,
   createSimpleProfiledComponent,
 } from "./helpers";
+
+import type { PhaseType } from "@/types.ts";
 
 describe("Property-Based Tests: Cache Behavior", () => {
   afterEach(() => {
@@ -34,7 +34,7 @@ describe("Property-Based Tests: Cache Behavior", () => {
 
         render(<Component />);
 
-        const references: (readonly RenderInfo[])[] = [];
+        const references: (readonly PhaseType[])[] = [];
 
         for (let i = 0; i < numReads; i++) {
           references.push(Component.getRenderHistory());
@@ -77,7 +77,7 @@ describe("Property-Based Tests: Cache Behavior", () => {
         const { rerender } = render(<Component value={0} />);
 
         for (let renderIdx = 0; renderIdx < numRenders; renderIdx++) {
-          const references: (readonly RenderInfo[])[] = [];
+          const references: (readonly PhaseType[])[] = [];
 
           // Multiple reads without renders
           for (let readIdx = 0; readIdx < readsPerRender; readIdx++) {
@@ -118,7 +118,7 @@ describe("Property-Based Tests: Cache Behavior", () => {
         const { rerender } = render(<Component value={0} />);
 
         let valueCounter = 1;
-        let lastCache: readonly RenderInfo[] | null = null;
+        let lastCache: readonly PhaseType[] | null = null;
 
         for (const op of operations) {
           if (op === "render") {
@@ -280,7 +280,7 @@ describe("Property-Based Tests: Cache Behavior", () => {
         const Component = createSimpleProfiledComponent();
         const { rerender } = render(<Component value={0} />);
 
-        const previousHistories: (readonly RenderInfo[])[] = [];
+        const previousHistories: (readonly PhaseType[])[] = [];
 
         for (let i = 0; i < numOperations; i++) {
           const history = Component.getRenderHistory();
@@ -331,9 +331,7 @@ describe("Property-Based Tests: Cache Behavior", () => {
         const Component = createSimpleProfiledComponent();
         const { rerender } = render(<Component value={0} />);
 
-        const caches: (readonly RenderInfo[])[] = [
-          Component.getRenderHistory(),
-        ];
+        const caches: (readonly PhaseType[])[] = [Component.getRenderHistory()];
 
         for (let i = 1; i < numRenders; i++) {
           rerender(<Component value={i} />);
@@ -368,7 +366,7 @@ describe("Property-Based Tests: Cache Behavior", () => {
         }
 
         // Multiple reads of the same phase
-        const references: (readonly RenderInfo[])[] = [];
+        const references: (readonly PhaseType[])[] = [];
 
         for (let i = 0; i < numReads; i++) {
           references.push(Component.getRendersByPhase(phase));

@@ -4,21 +4,26 @@ import { describe, expect, it } from "vitest";
 
 import { withProfiler } from "../../src";
 
+// Helper component that triggers 3 renders (mount + 2 updates)
+const createAsyncCounter = () => {
+  const Counter = () => {
+    const [count, setCount] = useState(0);
+
+    if (count < 2) {
+      setTimeout(() => {
+        setCount(count + 1);
+      }, 10);
+    }
+
+    return <div>{count}</div>;
+  };
+
+  return Counter;
+};
+
 describe("toEventuallyRenderTimes", () => {
   it("should pass when exact render count is reached", async () => {
-    const Counter = () => {
-      const [count, setCount] = useState(0);
-
-      if (count < 2) {
-        setTimeout(() => {
-          setCount(count + 1);
-        }, 10);
-      }
-
-      return <div>{count}</div>;
-    };
-
-    const ProfiledCounter = withProfiler(Counter);
+    const ProfiledCounter = withProfiler(createAsyncCounter());
 
     render(<ProfiledCounter />);
 
@@ -115,6 +120,19 @@ describe("toEventuallyRenderTimes", () => {
       message: expect.stringContaining("#1 [mount"),
     });
   });
+
+  it("should fail .not assertion when exact render count IS reached", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRenderTimes(1),
+    ).rejects.toThrow(
+      /Expected component not to eventually render 1 times within \d+ms, but it did/,
+    );
+  });
 });
 
 describe("toEventuallyRenderAtLeast", () => {
@@ -191,6 +209,18 @@ describe("toEventuallyRenderAtLeast", () => {
     });
 
     expect(ProfiledComponent.getRenderCount()).toBe(0);
+  });
+
+  it("should fail .not assertion when minimum render count IS reached", async () => {
+    const ProfiledCounter = withProfiler(createAsyncCounter());
+
+    render(<ProfiledCounter />);
+
+    await expect(
+      expect(ProfiledCounter).not.toEventuallyRenderAtLeast(2),
+    ).rejects.toThrow(
+      /Expected component not to eventually render at least 2 times within \d+ms, but it rendered \d+ times/,
+    );
   });
 });
 
@@ -326,6 +356,19 @@ describe("toEventuallyReachPhase", () => {
     expect(error).toMatchObject({
       message: expect.stringContaining(", "),
     });
+  });
+
+  it("should fail .not assertion when phase IS reached", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyReachPhase("mount"),
+    ).rejects.toThrow(
+      /Expected component not to eventually reach phase "mount" within \d+ms, but it did/,
+    );
   });
 });
 

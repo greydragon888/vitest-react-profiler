@@ -56,8 +56,7 @@
     "dist",
     "build",
     "coverage",
-    ".vitest",
-    "tests/benchmarks"
+    ".vitest"
   ],
   "references": [
     {

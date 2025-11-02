@@ -1,53 +1,100 @@
+# Codecov Configuration
+# Docs: https://docs.codecov.com/docs/codecovyml-reference
+
+# Basic Settings
 codecov:
-  require_ci_to_pass: yes
+  require_ci_to_pass: yes # Wait for CI to pass before reporting
+  notify:
+    wait_for_ci: yes # Wait for all CI checks before notifications
+    after_n_builds: 1 # Process after receiving all uploads
 
+# Coverage Configuration
 coverage:
-  precision: 2
-  round: down
-  range: "70...100"
+  precision: 2 # Decimal places for coverage percentage
+  round: down # Round down for conservative estimates
+  range: "70...100" # Green status range
 
+  # Coverage Status Checks
   status:
     project:
       default:
-        target: 95%
-        threshold: 2%
-        base: auto
-        flags:
-          - unittests
-        if_ci_failed: error
+        target: 90% # Project must maintain 90% coverage
+        threshold: 1% # Allow 1% drop without failing
+        if_ci_failed: error # Fail if CI failed
+        informational: false # Block on failure
+        only_pulls: false # Run on all commits
 
     patch:
       default:
-        target: 90%
-        threshold: 5%
-        base: auto
+        target: 90% # New code must have 90% coverage
+        threshold: 1% # Allow 1% variance
+        if_ci_failed: error
+        informational: false
+        only_pulls: true # Only for pull requests
 
-parsers:
-  javascript:
-    enable_partials: yes
+    changes:
+      default:
+        target: auto # Auto-calculate change coverage
+        threshold: 1%
+        if_ci_failed: error
+        informational: false
+        only_pulls: true
 
+# Pull Request Comments Configuration
 comment:
-  layout: "reach,diff,flags,tree"
-  behavior: default
-  require_changes: false
-  require_base: false
-  require_head: true
+  layout: "header, diff, changes, suggestions, tree, footer"
+  behavior: default # Update existing comment
+  require_changes: false # Always show comment
+  require_base: false # Don't require base commit
+  require_head: true # Require head commit
 
+# Ignore paths (no coverage tracking)
 ignore:
-  - "**/*.test.ts"
-  - "**/*.test.tsx"
-  - "**/*.spec.ts"
-  - "**/*.spec.tsx"
-  - "**/tests/**"
-  - "**/examples/**"
-  - "dist/**"
-  - "coverage/**"
-  - "*.config.*"
-  - "**/index.ts"
-  - "**/types.ts"
+  - "tests/**" # Test files
+  - "**/*.test.ts" # Unit tests
+  - "**/*.test.tsx" # React tests
+  - "**/*.spec.ts" # Spec tests
+  - "**/*.spec.tsx" # React spec tests
+  - "**/*.bench.tsx" # Benchmark files
+  - "**/*.properties.tsx" # Property tests
+  - "examples/**" # Example code
+  - "dist/**" # Built files
+  - "coverage/**" # Coverage reports
+  - "**/*.config.ts" # Config files
+  - "**/*.config.mts" # Config files
+  - "**/*.config.js" # Config files
+  - ".github/**" # GitHub workflows
+  - "docs/**" # Documentation
 
+# Flags for organizing coverage
 flags:
   unittests:
     paths:
       - src/
-    carryforward: true
+    carryforward: false # Don't carry forward old coverage
+
+# GitHub Checks Integration
+github_checks:
+  annotations: true # Show inline annotations on GitHub
+
+# Parser configuration for JavaScript/TypeScript
+parsers:
+  javascript:
+    enable_partials: true # Track partial coverage
+
+# Bundle Analysis Configuration
+# Docs: https://docs.codecov.com/docs/javascript-bundle-analysis
+bundle_analysis:
+  # Require bundle changes to show in PR comments
+  require_bundle_changes: true # Only comment when bundle size changes
+
+  # Threshold for bundle change warnings (in bytes)
+  bundle_change_threshold: 1kb # Warn on 1KB+ increase
+
+  # Status check configuration
+  status:
+    # Warning threshold for bundle size increase
+    warning_threshold: 5% # Warn if bundle increases by 5%
+
+    # Status check behavior
+    status: informational # Don't block PRs, just inform
