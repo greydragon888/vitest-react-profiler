@@ -130,38 +130,6 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
 });
 
 describe("getRenderHistory - Methods Using Cache", () => {
-  bench("getAverageRenderTime - 100 renders, single call", () => {
-    const TestComponent: FC<{ value: number }> = ({ value }) => (
-      <div>{value}</div>
-    );
-    const ProfiledComponent = withProfiler(TestComponent);
-
-    const { rerender } = render(<ProfiledComponent value={0} />);
-
-    for (let i = 1; i < 100; i++) {
-      rerender(<ProfiledComponent value={i} />);
-    }
-
-    const _avg = ProfiledComponent.getAverageRenderTime();
-  });
-
-  bench("getAverageRenderTime - 100 renders, 100 calls", () => {
-    const TestComponent: FC<{ value: number }> = ({ value }) => (
-      <div>{value}</div>
-    );
-    const ProfiledComponent = withProfiler(TestComponent);
-
-    const { rerender } = render(<ProfiledComponent value={0} />);
-
-    for (let i = 1; i < 100; i++) {
-      rerender(<ProfiledComponent value={i} />);
-    }
-
-    for (let i = 0; i < 100; i++) {
-      const _avg = ProfiledComponent.getAverageRenderTime();
-    }
-  });
-
   bench("getRendersByPhase - 100 renders, single call", () => {
     const TestComponent: FC<{ value: number }> = ({ value }) => (
       <div>{value}</div>
@@ -210,7 +178,6 @@ describe("getRenderHistory - Realistic Test Patterns", () => {
 
     // Typical test pattern: check history, average, and phases
     const _history = ProfiledComponent.getRenderHistory();
-    const _avg = ProfiledComponent.getAverageRenderTime();
     const _mounts = ProfiledComponent.getRendersByPhase("mount");
     const _updates = ProfiledComponent.getRendersByPhase("update");
   });
@@ -230,7 +197,6 @@ describe("getRenderHistory - Realistic Test Patterns", () => {
     // Simulate heavy usage
     for (let i = 0; i < 20; i++) {
       const _history = ProfiledComponent.getRenderHistory();
-      const _avg = ProfiledComponent.getAverageRenderTime();
       const _updates = ProfiledComponent.getRendersByPhase("update");
     }
   });

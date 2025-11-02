@@ -14,77 +14,12 @@ import { afterEach, describe, expect } from "vitest";
 import {
   createComponentWithRenders,
   createMultipleComponents,
-  createSimpleProfiledComponent,
   verifyMathematicalInvariants,
-  verifySafeNumbers,
 } from "./helpers";
 
 describe("Property-Based Tests: Mathematical Invariants", () => {
   afterEach(() => {
     cleanup();
-  });
-
-  describe("Average Render Time Invariants", () => {
-    test.prop([fc.nat({ max: 100 })], { numRuns: 1000 })(
-      "average render time never exceeds maximum time",
-      (numRenders) => {
-        // Skip empty case
-        if (numRenders === 0) {
-          return true;
-        }
-
-        const component = createComponentWithRenders(numRenders);
-        const history = component.getRenderHistory();
-        const avg = component.getAverageRenderTime();
-
-        const durations = history.map((r) => r.actualDuration);
-        const max = Math.max(...durations);
-
-        return avg <= max;
-      },
-    );
-
-    test.prop([fc.nat({ max: 100 })], { numRuns: 1000 })(
-      "average render time never less than minimum time",
-      (numRenders) => {
-        // Skip empty case
-        if (numRenders === 0) {
-          return true;
-        }
-
-        const component = createComponentWithRenders(numRenders);
-        const history = component.getRenderHistory();
-        const avg = component.getAverageRenderTime();
-
-        const durations = history.map((r) => r.actualDuration);
-        const min = Math.min(...durations);
-
-        return avg >= min;
-      },
-    );
-
-    test.prop([fc.nat({ max: 100 })], { numRuns: 1000 })(
-      "average equals zero for component with no renders",
-      (numRenders) => {
-        const component = createComponentWithRenders(numRenders);
-
-        if (numRenders === 0) {
-          return component.getAverageRenderTime() === 0;
-        }
-
-        return true;
-      },
-    );
-
-    test.prop([fc.integer({ min: 1, max: 100 })], { numRuns: 1000 })(
-      "average is always a safe number (not NaN, not Infinity)",
-      (numRenders) => {
-        const component = createComponentWithRenders(numRenders);
-        const avg = component.getAverageRenderTime();
-
-        return Number.isFinite(avg) && !Number.isNaN(avg);
-      },
-    );
   });
 
   describe("Render Count Invariants", () => {
@@ -226,15 +161,6 @@ describe("Property-Based Tests: Mathematical Invariants", () => {
         }
 
         return true;
-      },
-    );
-
-    test.prop([fc.nat({ max: 100 })], { numRuns: 1000 })(
-      "all values in render history are safe numbers",
-      (numRenders) => {
-        const component = createComponentWithRenders(numRenders);
-
-        return verifySafeNumbers(component);
       },
     );
   });
@@ -411,47 +337,6 @@ describe("Property-Based Tests: WeakMap Isolation", () => {
         return components.every(
           (C, idx) => C.getRenderCount() === renderCounts[idx],
         );
-      },
-    );
-  });
-});
-
-describe("Property-Based Tests: Edge Cases", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  describe("Empty State", () => {
-    test.prop([fc.constant(undefined)])(
-      "component with no renders returns empty data",
-      () => {
-        const component = createSimpleProfiledComponent();
-
-        return (
-          component.getRenderCount() === 0 &&
-          component.getRenderHistory().length === 0 &&
-          component.getAverageRenderTime() === 0 &&
-          component.getLastRender() === undefined &&
-          !component.hasMounted()
-        );
-      },
-    );
-  });
-
-  describe("Single Render", () => {
-    test.prop([fc.constant(1)])(
-      "component with single render has average equal to render duration",
-      () => {
-        const component = createComponentWithRenders(1);
-        const avg = component.getAverageRenderTime();
-        const history = component.getRenderHistory();
-        const firstRender = history[0];
-
-        if (!firstRender) {
-          return false;
-        }
-
-        return avg === firstRender.actualDuration;
       },
     );
   });

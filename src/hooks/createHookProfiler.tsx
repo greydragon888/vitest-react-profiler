@@ -35,7 +35,6 @@ export function createHookProfiler<TResult>(hook: () => TResult): {
   getRenderCount: () => number;
   getRenderHistory: () => readonly RenderInfo[];
   getLastRender: () => RenderInfo | undefined;
-  getAverageRenderTime: () => number;
 };
 
 // Type overload for hooks with parameters
@@ -51,7 +50,6 @@ export function createHookProfiler<TProps, TResult>(
   getRenderCount: () => number;
   getRenderHistory: () => readonly RenderInfo[];
   getLastRender: () => RenderInfo | undefined;
-  getAverageRenderTime: () => number;
 };
 
 // Implementation
@@ -92,6 +90,5 @@ export function createHookProfiler<
     getRenderCount: () => ProfiledHook.getRenderCount(),
     getRenderHistory: () => ProfiledHook.getRenderHistory(),
     getLastRender: () => ProfiledHook.getLastRender(),
-    getAverageRenderTime: () => ProfiledHook.getAverageRenderTime(),
   };
 }

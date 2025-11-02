@@ -1,4 +1,4 @@
-import { render, fireEvent, screen, waitFor } from "@testing-library/react";
+import { render, fireEvent, screen } from "@testing-library/react";
 import { memo, useState, useCallback } from "react";
 import { withProfiler } from "../../src";
 import {
@@ -11,11 +11,7 @@ import {
   UnmemoizedForm,
   FormField,
 } from "./components/ComplexForm.tsx";
-import {
-  MemoizedDataGrid,
-  UnmemoizedDataGrid,
-  GridRow,
-} from "./components/DataGrid.tsx";
+import { MemoizedDataGrid, GridRow } from "./components/DataGrid.tsx";
 
 describe("Memoization Performance Tests", () => {
   describe("List Component Memoization", () => {
@@ -97,34 +93,6 @@ describe("Memoization Performance Tests", () => {
       rerender(<MemoProfiled items={items} filterText="2" />);
 
       expect(ProfiledMemoizedList).toHaveRenderedTimes(2);
-    });
-
-    it("should measure performance difference between memoized and unmemoized", () => {
-      const items = generateItems(50);
-
-      const ProfiledMemoizedList = withProfiler(MemoizedList, "MemoizedList");
-      const ProfiledUnmemoizedList = withProfiler(
-        UnmemoizedList,
-        "UnmemoizedList",
-      );
-
-      render(
-        <>
-          <ProfiledMemoizedList items={items} />
-          <ProfiledUnmemoizedList items={items} />
-        </>,
-      );
-
-      const memoizedTime =
-        ProfiledMemoizedList.getLastRender()?.actualDuration ?? 0;
-      const unmemoizedTime =
-        ProfiledUnmemoizedList.getLastRender()?.actualDuration ?? 0;
-
-      expect(ProfiledMemoizedList).toHaveRenderedWithin(100);
-      expect(ProfiledUnmemoizedList).toHaveRenderedWithin(100);
-
-      console.log(`Memoized render time: ${memoizedTime.toFixed(2)}ms`);
-      console.log(`Unmemoized render time: ${unmemoizedTime.toFixed(2)}ms`);
     });
 
     it("should verify ListItem memoization", () => {
@@ -256,88 +224,6 @@ describe("Memoization Performance Tests", () => {
 
       expect(ProfiledMemoizedForm).toHaveRenderedTimes(1);
     });
-
-    it("should track performance during form validation", () => {
-      const ProfiledFormField = withProfiler(FormField, "FormField");
-
-      const TestForm = () => {
-        const [formData, setFormData] = useState({
-          firstName: "",
-          lastName: "",
-          email: "",
-        });
-        const [errors, setErrors] = useState<any>({});
-
-        const handleFieldChange = useCallback(
-          (field: keyof typeof formData) => (value: string) => {
-            setFormData((prev) => ({ ...prev, [field]: value }));
-            setErrors((prev: any) => ({ ...prev, [field]: undefined }));
-          },
-          [],
-        );
-
-        const handleSubmit = (e: React.FormEvent) => {
-          e.preventDefault();
-          const newErrors: any = {};
-
-          if (!formData.firstName) {
-            newErrors.firstName = "Required";
-          }
-          if (!formData.lastName) {
-            newErrors.lastName = "Required";
-          }
-          if (!formData.email) {
-            newErrors.email = "Required";
-          }
-
-          setErrors(newErrors);
-        };
-
-        return (
-          <form onSubmit={handleSubmit}>
-            <ProfiledFormField
-              label="First Name"
-              value={formData.firstName}
-              onChange={handleFieldChange("firstName")}
-              error={errors.firstName}
-            />
-            <ProfiledFormField
-              label="Last Name"
-              value={formData.lastName}
-              onChange={handleFieldChange("lastName")}
-              error={errors.lastName}
-            />
-            <ProfiledFormField
-              label="Email"
-              value={formData.email}
-              onChange={handleFieldChange("email")}
-              error={errors.email}
-            />
-            <button type="submit">Submit</button>
-          </form>
-        );
-      };
-
-      render(<TestForm />);
-
-      const submitButton = screen.getByText("Submit");
-      const renderCountBeforeSubmit = ProfiledFormField.getRenderCount();
-
-      fireEvent.click(submitButton);
-
-      // Fields should re-render when errors are added (3 fields)
-      expect(ProfiledFormField.getRenderCount()).toBe(
-        renderCountBeforeSubmit + 3,
-      );
-
-      const avgRenderTime = ProfiledFormField.getAverageRenderTime();
-
-      expect(ProfiledFormField).toHaveAverageRenderTime(50);
-
-      console.log(
-        `Average FormField render time during validation: ${avgRenderTime.toFixed(2)}ms`,
-      );
-    });
   });
 
   describe("DataGrid Component Memoization", () => {
@@ -423,81 +309,6 @@ describe("Memoization Performance Tests", () => {
       rerender(<MemoProfiled data={data} sortBy="name" />);
 
       expect(ProfiledMemoizedGrid).toHaveRenderedTimes(1);
-    });
-
-    it("should optimize sorting and filtering with useMemo", () => {
-      const data = generateData(50);
-
-      const ProfiledMemoizedGrid = withProfiler(
-        MemoizedDataGrid,
-        "MemoizedDataGrid",
-      );
-
-      const { rerender } = render(
-        <ProfiledMemoizedGrid data={data} filterBy="active" />,
-      );
-
-      const renderCountBefore = ProfiledMemoizedGrid.getRenderCount();
-
-      rerender(
-        <ProfiledMemoizedGrid data={data} filterBy="active" sortBy="value" />,
-      );
-
-      // Rerender should cause exactly 1 additional render
-      expect(ProfiledMemoizedGrid.getRenderCount()).toBe(renderCountBefore + 1);
-
-      const renderTime =
-        ProfiledMemoizedGrid.getLastRender()?.actualDuration ?? 0;
-
-      expect(ProfiledMemoizedGrid).toHaveRenderedWithin(100);
-
-      console.log(
-        `Grid re-render with sort change: ${renderTime.toFixed(2)}ms`,
-      );
-    });
-
-    it("should compare performance between memoized and unmemoized grids", async () => {
-      const data = generateData(100);
-
-      const ProfiledMemoizedGrid = withProfiler(
-        MemoizedDataGrid,
-        "MemoizedDataGrid",
-      );
-      const ProfiledUnmemoizedGrid = withProfiler(
-        UnmemoizedDataGrid,
-        "UnmemoizedDataGrid",
-      );
-
-      render(
-        <>
-          <ProfiledMemoizedGrid data={data} />
-          <ProfiledUnmemoizedGrid data={data} />
-        </>,
-      );
-
-      const memoizedInitialTime =
-        ProfiledMemoizedGrid.getLastRender()?.actualDuration ?? 0;
-      const unmemoizedInitialTime =
-        ProfiledUnmemoizedGrid.getLastRender()?.actualDuration ?? 0;
-
-      console.log(`Initial render comparison:`);
-      console.log(`  Memoized: ${memoizedInitialTime.toFixed(2)}ms`);
-      console.log(`  Unmemoized: ${unmemoizedInitialTime.toFixed(2)}ms`);
-
-      const rows = screen.getAllByRole("row");
-
-      fireEvent.click(rows[1]);
-
-      await waitFor(() => {
-        const memoizedUpdateTime =
-          ProfiledMemoizedGrid.getLastRender()?.actualDuration ?? 0;
-        const unmemoizedUpdateTime =
-          ProfiledUnmemoizedGrid.getLastRender()?.actualDuration ?? 0;
-
-        console.log(`Update render comparison:`);
-        console.log(`  Memoized: ${memoizedUpdateTime.toFixed(2)}ms`);
-        console.log(`  Unmemoized: ${unmemoizedUpdateTime.toFixed(2)}ms`);
-      });
     });
   });
 
@@ -598,15 +409,6 @@ describe("Memoization Performance Tests", () => {
         rerender(<MemoProfiled value={i % 2} />);
       }
 
-      const history = ProfiledComponent.getRenderHistory();
-      const preventedRenders = 10 - history.length + 1;
-
-      console.log(`Memo prevented ${preventedRenders} unnecessary renders`);
-      console.log(`Actual renders: ${history.length}`);
-      console.log(
-        `Average render time: ${ProfiledComponent.getAverageRenderTime().toFixed(2)}ms`,
-      );
-
       expect(ProfiledComponent.getRenderCount()).toBeLessThanOrEqual(11);
     });
 
@@ -653,64 +455,6 @@ describe("Memoization Performance Tests", () => {
       // DataList doesn't re-render because items reference is stable
       expect(ProfiledDataList).toHaveRenderedTimes(1);
       expect(ProfiledDataList).toHaveMountedOnce();
-    });
-  });
-
-  describe("Performance Budget Testing", () => {
-    it("should verify all components meet performance budgets", () => {
-      const performanceBudgets = {
-        MemoizedList: 50,
-        MemoizedForm: 75,
-        MemoizedDataGrid: 100,
-      };
-
-      const items = Array.from({ length: 50 }, (_, i) => ({
-        id: `item-${i}`,
-        text: `Item ${i}`,
-        highlighted: false,
-      }));
-
-      const data = Array.from({ length: 50 }, (_, i) => ({
-        id: `row-${i}`,
-        name: `Item ${i}`,
-        value: i * 100,
-        status: "active" as const,
-      }));
-
-      // Test MemoizedList
-      const ProfiledList = withProfiler(MemoizedList, "MemoizedList");
-
-      render(<ProfiledList items={items} />);
-      expect(ProfiledList).toHaveRenderedWithin(
-        performanceBudgets.MemoizedList,
-      );
-
-      // Test MemoizedForm
-      const ProfiledForm = withProfiler(MemoizedForm, "MemoizedForm");
-
-      render(<ProfiledForm />);
-      expect(ProfiledForm).toHaveRenderedWithin(
-        performanceBudgets.MemoizedForm,
-      );
-
-      // Test MemoizedDataGrid
-      const ProfiledGrid = withProfiler(MemoizedDataGrid, "MemoizedDataGrid");
-
-      render(<ProfiledGrid data={data} />);
-      expect(ProfiledGrid).toHaveRenderedWithin(
-        performanceBudgets.MemoizedDataGrid,
-      );
-
-      console.log("Performance Budget Results:");
-      console.log(
-        `  MemoizedList: ${ProfiledList.getLastRender()?.actualDuration.toFixed(2)}ms / ${performanceBudgets.MemoizedList}ms`,
-      );
-      console.log(
-        `  MemoizedForm: ${ProfiledForm.getLastRender()?.actualDuration.toFixed(2)}ms / ${performanceBudgets.MemoizedForm}ms`,
-      );
-      console.log(
-        `  MemoizedDataGrid: ${ProfiledGrid.getLastRender()?.actualDuration.toFixed(2)}ms / ${performanceBudgets.MemoizedDataGrid}ms`,
-      );
     });
   });
 });

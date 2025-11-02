@@ -52,36 +52,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
       },
     );
 
-    test.prop([fc.integer({ min: 1000, max: 5000 })], {
-      numRuns: 5,
-      timeout: 60_000,
-    })(
-      "mathematical invariants hold with thousands of renders",
-      (numRenders) => {
-        const Component = createSimpleProfiledComponent();
-        const { rerender } = render(<Component value={0} />);
-
-        for (let i = 1; i < numRenders; i++) {
-          rerender(<Component value={i} />);
-        }
-
-        const history = Component.getRenderHistory();
-        const average = Component.getAverageRenderTime();
-
-        const durations = history.map((r) => r.actualDuration);
-        const min = Math.min(...durations);
-        const max = Math.max(...durations);
-
-        // Mathematical invariants must still hold
-        return (
-          average >= min &&
-          average <= max &&
-          Number.isFinite(average) &&
-          !Number.isNaN(average)
-        );
-      },
-    );
-
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
       timeout: 60_000,
@@ -267,41 +237,12 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           entry &&
           typeof entry.phase === "string" &&
-          Number.isFinite(entry.actualDuration) &&
-          Number.isFinite(entry.baseDuration) &&
-          Number.isFinite(entry.startTime) &&
-          Number.isFinite(entry.commitTime) &&
           Number.isFinite(entry.timestamp),
       );
     });
   });
 
   describe("Performance Invariants", () => {
-    test.prop([fc.integer({ min: 1000, max: 3000 })], {
-      numRuns: 5,
-      timeout: 60_000,
-    })(
-      "getAverageRenderTime computes correctly with many renders",
-      (numRenders) => {
-        const Component = createSimpleProfiledComponent();
-        const { rerender } = render(<Component value={0} />);
-
-        for (let i = 1; i < numRenders; i++) {
-          rerender(<Component value={i} />);
-        }
-
-        const average = Component.getAverageRenderTime();
-        const history = Component.getRenderHistory();
-
-        const manualAverage =
-          history.reduce((sum, r) => sum + r.actualDuration, 0) /
-          history.length;
-
-        // Should match manual calculation (with floating point tolerance)
-        return Math.abs(average - manualAverage) < 0.001;
-      },
-    );
-
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
       timeout: 60_000,

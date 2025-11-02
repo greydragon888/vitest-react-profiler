@@ -347,6 +347,191 @@ describe("Property-Based Tests: Cache Behavior", () => {
       },
     );
   });
+
+  describe("getRendersByPhase() Caching", () => {
+    test.prop(
+      [
+        fc.integer({ min: 5, max: 30 }),
+        fc.integer({ min: 2, max: 20 }),
+        fc.constantFrom("mount", "update", "nested-update"),
+      ],
+      { numRuns: 1000 },
+    )(
+      "getRendersByPhase returns same reference with multiple calls without renders",
+      (numRenders, numReads, phase) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Create multiple renders
+        for (let i = 1; i < numRenders; i++) {
+          rerender(<Component value={i} />);
+        }
+
+        // Multiple reads of the same phase
+        const references: (readonly RenderInfo[])[] = [];
+
+        for (let i = 0; i < numReads; i++) {
+          references.push(Component.getRendersByPhase(phase));
+        }
+
+        // All references should be identical (same object reference)
+        return references.every((ref) => ref === references[0]);
+      },
+    );
+
+    test.prop(
+      [
+        fc.integer({ min: 2, max: 30 }),
+        fc.constantFrom("mount", "update", "nested-update"),
+      ],
+      { numRuns: 1000 },
+    )(
+      "getRendersByPhase cache is invalidated after each new render",
+      (numRenders, phase) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        for (let i = 1; i < numRenders; i++) {
+          const before = Component.getRendersByPhase(phase);
+
+          rerender(<Component value={i} />);
+          const after = Component.getRendersByPhase(phase);
+
+          // Cache MUST be invalidated - different references
+          if (before === after) {
+            return false; // Found a bug!
+          }
+        }
+
+        return true;
+      },
+    );
+
+    test.prop([fc.integer({ min: 10, max: 30 })], { numRuns: 1000 })(
+      "different phases have independent caches",
+      (numRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        for (let i = 1; i < numRenders; i++) {
+          rerender(<Component value={i} />);
+        }
+
+        // Read all phases multiple times
+        const mountRefs = [
+          Component.getRendersByPhase("mount"),
+          Component.getRendersByPhase("mount"),
+        ];
+        const updateRefs = [
+          Component.getRendersByPhase("update"),
+          Component.getRendersByPhase("update"),
+        ];
+        const nestedRefs = [
+          Component.getRendersByPhase("nested-update"),
+          Component.getRendersByPhase("nested-update"),
+        ];
+
+        // Each phase should cache independently
+        const mountSame = mountRefs[0] === mountRefs[1];
+        const updateSame = updateRefs[0] === updateRefs[1];
+        const nestedSame = nestedRefs[0] === nestedRefs[1];
+
+        // All should be cached
+        if (!mountSame || !updateSame || !nestedSame) {
+          return false;
+        }
+
+        // Different phases should have different references (unless both empty)
+        if (mountRefs[0]?.length === 0 && updateRefs[0]?.length === 0) {
+          return true; // Both empty is ok
+        }
+
+        return mountRefs[0] !== updateRefs[0];
+      },
+    );
+  });
+
+  describe("hasMounted() Caching", () => {
+    test.prop(
+      [fc.integer({ min: 5, max: 30 }), fc.integer({ min: 2, max: 50 })],
+      { numRuns: 1000 },
+    )(
+      "hasMounted returns same value with multiple calls without renders",
+      (numRenders, numReads) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Create multiple renders
+        for (let i = 1; i < numRenders; i++) {
+          rerender(<Component value={i} />);
+        }
+
+        // Multiple reads
+        const results: boolean[] = [];
+
+        for (let i = 0; i < numReads; i++) {
+          results.push(Component.hasMounted());
+        }
+
+        // All results should be identical and true (we did render)
+        return results.every(Boolean);
+      },
+    );
+
+    test.prop([fc.integer({ min: 2, max: 30 })], { numRuns: 1000 })(
+      "hasMounted cache works correctly before and after first render",
+      (numReads) => {
+        const Component = createSimpleProfiledComponent();
+
+        // Before rendering - should be false
+        const beforeResults: boolean[] = [];
+
+        for (let i = 0; i < numReads; i++) {
+          beforeResults.push(Component.hasMounted());
+        }
+
+        const allFalseBefore = beforeResults.every((r) => !r);
+
+        // After rendering - should be true
+        render(<Component />);
+        const afterResults: boolean[] = [];
+
+        for (let i = 0; i < numReads; i++) {
+          afterResults.push(Component.hasMounted());
+        }
+
+        const allTrueAfter = afterResults.every(Boolean);
+
+        return allFalseBefore && allTrueAfter;
+      },
+    );
+
+    test.prop([fc.integer({ min: 2, max: 30 })], { numRuns: 1000 })(
+      "hasMounted remains consistent through multiple updates",
+      (numRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // After mount, hasMounted should always be true
+        for (let i = 1; i < numRenders; i++) {
+          // Check before update
+          const beforeUpdate = Component.hasMounted();
+
+          rerender(<Component value={i} />);
+
+          // Check after update
+          const afterUpdate = Component.hasMounted();
+
+          // Should be true both times
+          if (!beforeUpdate || !afterUpdate) {
+            return false;
+          }
+        }
+
+        return true;
+      },
+    );
+  });
 });
 
 describe("Property-Based Tests: Cache Edge Cases", () => {

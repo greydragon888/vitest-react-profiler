@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import type { RenderInfo } from "@/types.ts";
 import {
   formatRenderHistory,
   formatRenderSummary,
-  formatPerformanceMetrics,
-} from "../../src/utils/formatRenderHistory";
-
-import type { RenderInfo } from "../../src/types";
+} from "@/utils/formatRenderHistory.ts";
 
 describe("formatRenderHistory", () => {
   it("should return 'No renders' for empty history", () => {
@@ -19,10 +17,6 @@ describe("formatRenderHistory", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 2.5,
-        baseDuration: 3,
-        startTime: 0,
-        commitTime: 2.5,
         timestamp: Date.now(),
       },
     ];
@@ -30,8 +24,7 @@ describe("formatRenderHistory", () => {
     const result = formatRenderHistory(history);
 
     expect(result).toContain("#1 [mount");
-    expect(result).toContain("0.00ms");
-    expect(result).toContain("2.50ms");
+    expect(result).toContain("at");
     expect(result).toContain("💡 Tip:");
   });
 
@@ -39,26 +32,14 @@ describe("formatRenderHistory", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 2.5,
-        baseDuration: 3,
-        startTime: 0,
-        commitTime: 2.5,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1.2,
-        baseDuration: 3,
-        startTime: 10.5,
-        commitTime: 11.7,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1.1,
-        baseDuration: 3,
-        startTime: 15.7,
-        commitTime: 16.8,
         timestamp: Date.now(),
       },
     ];
@@ -78,18 +59,10 @@ describe("formatRenderHistory", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 11,
         timestamp: Date.now(),
       },
     ];
@@ -109,10 +82,6 @@ describe("formatRenderHistory", () => {
     // Test edge case: history.length === maxItems
     const history: RenderInfo[] = Array.from({ length: 5 }, (_, i) => ({
       phase: i === 0 ? ("mount" as const) : ("update" as const),
-      actualDuration: 1,
-      baseDuration: 2,
-      startTime: i * 10,
-      commitTime: i * 10 + 1,
       timestamp: Date.now() + i,
     }));
 
@@ -126,10 +95,6 @@ describe("formatRenderHistory", () => {
   it("should not show more indicator when history length equals maxItems", () => {
     const history: RenderInfo[] = Array.from({ length: 10 }, (_, i) => ({
       phase: "update" as const,
-      actualDuration: 1,
-      baseDuration: 2,
-      startTime: i * 10,
-      commitTime: i * 10 + 1,
       timestamp: Date.now() + i,
     }));
 
@@ -143,10 +108,6 @@ describe("formatRenderHistory", () => {
   it("should truncate to maxItems and show 'and X more' message", () => {
     const history: RenderInfo[] = Array.from({ length: 15 }, (_, i) => ({
       phase: i === 0 ? ("mount" as const) : ("update" as const),
-      actualDuration: 1,
-      baseDuration: 2,
-      startTime: i * 10,
-      commitTime: i * 10 + 1,
       timestamp: Date.now() + i,
     }));
 
@@ -161,10 +122,6 @@ describe("formatRenderHistory", () => {
     const history: RenderInfo[] = [
       {
         phase: "nested-update",
-        actualDuration: 0.5,
-        baseDuration: 1,
-        startTime: 0,
-        commitTime: 0.5,
         timestamp: Date.now(),
       },
     ];
@@ -186,10 +143,6 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
     ];
@@ -203,26 +156,14 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 11,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 20,
-        commitTime: 21,
         timestamp: Date.now(),
       },
     ];
@@ -236,18 +177,10 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "nested-update",
-        actualDuration: 0.5,
-        baseDuration: 1,
-        startTime: 5,
-        commitTime: 5.5,
         timestamp: Date.now(),
       },
     ];
@@ -261,10 +194,6 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
     ];
@@ -280,18 +209,10 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 11,
         timestamp: Date.now(),
       },
     ];
@@ -306,18 +227,10 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 11,
         timestamp: Date.now(),
       },
     ];
@@ -334,10 +247,6 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
     ];
@@ -354,10 +263,6 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "nested-update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
     ];
@@ -374,18 +279,10 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "nested-update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "nested-update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 11,
         timestamp: Date.now(),
       },
     ];
@@ -403,26 +300,14 @@ describe("formatRenderSummary", () => {
     const history: RenderInfo[] = [
       {
         phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
         timestamp: Date.now(),
       },
       {
         phase: "update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 11,
         timestamp: Date.now(),
       },
       {
         phase: "nested-update",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 20,
-        commitTime: 21,
         timestamp: Date.now(),
       },
     ];
@@ -430,102 +315,5 @@ describe("formatRenderSummary", () => {
     const result = formatRenderSummary(history);
 
     expect(result).toBe("3 renders (1 mount, 1 update, 1 nested update)");
-  });
-});
-
-describe("formatPerformanceMetrics", () => {
-  it("should return 'No performance data' for empty history", () => {
-    const result = formatPerformanceMetrics([]);
-
-    expect(result).toBe("No performance data");
-  });
-
-  it("should calculate metrics for single render", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        actualDuration: 5.25,
-        baseDuration: 6,
-        startTime: 0,
-        commitTime: 5.25,
-        timestamp: Date.now(),
-      },
-    ];
-
-    const result = formatPerformanceMetrics(history);
-
-    expect(result).toBe("Avg: 5.25ms, Min: 5.25ms, Max: 5.25ms");
-  });
-
-  it("should calculate metrics for multiple renders", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        actualDuration: 1,
-        baseDuration: 2,
-        startTime: 0,
-        commitTime: 1,
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        actualDuration: 2,
-        baseDuration: 2,
-        startTime: 10,
-        commitTime: 12,
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        actualDuration: 3,
-        baseDuration: 2,
-        startTime: 20,
-        commitTime: 23,
-        timestamp: Date.now(),
-      },
-    ];
-
-    const result = formatPerformanceMetrics(history);
-
-    // Average: (1 + 2 + 3) / 3 = 2.0
-    expect(result).toContain("Avg: 2.00ms");
-    expect(result).toContain("Min: 1.00ms");
-    expect(result).toContain("Max: 3.00ms");
-  });
-
-  it("should handle varying performance correctly", () => {
-    const history: RenderInfo[] = [
-      {
-        phase: "mount",
-        actualDuration: 0.5,
-        baseDuration: 1,
-        startTime: 0,
-        commitTime: 0.5,
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        actualDuration: 10.5,
-        baseDuration: 1,
-        startTime: 10,
-        commitTime: 20.5,
-        timestamp: Date.now(),
-      },
-      {
-        phase: "update",
-        actualDuration: 1.5,
-        baseDuration: 1,
-        startTime: 30,
-        commitTime: 31.5,
-        timestamp: Date.now(),
-      },
-    ];
-
-    const result = formatPerformanceMetrics(history);
-
-    // Average: (0.5 + 10.5 + 1.5) / 3 = 4.17
-    expect(result).toContain("Avg: 4.17ms");
-    expect(result).toContain("Min: 0.50ms");
-    expect(result).toContain("Max: 10.50ms");
   });
 });

@@ -87,41 +87,6 @@ describe("getRenderHistory caching", () => {
     // and is tested indirectly through test isolation
   });
 
-  it("should handle methods that depend on getRenderHistory", () => {
-    const Component = ({ value }: { value: number }) => <div>{value}</div>;
-    const ProfiledComponent = withProfiler(Component);
-
-    const { rerender } = render(<ProfiledComponent value={1} />);
-
-    // Call methods that internally use getRenderHistory
-    const avg1 = ProfiledComponent.getAverageRenderTime();
-    const avg2 = ProfiledComponent.getAverageRenderTime();
-
-    // Average should be consistent
-    expect(avg1).toBe(avg2);
-
-    // Get phases
-    const mounts1 = ProfiledComponent.getRendersByPhase("mount");
-    const mounts2 = ProfiledComponent.getRendersByPhase("mount");
-
-    expect(mounts1).toHaveLength(1);
-    expect(mounts2).toHaveLength(1);
-
-    // Re-render
-    rerender(<ProfiledComponent value={2} />);
-
-    // New average after re-render
-    const avg3 = ProfiledComponent.getAverageRenderTime();
-
-    // Should be recalculated
-    expect(avg3).toBeDefined();
-
-    // Phases should include update now
-    const updates = ProfiledComponent.getRendersByPhase("update");
-
-    expect(updates).toHaveLength(1);
-  });
-
   it("should maintain cache isolation between different components", () => {
     const Component1 = () => <div>Component 1</div>;
     const Component2 = () => <div>Component 2</div>;
@@ -210,5 +175,200 @@ describe("getRenderHistory caching", () => {
 
     // But different from old references
     expect(newFirstRef).not.toBe(firstRef);
+  });
+});
+
+describe("getRendersByPhase caching", () => {
+  it("should return the same reference when called multiple times without new renders", () => {
+    const Component = ({ value }: { value: number }) => <div>{value}</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    // Create multiple renders
+    for (let i = 1; i < 10; i++) {
+      rerender(<ProfiledComponent value={i} />);
+    }
+
+    // Multiple calls should return same reference
+    const updates1 = ProfiledComponent.getRendersByPhase("update");
+    const updates2 = ProfiledComponent.getRendersByPhase("update");
+    const updates3 = ProfiledComponent.getRendersByPhase("update");
+
+    expect(updates1).toBe(updates2);
+    expect(updates2).toBe(updates3);
+  });
+
+  it("should invalidate cache on new render", () => {
+    const Component = ({ value }: { value: number }) => <div>{value}</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    const updates1 = ProfiledComponent.getRendersByPhase("update");
+
+    // Re-render
+    rerender(<ProfiledComponent value={1} />);
+
+    const updates2 = ProfiledComponent.getRendersByPhase("update");
+
+    // Should be different references after re-render
+    expect(updates1).not.toBe(updates2);
+
+    // Length should have increased
+    expect(updates1).toHaveLength(0);
+    expect(updates2).toHaveLength(1);
+  });
+
+  it("should cache different phases independently", () => {
+    const Component = ({ value }: { value: number }) => <div>{value}</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    for (let i = 1; i < 5; i++) {
+      rerender(<ProfiledComponent value={i} />);
+    }
+
+    // Get different phases
+    const mounts1 = ProfiledComponent.getRendersByPhase("mount");
+    const updates1 = ProfiledComponent.getRendersByPhase("update");
+    const nested1 = ProfiledComponent.getRendersByPhase("nested-update");
+
+    // Read again
+    const mounts2 = ProfiledComponent.getRendersByPhase("mount");
+    const updates2 = ProfiledComponent.getRendersByPhase("update");
+    const nested2 = ProfiledComponent.getRendersByPhase("nested-update");
+
+    // Each phase should cache independently
+    expect(mounts1).toBe(mounts2);
+    expect(updates1).toBe(updates2);
+    expect(nested1).toBe(nested2);
+
+    // Different phases should have different references
+    expect(mounts1).not.toBe(updates1);
+  });
+
+  it("should return frozen arrays", () => {
+    const Component = ({ value }: { value: number }) => <div>{value}</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    rerender(<ProfiledComponent value={1} />);
+
+    const updates = ProfiledComponent.getRendersByPhase("update");
+
+    // Should be frozen
+    expect(Object.isFrozen(updates)).toBe(true);
+  });
+
+  it("should return empty array when no profiler data exists", () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    // Call without rendering - should return empty array
+    const result = ProfiledComponent.getRendersByPhase("mount");
+
+    expect(result).toStrictEqual([]);
+  });
+});
+
+describe("hasMounted caching", () => {
+  it("should return the same value when called multiple times without new renders", () => {
+    const Component = ({ value }: { value: number }) => <div>{value}</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    // Create multiple renders
+    for (let i = 1; i < 10; i++) {
+      rerender(<ProfiledComponent value={i} />);
+    }
+
+    // First call computes and caches the result
+    const result1 = ProfiledComponent.hasMounted();
+
+    // Subsequent calls should return the SAME cached value without recomputing
+    const result2 = ProfiledComponent.hasMounted();
+    const result3 = ProfiledComponent.hasMounted();
+
+    expect(result1).toBe(true);
+    expect(result2).toBe(true);
+    expect(result3).toBe(true);
+
+    // All three calls should return the same result
+    // This tests that the cache (profilerData.hasMountedCache) is being used
+    expect(result1).toBe(result2);
+    expect(result2).toBe(result3);
+  });
+
+  it("should return false when no profiler data exists", () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    // Call without rendering
+    const result = ProfiledComponent.hasMounted();
+
+    expect(result).toBe(false);
+  });
+
+  it("should cache correctly before and after mount", () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    // Before mount - should be false (cached)
+    expect(ProfiledComponent.hasMounted()).toBe(false);
+    expect(ProfiledComponent.hasMounted()).toBe(false);
+
+    // After mount - should be true (cache invalidated then cached again)
+    render(<ProfiledComponent />);
+
+    expect(ProfiledComponent.hasMounted()).toBe(true);
+    expect(ProfiledComponent.hasMounted()).toBe(true);
+  });
+
+  it("should remain true through updates", () => {
+    const Component = ({ value }: { value: number }) => <div>{value}</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    // After mount
+    expect(ProfiledComponent.hasMounted()).toBe(true);
+
+    // After updates
+    rerender(<ProfiledComponent value={1} />);
+
+    expect(ProfiledComponent.hasMounted()).toBe(true);
+
+    rerender(<ProfiledComponent value={2} />);
+
+    expect(ProfiledComponent.hasMounted()).toBe(true);
+  });
+});
+
+describe("getRenderCount edge cases", () => {
+  it("should return 0 when no profiler data exists", () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    // Call without rendering
+    const count = ProfiledComponent.getRenderCount();
+
+    expect(count).toBe(0);
+  });
+});
+
+describe("getRenderHistory edge cases", () => {
+  it("should return empty array when no profiler data exists", () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    // Call without rendering
+    const history = ProfiledComponent.getRenderHistory();
+
+    expect(history).toStrictEqual([]);
+    expect(Object.isFrozen(history)).toBe(true);
   });
 });

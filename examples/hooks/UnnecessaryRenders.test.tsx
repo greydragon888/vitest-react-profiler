@@ -144,34 +144,6 @@ describe("Unnecessary Renders Detection", () => {
     });
   });
 
-  describe("Simplified API: createHookProfiler", () => {
-    it("should use createHookProfiler for cleaner assertions", () => {
-      // Using simplified API
-      function useBadHook(value: number) {
-        const [state, setState] = useState(value);
-
-        useEffect(() => {
-          setState(value * 2);
-        }, [value]);
-
-        return state;
-      }
-
-      const profiler = createHookProfiler(({ value }) => useBadHook(value), {
-        value: 10,
-      });
-
-      // Clean assertion API
-      expect(() => profiler.expectRenderCount(1)).toThrow(
-        /Expected 1 render\(s\), but got 2/,
-      );
-
-      // Get metrics
-      const avgTime = profiler.getAverageRenderTime();
-      expect(avgTime).toBeGreaterThanOrEqual(0);
-    });
-  });
-
   describe("Real-World: Data Fetching Anti-Pattern", () => {
     it("should detect unnecessary renders from data fetching hooks", () => {
       // ❌ BAD: Setting loading state unnecessarily

@@ -5,21 +5,107 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.2] - 2025-11-01
+## [1.4.0] - 2025-11-02
+
+### BREAKING CHANGES
+
+**vitest-react-profiler** now focuses exclusively on **render counting and phase tracking**, removing all time-based performance measurement features.
+
+**Why this change?** Time-based metrics in test environments don't reflect real-world performance and provide unreliable, misleading data.
+Instead of offering useful insights, they could lead to incorrect conclusions about component performance.
+The library now focuses on what actually matters: **detecting unnecessary re-renders** through deterministic render counting and phase tracking.
+
+**Removed from `RenderInfo` interface:**
+
+- `actualDuration` - Time spent rendering the component
+- `baseDuration` - Estimated time without memoization
+- `startTime` - When React began rendering
+- `commitTime` - When React committed the render
+
+**Removed matchers:**
+
+- `toHaveRenderedWithin(ms)` - Check last render duration
+- `toHaveAverageRenderTime(ms)` - Check average render time across all renders
+
+**Removed methods:**
+
+- `getAverageRenderTime()` - Get average render duration
+
+**Removed utilities:**
+
+- `formatPerformanceMetrics()` - Format performance metrics for display
 
 ### Performance
 
-- **Metrics caching optimization** - Significantly improved performance of `getAverageRenderTime()` method
-  - **Impact**: Up to 35x faster for repeated calls (17-35x benchmarked improvement)
-  - O(1) performance for cached calls vs O(n) recalculation
-  - 35x speedup on small histories (10 renders), 17-20x on large (100-200 renders)
-  - Benchmarked with 100 consecutive calls: 0.4ms (cached) vs 15ms (uncached) for 10 renders
-  - Fixed stack overflow bug with `Math.min(...array)` on 200+ render histories
-  - Introduced `metricsCache` in `ProfilerData` interface storing average, min, max, total
-  - Cache invalidation on new renders via `historyVersion` tracking
-  - All metrics (average, min, max, total) computed in single-pass for-loop (no array operations)
-  - Cache automatically cleared between tests
-  - 100% backward compatible - no breaking changes to public API
+- **Optimized `getRendersByPhase()` performance** - Added phase-specific caching
+  - **Impact**: O(n) → O(1) for repeated calls with same phase
+  - Cache invalidated automatically on new renders
+  - Separate cache entries for "mount", "update", and "nested-update" phases
+  - Frozen arrays returned for immutability
+
+- **Optimized `hasMounted()` performance** - Added boolean result caching
+  - **Impact**: O(n) → O(1) for repeated calls
+  - Cache invalidated automatically on new renders
+  - Eliminates redundant array traversal
+
+- **Removed unused `historyVersion` field** - Simplified `ProfilerData` interface
+  - Field was declared but never used in the codebase
+  - Reduced memory footprint per component
+
+### Fixed
+
+- **Test execution memory exhaustion** - Tests no longer consume all available memory
+  - **Impact**: Prevents IDE crashes during test runs
+  - Limited concurrent test threads to 4 (via `poolOptions.maxThreads`)
+  - Excluded stress tests and property-based tests from default test run
+  - Separate npm scripts: `test:stress` and `test:properties` for targeted execution
+
+- **Custom matchers not registered globally** - Fixed 17 failing unit tests
+  - Added `import "../src/matchers"` to `tests/setup.ts`
+  - Matchers now available in all test files without explicit import
+  - Resolved "Invalid Chai property" errors
+
+### Changed
+
+- **Comprehensive documentation update** - README.md updated throughout
+  - Removed all references to time-based matchers and methods
+  - Updated error message examples to show timestamp-based format
+  - Replaced "Performance Budget Testing" with "Render Count Monitoring"
+  - Updated "CI Performance Monitoring" to "CI Render Count Monitoring"
+  - Simplified API reference section
+  - Updated all code examples to focus on render counting
+
+- **Examples cleanup** - Removed 1,225 lines of time-based testing examples
+  - Updated `examples/basic/Basic.test.tsx`
+  - Updated `examples/hooks/*` (4 files)
+  - Updated `examples/memoization/*` (2 files)
+  - Updated `examples/performance/PerformanceTest.test.tsx`
+  - All examples now focus on render counting and phase tracking
+
+### Added
+
+- **Enhanced caching tests** - Comprehensive test coverage for new cache optimizations
+  - 6 new property-based tests in `tests/property/cache.properties.tsx`
+  - `getRendersByPhase()` caching behavior tests
+  - `hasMounted()` caching behavior tests
+  - Cache invalidation tests
+  - Cache isolation tests between components
+
+- **Property descriptor tests** - Immutability verification
+  - Tests for non-writable `displayName` property
+  - Tests for non-writable and non-enumerable `OriginalComponent` property
+  - Verification of Object.defineProperty descriptors
+
+- **Edge-case test coverage**
+  - `toHaveOnlyUpdated()` edge case: component with only updates (no mount)
+  - Empty profiler data edge cases for all methods
+
+### Infrastructure
+
+- All 237 tests passing with optimized memory usage
+- Codebase reduced by ~2,051 lines (-73% in affected files)
+
+## [1.3.2] - 2025-11-01
 
 ### Code Quality
 
@@ -34,30 +120,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `any` usage now limited to 3 internal helper functions (documented)
   - Better IDE autocompletion and type inference
   - Reduced risk of type-related bugs
-
-### Added
-
-- 13 comprehensive tests for metrics caching (`tests/unit/metrics-cache.test.tsx`, `tests/property/metrics-cache.properties.tsx`)
-  - **8 unit tests**:
-    - Cache behavior on unchanged history
-    - Cache invalidation on new renders
-    - Efficient caching for large histories (1000 renders)
-    - Multiple consecutive calls return cached values
-    - Consistent values across repeated calls
-    - Edge case: zero renders
-    - Edge case: single render
-    - Component isolation (independent caches)
-  - **5 property-based tests** (using fast-check):
-    - Cache after N renders (1-100 randomized)
-    - Cache invalidation after additional renders
-    - M consecutive calls caching (2-20 randomized)
-    - Performance improvement on large histories (10-200 randomized)
-    - Interleaved renders and reads (randomized patterns)
-
-### Infrastructure
-
-- All 261 tests passing (+13 new for metrics caching)
-- Code coverage: 98.35% (+0.04%)
 
 ## [1.3.1] - 2025-11-01
 
@@ -239,6 +301,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.4.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.4.0
 [1.3.2]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.2
 [1.3.1]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.1
 [1.3.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.0

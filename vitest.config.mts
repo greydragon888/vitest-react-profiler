@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 
 import { defineConfig } from "vitest/config";
 
@@ -91,9 +91,18 @@ export default defineConfig({
 
     /**
      * Test filtering
+     * Exclude memory-intensive stress and property tests from default run.
+     * Run them separately with: npm run test:stress or npm run test:properties
      */
     include: ["tests/**/*.test.{ts,tsx}", "tests/**/*.spec.{ts,tsx}"],
-    exclude: ["node_modules", "dist", ".idea", ".git", ".cache"],
+    exclude: [
+      "node_modules",
+      "dist",
+      ".idea",
+      ".git",
+      ".cache",
+      "tests/property/**/*.properties.{ts,tsx}",
+    ],
 
     /**
      * Timeout configuration
@@ -101,6 +110,23 @@ export default defineConfig({
      */
     testTimeout: 10000,
     hookTimeout: 10000,
+
+    /**
+     * Pool options for worker threads
+     * Limit parallelism to prevent memory exhaustion
+     */
+    poolOptions: {
+      threads: {
+        // Limit number of concurrent workers to reduce memory usage
+        maxThreads: 4,
+        minThreads: 1,
+        // Enable isolation for accurate profiling
+        isolate: true,
+      },
+    },
+
+    // Use threads pool for better performance with async tests
+    pool: "threads",
   },
 
   /**

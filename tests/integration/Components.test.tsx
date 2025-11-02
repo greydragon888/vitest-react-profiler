@@ -58,37 +58,6 @@ describe("Profiler Usage Examples", () => {
     });
   });
 
-  describe("Performance monitoring", () => {
-    it("should measure render duration", () => {
-      render(<ProfiledCounter />);
-
-      // Check that render completed within 50ms (adjust based on your needs)
-      expect(ProfiledCounter).toHaveRenderedWithin(50);
-
-      // Get specific render information
-      const lastRender = ProfiledCounter.getLastRender();
-
-      expect(lastRender?.phase).toBe("mount");
-      expect(lastRender?.actualDuration).toBeLessThan(50);
-    });
-
-    it("should track average render time", () => {
-      const { rerender } = render(<ProfiledCounter />);
-
-      // Trigger multiple renders
-      for (let i = 0; i < 5; i++) {
-        rerender(<ProfiledCounter initialCount={i} />);
-      }
-
-      expect(ProfiledCounter).toHaveRenderedTimes(6); // 1 mount + 5 updates
-      expect(ProfiledCounter).toHaveAverageRenderTime(20);
-
-      const avgTime = ProfiledCounter.getAverageRenderTime();
-
-      console.log(`Average render time: ${avgTime.toFixed(2)}ms`);
-    });
-  });
-
   describe("Mount/Update phase tracking", () => {
     it("should distinguish between mount and update phases", () => {
       const { rerender } = render(<ProfiledCounter />);

@@ -25,15 +25,6 @@ export interface ProfilerMatchers<R = unknown> {
   toHaveRenderedTimes: (count: number) => R;
 
   /**
-   * Assert that the last render completed within specified duration
-   *
-   * @param ms - Maximum allowed render duration in milliseconds
-   * @returns - Matcher result
-   * @example expect(ProfiledComponent).toHaveRenderedWithin(16)
-   */
-  toHaveRenderedWithin: (ms: number) => R;
-
-  /**
    * Assert that component mounted exactly once
    *
    * @returns - Matcher result
@@ -56,15 +47,6 @@ export interface ProfilerMatchers<R = unknown> {
    * @example expect(ProfiledComponent).toHaveOnlyUpdated()
    */
   toHaveOnlyUpdated: () => R;
-
-  /**
-   * Assert average render time across all renders
-   *
-   * @param ms - Maximum allowed average render time
-   * @returns - Matcher result
-   * @example expect(ProfiledComponent).toHaveAverageRenderTime(10)
-   */
-  toHaveAverageRenderTime: (ms: number) => R;
 
   /**
    * Assert that component eventually renders exact number of times (async)
@@ -115,14 +97,6 @@ export interface ProfilerMatchers<R = unknown> {
 export interface RenderInfo {
   /** Mount for initial render, update for re-renders */
   phase: "mount" | "update" | "nested-update";
-  /** Time spent rendering the component and its descendants */
-  actualDuration: number;
-  /** Estimated time to render without memoization */
-  baseDuration: number;
-  /** When React began rendering */
-  startTime: number;
-  /** When React committed the render */
-  commitTime: number;
   /** Timestamp when this render was recorded */
   timestamp: number;
 }
@@ -170,13 +144,6 @@ export interface ProfiledComponent<P> {
    * @returns - Array of renders matching the specified phase
    */
   getRendersByPhase: (phase: RenderInfo["phase"]) => readonly RenderInfo[];
-
-  /**
-   * Get average render duration
-   *
-   * @returns - Average duration in milliseconds
-   */
-  getAverageRenderTime: () => number;
 
   /**
    * Check if component has ever mounted

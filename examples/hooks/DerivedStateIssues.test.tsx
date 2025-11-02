@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { useState, useMemo, useEffect } from "react";
-import { profileHook, createHookProfiler } from "../../src";
+import { createHookProfiler } from "../../src";
 
 /**
  * Examples of performance issues with derived state calculations
@@ -317,42 +317,6 @@ describe("Derived State Performance Issues", () => {
       // Stable references! ✅
       expect(result1.items).toBe(result2.items);
       expect(result1.grouped).toBe(result2.grouped);
-    });
-  });
-
-  describe("Performance Metrics", () => {
-    it("should compare render times with/without memoization", () => {
-      const data = Array.from({ length: 10000 }, (_, i) => i);
-
-      // Bad version
-      const bad = profileHook(
-        ({ items }) => {
-          return items.reduce((acc, val) => acc + val, 0);
-        },
-        { items: data },
-      );
-
-      // Good version
-      const good = profileHook(
-        ({ items }) => {
-          return useMemo(
-            () => items.reduce((acc, val) => acc + val, 0),
-            [items],
-          );
-        },
-        { items: data },
-      );
-
-      // Both render once, but good version is more efficient for rerenders
-      expect(bad.ProfiledHook).toHaveRenderedTimes(1);
-      expect(good.ProfiledHook).toHaveRenderedTimes(1);
-
-      // Check render times
-      const badTime = bad.ProfiledHook.getAverageRenderTime();
-      const goodTime = good.ProfiledHook.getAverageRenderTime();
-
-      expect(badTime).toBeGreaterThanOrEqual(0);
-      expect(goodTime).toBeGreaterThanOrEqual(0);
     });
   });
 });

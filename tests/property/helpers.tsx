@@ -135,16 +135,6 @@ export function verifyMathematicalInvariants<T = unknown>(
     return true;
   }
 
-  const durations = history.map((r) => r.actualDuration);
-  const avg = component.getAverageRenderTime();
-  const min = Math.min(...durations);
-  const max = Math.max(...durations);
-
-  // Average must be between min and max (inclusive)
-  if (avg < min || avg > max) {
-    return false;
-  }
-
   // Render count must match history length
   if (component.getRenderCount() !== history.length) {
     return false;
@@ -155,35 +145,7 @@ export function verifyMathematicalInvariants<T = unknown>(
   const updates = component.getRendersByPhase("update").length;
   const nested = component.getRendersByPhase("nested-update").length;
 
-  if (mounts + updates + nested !== history.length) {
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Validates that all values are safe numbers (not NaN or Infinity)
- */
-export function verifySafeNumbers<T = unknown>(
-  component: ProfiledComponent<T>,
-): boolean {
-  const history = component.getRenderHistory();
-  const avg = component.getAverageRenderTime();
-
-  // Check average is safe
-  if (!Number.isFinite(avg)) {
-    return false;
-  }
-
-  // Check all durations are safe
-  return history.every(
-    (r) =>
-      Number.isFinite(r.actualDuration) &&
-      Number.isFinite(r.baseDuration) &&
-      Number.isFinite(r.startTime) &&
-      Number.isFinite(r.commitTime),
-  );
+  return mounts + updates + nested === history.length;
 }
 
 /**

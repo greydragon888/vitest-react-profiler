@@ -102,11 +102,6 @@ describe("Stress Tests - High Volume Renders", () => {
 
     expect(ProfiledComponent.getRenderCount()).toBe(2000);
 
-    // Methods should still work correctly
-    const averageTime = ProfiledComponent.getAverageRenderTime();
-
-    expect(averageTime).toBeGreaterThanOrEqual(0);
-
     const lastRender = ProfiledComponent.getLastRender();
 
     expect(lastRender).toBeDefined();
@@ -294,10 +289,6 @@ describe("Stress Tests - Multiple Components", () => {
 
     // Verify methods still work on all components
     components.forEach((C) => {
-      const avgTime = C.getAverageRenderTime();
-
-      expect(avgTime).toBeGreaterThanOrEqual(0);
-
       const lastRender = C.getLastRender();
 
       expect(lastRender?.phase).toBe("update");
@@ -425,10 +416,6 @@ describe("Stress Tests - Mixed Scenarios", () => {
         const count = ProfiledComponent.getRenderCount();
 
         expect(count).toBe(i + 1);
-
-        const avgTime = ProfiledComponent.getAverageRenderTime();
-
-        expect(avgTime).toBeGreaterThanOrEqual(0);
 
         const history = ProfiledComponent.getRenderHistory();
 

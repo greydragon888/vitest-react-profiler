@@ -34,7 +34,6 @@ describe("withProfiler", () => {
       expectTypeOf(Profiled.getLastRender).toBeFunction();
       expectTypeOf(Profiled.getRenderAt).toBeFunction();
       expectTypeOf(Profiled.getRendersByPhase).toBeFunction();
-      expectTypeOf(Profiled.getAverageRenderTime).toBeFunction();
       expectTypeOf(Profiled.hasMounted).toBeFunction();
     });
 
@@ -58,6 +57,78 @@ describe("withProfiler", () => {
       const { getByText } = render(<ProfiledSimple value="test" />);
 
       expect(getByText("test")).toBeInTheDocument();
+    });
+  });
+
+  describe("Property Descriptors", () => {
+    it("should make displayName non-writable", () => {
+      const Component = () => <div>test</div>;
+      const ProfiledComponent = withProfiler(Component);
+
+      const descriptor = Object.getOwnPropertyDescriptor(
+        ProfiledComponent,
+        "displayName",
+      );
+
+      expect(descriptor?.writable).toBe(false);
+      expect(descriptor?.enumerable).toBe(true);
+      expect(descriptor?.configurable).toBe(false);
+
+      // Attempt to overwrite should fail (in strict mode) or be silently ignored
+      const originalName = ProfiledComponent.displayName;
+
+      try {
+        (ProfiledComponent as any).displayName = "NewName";
+      } catch {
+        // Expected in strict mode
+      }
+
+      expect(ProfiledComponent.displayName).toBe(originalName);
+    });
+
+    it("should make OriginalComponent non-writable and non-enumerable", () => {
+      const Component = () => <div>test</div>;
+      const ProfiledComponent = withProfiler(Component);
+
+      const descriptor = Object.getOwnPropertyDescriptor(
+        ProfiledComponent,
+        "OriginalComponent",
+      );
+
+      expect(descriptor?.writable).toBe(false);
+      expect(descriptor?.enumerable).toBe(false);
+      expect(descriptor?.configurable).toBe(false);
+
+      // Verify the value is correct
+      expect(ProfiledComponent.OriginalComponent).toBe(Component);
+
+      // Attempt to overwrite should fail (in strict mode) or be silently ignored
+      const originalRef = ProfiledComponent.OriginalComponent;
+
+      try {
+        (ProfiledComponent as any).OriginalComponent = null;
+      } catch {
+        // Expected in strict mode
+      }
+
+      expect(ProfiledComponent.OriginalComponent).toBe(originalRef);
+    });
+
+    it("should not include OriginalComponent in enumeration", () => {
+      const Component = () => <div>test</div>;
+      const ProfiledComponent = withProfiler(Component);
+
+      const keys = Object.keys(ProfiledComponent);
+      const ownKeys = Object.getOwnPropertyNames(ProfiledComponent);
+
+      // displayName should be enumerable
+      expect(keys).toContain("displayName");
+
+      // OriginalComponent should NOT be in keys (not enumerable)
+      expect(keys).not.toContain("OriginalComponent");
+
+      // But should be in getOwnPropertyNames (it exists)
+      expect(ownKeys).toContain("OriginalComponent");
     });
   });
 
@@ -141,7 +212,6 @@ describe("withProfiler", () => {
       // (would be broken if instanceCounter was creating new Profiler instances)
       history.forEach((render) => {
         expect(render.timestamp).toBeGreaterThan(0);
-        expect(render.actualDuration).toBeGreaterThanOrEqual(0);
       });
     });
   });
@@ -242,59 +312,8 @@ describe("withProfiler", () => {
 
       expect(lastRender).toMatchObject({
         phase: expect.any(String),
-        actualDuration: expect.any(Number),
-        baseDuration: expect.any(Number),
-        startTime: expect.any(Number),
-        commitTime: expect.any(Number),
         timestamp: expect.any(Number),
       });
-    });
-  });
-
-  describe("Performance Metrics", () => {
-    it("should measure render duration", () => {
-      render(<ProfiledSimple />);
-
-      const lastRender = ProfiledSimple.getLastRender();
-
-      expect(lastRender?.actualDuration).toBeGreaterThanOrEqual(0);
-      expect(lastRender?.baseDuration).toBeGreaterThanOrEqual(0);
-    });
-
-    it("should calculate average render time", () => {
-      const { rerender } = render(<ProfiledSimple value="1" />);
-
-      rerender(<ProfiledSimple value="2" />);
-      rerender(<ProfiledSimple value="3" />);
-
-      const avgTime = ProfiledSimple.getAverageRenderTime();
-
-      expect(avgTime).toBeGreaterThanOrEqual(0);
-
-      expectTypeOf(avgTime).toBeNumber();
-    });
-
-    it("should return 0 average time when no renders", () => {
-      const Fresh = withProfiler(SimpleComponent);
-
-      expect(Fresh.getAverageRenderTime()).toBe(0);
-    });
-
-    it("should track performance across multiple renders", () => {
-      const { rerender } = render(<ProfiledSimple />);
-
-      for (let i = 0; i < 5; i++) {
-        rerender(<ProfiledSimple value={`render-${i}`} />);
-      }
-
-      const history = ProfiledSimple.getRenderHistory();
-      const totalDuration = history.reduce(
-        (sum, r) => sum + r.actualDuration,
-        0,
-      );
-      const avgTime = ProfiledSimple.getAverageRenderTime();
-
-      expect(avgTime).toBeCloseTo(totalDuration / history.length, 5);
     });
   });
 

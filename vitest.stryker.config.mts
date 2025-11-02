@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { defineConfig } from "vitest/config";
 
 /**
@@ -5,6 +7,13 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   cacheDir: "./.vitest-stryker",
+
+  // Path aliases (required for tests to resolve @/ imports)
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
 
   test: {
     clearMocks: true,

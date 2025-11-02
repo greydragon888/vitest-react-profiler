@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { describe, it, expect } from "vitest";
 
-import { profileHook } from "../../src";
+import { profileHook } from "@/hooks";
 
 describe("profileHook - Real-world examples", () => {
   it("should detect data fetching anti-pattern", () => {

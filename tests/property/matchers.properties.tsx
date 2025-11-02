@@ -109,116 +109,6 @@ describe("Property-Based Tests: Matcher Parameter Validation", () => {
     });
   });
 
-  describe("Positive Number Parameter Validation", () => {
-    test.prop([fc.double()], { numRuns: 1000 })(
-      "toHaveRenderedWithin accepts positive numbers only",
-      (value) => {
-        const Component = createSimpleProfiledComponent();
-
-        render(<Component />);
-
-        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-          // Should not throw validation error (may throw duration mismatch)
-          try {
-            expect(Component).toHaveRenderedWithin(value);
-
-            return true;
-          } catch (error) {
-            const message = (error as Error).message;
-
-            return !message.includes(
-              "Expected duration must be a positive number",
-            );
-          }
-        } else {
-          // Should throw validation error
-          try {
-            expect(Component).toHaveRenderedWithin(value);
-
-            return false;
-          } catch (error) {
-            const message = (error as Error).message;
-
-            return message.includes(
-              "Expected duration must be a positive number",
-            );
-          }
-        }
-      },
-    );
-
-    test.prop([fc.double()], { numRuns: 1000 })(
-      "toHaveAverageRenderTime accepts positive numbers only",
-      (value) => {
-        const Component = createSimpleProfiledComponent();
-
-        render(<Component />);
-
-        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-          // Should not throw validation error
-          try {
-            expect(Component).toHaveAverageRenderTime(value);
-
-            return true;
-          } catch (error) {
-            const message = (error as Error).message;
-
-            return !message.includes(
-              "Expected average duration must be a positive number",
-            );
-          }
-        } else {
-          // Should throw validation error
-          try {
-            expect(Component).toHaveAverageRenderTime(value);
-
-            return false;
-          } catch (error) {
-            const message = (error as Error).message;
-
-            return message.includes(
-              "Expected average duration must be a positive number",
-            );
-          }
-        }
-      },
-    );
-
-    test.prop(
-      [
-        fc.oneof(
-          fc.constant(0),
-          fc.constant(-0),
-          fc.constant(-1),
-          fc.constant(-100),
-          fc.constant(Number.NaN),
-          fc.constant(Infinity),
-          fc.constant(-Infinity),
-        ),
-      ],
-      { numRuns: 100 },
-    )(
-      "toHaveRenderedWithin rejects zero, negative, and special values",
-      (value) => {
-        const Component = createSimpleProfiledComponent();
-
-        render(<Component />);
-
-        try {
-          expect(Component).toHaveRenderedWithin(value);
-
-          return false;
-        } catch (error) {
-          const message = (error as Error).message;
-
-          return message.includes(
-            "Expected duration must be a positive number",
-          );
-        }
-      },
-    );
-  });
-
   describe("Async Matcher Parameter Validation", () => {
     test.prop([fc.integer()], { numRuns: 500 })(
       "toEventuallyRenderTimes validates expected parameter",
@@ -370,9 +260,6 @@ describe("Property-Based Tests: isProfiledComponent Validation", () => {
           expect(invalidInput).toHaveRenderedTimes(1);
         },
         () => {
-          expect(invalidInput).toHaveRenderedWithin(100);
-        },
-        () => {
           expect(invalidInput).toHaveMountedOnce();
         },
         () => {
@@ -380,9 +267,6 @@ describe("Property-Based Tests: isProfiledComponent Validation", () => {
         },
         () => {
           expect(invalidInput).toHaveOnlyUpdated();
-        },
-        () => {
-          expect(invalidInput).toHaveAverageRenderTime(10);
         },
       ];
 
@@ -486,13 +370,7 @@ describe("Property-Based Tests: isProfiledComponent Validation", () => {
             expect(Component).toHaveRenderedTimes(numRenders);
           },
           () => {
-            expect(Component).toHaveRenderedWithin(1000);
-          },
-          () => {
             expect(Component).toHaveMountedOnce();
-          },
-          () => {
-            expect(Component).toHaveAverageRenderTime(1000);
           },
         ];
 
@@ -576,76 +454,6 @@ describe("Property-Based Tests: Matcher Logic Invariants", () => {
     );
   });
 
-  describe("toHaveRenderedWithin Logic", () => {
-    test.prop([fc.nat({ max: 20 })], { numRuns: 1000 })(
-      "toHaveRenderedWithin passes if lastRender.actualDuration <= maxDuration",
-      (numRenders) => {
-        // Skip if no renders
-        if (numRenders === 0) {
-          return true;
-        }
-
-        const Component = createSimpleProfiledComponent();
-        const { rerender } = render(<Component value={0} />);
-
-        for (let i = 1; i < numRenders; i++) {
-          rerender(<Component value={i} />);
-        }
-
-        const lastRender = Component.getLastRender();
-
-        if (!lastRender) {
-          return true;
-        }
-
-        const actualDuration = lastRender.actualDuration;
-
-        // Test with duration exactly equal to actual
-        try {
-          expect(Component).toHaveRenderedWithin(actualDuration);
-
-          // Should pass when maxDuration >= actualDuration
-          return true;
-        } catch {
-          return false;
-        }
-      },
-    );
-
-    test.prop([fc.nat({ max: 20 })], { numRuns: 1000 })(
-      "toHaveRenderedWithin fails when duration < lastRender.actualDuration",
-      (numRenders) => {
-        if (numRenders === 0) {
-          return true;
-        }
-
-        const Component = createSimpleProfiledComponent();
-        const { rerender } = render(<Component value={0} />);
-
-        for (let i = 1; i < numRenders; i++) {
-          rerender(<Component value={i} />);
-        }
-
-        const lastRender = Component.getLastRender();
-
-        if (!lastRender) {
-          return true;
-        }
-
-        const actualDuration = lastRender.actualDuration;
-
-        // Test with impossibly low threshold
-        try {
-          expect(Component).toHaveRenderedWithin(actualDuration * 0.1);
-
-          return false; // Should have failed
-        } catch {
-          return true;
-        }
-      },
-    );
-  });
-
   describe("toHaveMountedOnce Logic", () => {
     test.prop([fc.nat({ max: 10 })], { numRuns: 1000 })(
       "toHaveMountedOnce passes if and only if exactly 1 mount phase",
@@ -691,35 +499,6 @@ describe("Property-Based Tests: Matcher Logic Invariants", () => {
           return shouldPass;
         } catch {
           return !shouldPass;
-        }
-      },
-    );
-  });
-
-  describe("toHaveAverageRenderTime Logic", () => {
-    test.prop([fc.nat({ max: 20 })], { numRuns: 1000 })(
-      "toHaveAverageRenderTime passes if average <= maxAverage",
-      (numRenders) => {
-        if (numRenders === 0) {
-          return true;
-        }
-
-        const Component = createSimpleProfiledComponent();
-        const { rerender } = render(<Component value={0} />);
-
-        for (let i = 1; i < numRenders; i++) {
-          rerender(<Component value={i} />);
-        }
-
-        const average = Component.getAverageRenderTime();
-
-        // Test with maxAverage exactly equal to average
-        try {
-          expect(Component).toHaveAverageRenderTime(average);
-
-          return true; // Should pass
-        } catch {
-          return false;
         }
       },
     );
@@ -961,27 +740,6 @@ describe("Property-Based Tests: Error Message Consistency", () => {
         }
       },
     );
-
-    test.prop([fc.double().filter((n) => !Number.isFinite(n) || n <= 0)], {
-      numRuns: 500,
-    })(
-      "positive number validation errors include parameter name and constraint",
-      (invalidValue) => {
-        const Component = createSimpleProfiledComponent();
-
-        render(<Component />);
-
-        try {
-          expect(Component).toHaveRenderedWithin(invalidValue);
-
-          return false;
-        } catch (error) {
-          const message = (error as Error).message;
-
-          return message.includes("duration") && message.includes("positive");
-        }
-      },
-    );
   });
 
   describe("Assertion Error Format", () => {
@@ -1036,21 +794,9 @@ describe("Property-Based Tests: Error Message Consistency", () => {
           },
           {
             fn: () => {
-              expect(Component).toHaveRenderedWithin(100);
-            },
-            expectedPhrase: "has not rendered yet",
-          },
-          {
-            fn: () => {
               expect(Component).toHaveMountedOnce();
             },
             expectedPhrase: "never mounted",
-          },
-          {
-            fn: () => {
-              expect(Component).toHaveAverageRenderTime(10);
-            },
-            expectedPhrase: "has not rendered yet",
           },
         ];
 

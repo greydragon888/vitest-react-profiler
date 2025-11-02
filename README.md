@@ -8,6 +8,12 @@
 [![npm downloads](https://img.shields.io/npm/dm/vitest-react-profiler.svg?style=flat-square)](https://www.npmjs.com/package/vitest-react-profiler)
 [![CI](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/greydragon888/vitest-react-profiler/actions/workflows/ci.yml)
 
+  <!-- Framework & Testing Stack -->
+
+[![React](https://img.shields.io/badge/React-16.8--19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://reactjs.org/)
+[![React Testing Library](https://img.shields.io/badge/RTL-16.3-E33332?style=flat-square&logo=testing-library&logoColor=white)](https://testing-library.com/react)
+[![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest)](https://vitest.dev/)
+
   <!-- Quality & Testing -->
 
 [![Enterprise Grade Testing](https://img.shields.io/badge/testing-enterprise%20grade-brightgreen?style=flat-square)](https://dashboard.stryker-mutator.io/reports/github.com/greydragon888/vitest-react-profiler/master)
@@ -15,12 +21,6 @@
 [![Mutation testing badge](https://img.shields.io/endpoint?style=flat-square&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Fgreydragon888%2Fvitest-react-profiler%2Fmaster)](https://dashboard.stryker-mutator.io/reports/github.com/greydragon888/vitest-react-profiler/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=greydragon888_vitest-react-profiler&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=greydragon888_vitest-react-profiler)
 [![Property-Based Testing](https://img.shields.io/badge/PBT-fast--check-FF4785?style=flat-square)](https://fast-check.dev/)
-
-  <!-- Framework & Testing Stack -->
-
-[![React](https://img.shields.io/badge/React-16.8--19-61DAFB?style=flat-square&logo=react&logoColor=white)](https://reactjs.org/)
-[![React Testing Library](https://img.shields.io/badge/RTL-16.3-E33332?style=flat-square&logo=testing-library&logoColor=white)](https://testing-library.com/react)
-[![Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest)](https://vitest.dev/)
 
   <!-- Code Quality Tools -->
 
@@ -70,7 +70,6 @@ const Component = () => {
 const ProfiledComponent = withProfiler(Component);
 render(<ProfiledComponent />);
 expect(ProfiledComponent).toHaveRenderedTimes(1);
-expect(ProfiledComponent).toHaveRenderedWithin(16); // 60fps
 ```
 
 ## Requirements
@@ -129,13 +128,6 @@ describe('MyComponent performance', () => {
 
     expect(ProfiledComponent).toHaveRenderedTimes(1);
     expect(ProfiledComponent).toHaveMountedOnce();
-  });
-
-  it('should render quickly', () => {
-    const ProfiledComponent = withProfiler(MyComponent);
-    render(<ProfiledComponent />);
-
-    expect(ProfiledComponent).toHaveRenderedWithin(16); // 60fps budget
   });
 
   // No cleanup needed - automatic between tests!
@@ -241,10 +233,6 @@ Asserts that component has rendered at least once.
 
 Asserts exact number of renders.
 
-#### `toHaveRenderedWithin(ms)`
-
-Asserts that the last render completed within specified milliseconds.
-
 #### `toHaveMountedOnce()`
 
 Asserts that component mounted exactly once.
@@ -256,10 +244,6 @@ Asserts that component never mounted.
 #### `toHaveOnlyUpdated()`
 
 Asserts that component only updated (no mounts).
-
-#### `toHaveAverageRenderTime(ms)`
-
-Asserts average render time across all renders.
 
 ### Enhanced Error Messages
 
@@ -278,26 +262,11 @@ Expected component to render 3 time(s), but it rendered 5 time(s)
 ```
 Expected 3 renders, but got 5 (1 mount, 4 updates)
 
-  #1 [mount       ] at   0.00ms (duration:  2.50ms)
-  #2 [update      ] at  10.50ms (duration:  1.20ms)
-  #3 [update      ] at  15.70ms (duration:  1.10ms)
-  #4 [update      ] at  20.30ms (duration:  1.00ms)
-  #5 [update      ] at  25.10ms (duration:  1.00ms)
-
-  💡 Tip: Use Component.getRenderHistory() to inspect all render details
-```
-
-#### Performance Issues Detection
-
-When a render is too slow, you get context about all slow renders:
-
-```
-Expected last render to take at most 16ms, but it took 45.23ms
-
-Slow renders (3 total):
-  #2 [update      ] at  10.50ms (duration: 45.23ms)
-  #5 [update      ] at  50.30ms (duration: 38.10ms)
-  #8 [update      ] at  90.00ms (duration: 42.50ms)
+  #1 [mount       ] at 2025-01-15T10:30:45.123Z
+  #2 [update      ] at 2025-01-15T10:30:45.456Z
+  #3 [update      ] at 2025-01-15T10:30:45.789Z
+  #4 [update      ] at 2025-01-15T10:30:46.012Z
+  #5 [update      ] at 2025-01-15T10:30:46.345Z
 
   💡 Tip: Use Component.getRenderHistory() to inspect all render details
 ```
@@ -310,9 +279,9 @@ When component mounts multiple times unexpectedly:
 Expected component to mount once, but it mounted 3 times
 
 Mount renders:
-  #1 [mount       ] at   0.00ms (duration:  2.50ms)
-  #3 [mount       ] at  25.00ms (duration:  2.30ms)
-  #7 [mount       ] at  75.00ms (duration:  2.40ms)
+  #1 [mount       ] at 2025-01-15T10:30:45.123Z
+  #3 [mount       ] at 2025-01-15T10:30:45.456Z
+  #7 [mount       ] at 2025-01-15T10:30:46.012Z
 
   💡 Tip: Use Component.getRenderHistory() to inspect all render details
 ```
@@ -321,7 +290,6 @@ These detailed messages help you:
 
 - **Identify patterns** - See which renders are problematic
 - **Understand timing** - Know when renders occur
-- **Debug performance** - Spot slow renders immediately
 - **Fix issues faster** - No more guessing what went wrong
 
 ### Async Testing Utilities
@@ -484,7 +452,6 @@ interface ProfiledComponent<P> {
   getLastRender(): RenderInfo | undefined;
   getRenderAt(index: number): RenderInfo | undefined;
   getRendersByPhase(phase: Phase): readonly RenderInfo[];
-  getAverageRenderTime(): number;
   hasMounted(): boolean;
 
   // Properties
@@ -570,10 +537,6 @@ it("should handle rerenders correctly", () => {
 
   profiler.rerender({ value: 2 });
   profiler.expectRenderCount(2);
-
-  // Access metrics
-  const avgTime = profiler.getAverageRenderTime();
-  expect(avgTime).toBeLessThan(10); // ms
 });
 ```
 
@@ -586,9 +549,7 @@ const { ProfiledHook } = profileHook(() => useMyHook());
 
 expect(ProfiledHook).toHaveRendered();
 expect(ProfiledHook).toHaveRenderedTimes(1);
-expect(ProfiledHook).toHaveRenderedWithin(16); // 60fps
 expect(ProfiledHook).toHaveMountedOnce();
-expect(ProfiledHook).toHaveAverageRenderTime(5);
 ```
 
 ### Real-World Anti-Patterns
@@ -716,93 +677,52 @@ it('should verify memo prevents unnecessary renders', () => {
 
 **Why?** React Profiler always triggers even when memo prevents re-render. The additional memo wrapper ensures accurate testing.
 
-### Performance Budget Testing
-
-```typescript
-it('should meet performance budget', () => {
-  const ProfiledComponent = withProfiler(MyComponent);
-  const { rerender } = render(<ProfiledComponent />);
-
-  // Simulate multiple interactions
-  for (let i = 0; i < 10; i++) {
-    rerender(<ProfiledComponent key={i} />);
-  }
-
-  // Assert performance budget
-  expect(ProfiledComponent).toHaveAverageRenderTime(10);
-
-  // Check for performance regressions
-  const slowRenders = ProfiledComponent.__renderHistory
-    .filter(r => r.actualDuration > 16);
-  expect(slowRenders).toHaveLength(0);
-});
-```
-
-### Debug Slow Renders
-
-```typescript
-it('should identify performance bottlenecks', () => {
-  const ProfiledComponent = withProfiler(SlowComponent);
-  render(<ProfiledComponent />);
-
-  const history = ProfiledComponent.__renderHistory;
-  history.forEach((render, index) => {
-    if (render.actualDuration > 16) {
-      console.warn(`Slow render #${index + 1}:`, {
-        phase: render.phase,
-        duration: `${render.actualDuration.toFixed(2)}ms`,
-        timestamp: new Date(render.timestamp).toISOString()
-      });
-    }
-  });
-});
-```
-
 ## Advanced Usage
 
 ### Custom Assertions
 
-Create domain-specific assertions:
+Create domain-specific assertions for render count patterns:
 
 ```typescript
 // test-utils/custom-matchers.ts
 expect.extend({
-  toRenderWithin60FPS(component: ProfiledComponent<any>) {
-    const lastRender = component.getLastRender();
-    const pass = lastRender ? lastRender.actualDuration <= 16.67 : false;
+  toHaveRenderedOnlyOnMount(component: ProfiledComponent<any>) {
+    const renderCount = component.getRenderCount();
+    const pass = renderCount === 1 && component.hasMounted();
     return {
       pass,
       message: () =>
         pass
-          ? `Expected render to exceed 60fps threshold`
-          : `Expected 60fps (≤16.67ms), but took ${lastRender?.actualDuration.toFixed(2)}ms`,
+          ? `Expected component to render more than once`
+          : `Expected component to render only on mount, but it rendered ${renderCount} times`,
     };
   },
 });
 ```
 
-### CI Performance Monitoring
+### CI Render Count Monitoring
 
 ```typescript
-// ci-performance.test.ts
-describe('Performance Regression Tests', () => {
-  const performanceBudgets = {
-    HomePage: 50,
-    Dashboard: 100,
-    DataGrid: 150
+// ci-render-tracking.test.ts
+describe('Render Count Regression Tests', () => {
+  const renderBudgets = {
+    HomePage: 1,      // Should render only once
+    Dashboard: 5,     // May render up to 5 times
+    DataGrid: 10      // Complex component, up to 10 renders
   };
 
-  Object.entries(performanceBudgets).forEach(([name, budget]) => {
-    it(`${name} should render within ${budget}ms`, () => {
+  Object.entries(renderBudgets).forEach(([name, maxRenders]) => {
+    it(`${name} should not exceed ${maxRenders} renders`, () => {
       const Component = require(`./components/${name}`).default;
       const ProfiledComponent = withProfiler(Component);
 
       render(<ProfiledComponent />);
 
-      expect(ProfiledComponent).toHaveRenderedWithin(budget);
+      const renderCount = ProfiledComponent.getRenderCount();
+      expect(renderCount).toBeLessThanOrEqual(maxRenders);
 
       // Log for CI metrics
-      console.log(`PERF_METRIC:${name}:${ProfiledComponent.getLastRender()?.actualDuration}`);
+      console.log(`RENDER_COUNT:${name}:${renderCount}`);
     });
   });
 });

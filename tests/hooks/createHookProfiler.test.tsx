@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { describe, it, expect, expectTypeOf } from "vitest";
+import { describe, it, expect } from "vitest";
 
-import { createHookProfiler } from "../../src";
+import { createHookProfiler } from "@/hooks";
 
 // Helper hook that causes extra render
 function useBadHook() {
@@ -62,14 +62,5 @@ describe("createHookProfiler", () => {
 
     expect(lastRender).toBeDefined();
     expect(lastRender!.phase).toBe("mount");
-  });
-
-  it("should provide getAverageRenderTime", () => {
-    const profiler = createHookProfiler(() => useState(0));
-    const avgTime = profiler.getAverageRenderTime();
-
-    expect(avgTime).toBeGreaterThanOrEqual(0);
-
-    expectTypeOf(avgTime).toBeNumber();
   });
 });

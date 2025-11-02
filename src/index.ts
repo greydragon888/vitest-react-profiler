@@ -21,7 +21,6 @@ export { profileHook, createHookProfiler } from "./hooks";
 export {
   formatRenderHistory,
   formatRenderSummary,
-  formatPerformanceMetrics,
 } from "./utils/formatRenderHistory";
 
 // Async utilities

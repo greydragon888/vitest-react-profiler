@@ -11,17 +11,16 @@ import type { ProfilerOnRenderCallback, ComponentType } from "react";
 interface ProfilerData {
   renderHistory: RenderInfo[];
   frozenHistoryCache?: readonly RenderInfo[] | undefined;
-  historyVersion: number;
-  // Performance metrics cache to avoid O(n) recalculation on every call
-  metricsCache?:
+  // Cache for getRendersByPhase()
+  phaseCache?:
     | {
-        version: number;
-        average: number;
-        min: number;
-        max: number;
-        total: number;
+        mount?: readonly RenderInfo[];
+        update?: readonly RenderInfo[];
+        "nested-update"?: readonly RenderInfo[];
       }
     | undefined;
+  // Cache for hasMounted()
+  hasMountedCache?: boolean | undefined;
 }
 
 /**
@@ -98,38 +97,29 @@ export function withProfiler<P extends object>(
     setProfilerData(Component, {
       renderHistory: [],
       frozenHistoryCache: undefined,
-      historyVersion: 0,
+      phaseCache: undefined,
+      hasMountedCache: undefined,
     });
   }
 
   /**
    * Profiler callback that records render information
    */
-  const onRender: ProfilerOnRenderCallback = (
-    _id,
-    phase,
-    actualDuration,
-    baseDuration,
-    startTime,
-    commitTime,
-  ) => {
+  const onRender: ProfilerOnRenderCallback = (_id, phase) => {
     const data = getProfilerData(Component);
 
+    /* c8 ignore next 3 - defensive check, data is always initialized in withProfiler */
     if (!data) {
       return;
     }
 
-    // Invalidate caches on new render
+    // Invalidate all caches on new render
     data.frozenHistoryCache = undefined;
-    data.metricsCache = undefined;
-    data.historyVersion++;
+    data.phaseCache = undefined;
+    data.hasMountedCache = undefined;
 
     data.renderHistory.push({
       phase: phase,
-      actualDuration,
-      baseDuration,
-      startTime,
-      commitTime,
       timestamp: Date.now(),
     });
   };
@@ -175,6 +165,7 @@ export function withProfiler<P extends object>(
   ProfiledComponent.getRenderCount = () => {
     const profilerData = getProfilerData(Component);
 
+    /* c8 ignore next 3 - defensive check, data is always initialized in withProfiler */
     if (!profilerData) {
       return 0;
     }
@@ -186,6 +177,7 @@ export function withProfiler<P extends object>(
   ProfiledComponent.getRenderHistory = () => {
     const profilerData = getProfilerData(Component);
 
+    /* c8 ignore next 3 - defensive check, data is always initialized in withProfiler */
     if (!profilerData) {
       return [];
     }
@@ -215,8 +207,8 @@ export function withProfiler<P extends object>(
     if (data) {
       data.renderHistory = [];
       data.frozenHistoryCache = undefined;
-      data.metricsCache = undefined;
-      data.historyVersion = 0;
+      data.phaseCache = undefined;
+      data.hasMountedCache = undefined;
     }
   };
 
@@ -240,70 +232,57 @@ export function withProfiler<P extends object>(
   };
 
   /**
-   * Get all renders of a specific phase
+   * Get all renders of a specific phase (cached for performance)
    */
   ProfiledComponent.getRendersByPhase = (phase: RenderInfo["phase"]) => {
-    return Object.freeze(
+    const profilerData = getProfilerData(Component);
+
+    /* c8 ignore next 3 - defensive check, data is always initialized in withProfiler */
+    if (!profilerData) {
+      return [];
+    }
+
+    // Return cached version if available
+    if (profilerData.phaseCache?.[phase]) {
+      return profilerData.phaseCache[phase];
+    }
+
+    // Calculate and cache
+    const filtered = Object.freeze(
       ProfiledComponent.getRenderHistory().filter((r) => r.phase === phase),
     );
+
+    // Initialize cache object if needed
+    profilerData.phaseCache ??= {};
+    profilerData.phaseCache[phase] = filtered;
+
+    return filtered;
   };
 
   /**
-   * Calculate average render time across all renders
-   * Results are cached until render history changes
-   */
-  ProfiledComponent.getAverageRenderTime = () => {
-    const data = getProfilerData(Component);
-
-    if (!data || data.renderHistory.length === 0) {
-      return 0;
-    }
-
-    // Return cached value if available and valid
-    if (data.metricsCache?.version === data.historyVersion) {
-      return data.metricsCache.average;
-    }
-
-    // Calculate all metrics in one pass for efficiency
-    let total = 0;
-    let min = Number.POSITIVE_INFINITY;
-    let max = Number.NEGATIVE_INFINITY;
-
-    for (const render of data.renderHistory) {
-      const duration = render.actualDuration;
-
-      total += duration;
-
-      if (duration < min) {
-        min = duration;
-      }
-
-      if (duration > max) {
-        max = duration;
-      }
-    }
-
-    const average = total / data.renderHistory.length;
-
-    // Cache metrics for future calls
-    data.metricsCache = {
-      version: data.historyVersion,
-      average,
-      min,
-      max,
-      total,
-    };
-
-    return average;
-  };
-
-  /**
-   * Check if component has mounted at least once
+   * Check if component has mounted at least once (cached for performance)
    */
   ProfiledComponent.hasMounted = () => {
-    return ProfiledComponent.getRenderHistory().some(
+    const profilerData = getProfilerData(Component);
+
+    /* c8 ignore next 3 - defensive check, data is always initialized in withProfiler */
+    if (!profilerData) {
+      return false;
+    }
+
+    // Return cached value if available
+    if (profilerData.hasMountedCache !== undefined) {
+      return profilerData.hasMountedCache;
+    }
+
+    // Calculate and cache
+    const hasMounted = ProfiledComponent.getRenderHistory().some(
       (r) => r.phase === "mount",
     );
+
+    profilerData.hasMountedCache = hasMounted;
+
+    return hasMounted;
   };
 
   return ProfiledComponent;

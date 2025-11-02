@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { describe, it, expect, expectTypeOf } from "vitest";
 
-import { profileHook } from "../../src";
+import { profileHook } from "@/hooks";
 
 describe("profileHook - Edge cases", () => {
   it("should handle hook without props", () => {

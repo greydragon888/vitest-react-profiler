@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { describe, it, expect } from "vitest";
 
-import { profileHook } from "../../src";
+import { profileHook } from "@/hooks";
 
 describe("profileHook - Basic functionality", () => {
   it("should profile hook initial render", () => {

@@ -7,20 +7,6 @@ import { ConditionalComponent } from "./components/ConditionalComponent.tsx";
 
 describe("Basic vitest-react-profiler Examples", () => {
   describe("SimpleCounter", () => {
-    it("should track initial render", () => {
-      const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
-
-      render(<ProfiledCounter initialCount={0} />);
-
-      expect(ProfiledCounter).toHaveRendered();
-      expect(ProfiledCounter).toHaveRenderedTimes(1);
-
-      const lastRender = ProfiledCounter.getLastRender();
-
-      expect(lastRender?.phase).toBe("mount");
-      console.log(`Initial render took ${lastRender?.actualDuration}ms`);
-    });
-
     it("should track re-renders on state changes", () => {
       const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
 
@@ -46,31 +32,8 @@ describe("Basic vitest-react-profiler Examples", () => {
         "Render history:",
         renders.map((r) => ({
           phase: r.phase,
-          duration: r.actualDuration,
         })),
       );
-    });
-
-    it("should measure performance of multiple operations", () => {
-      const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
-
-      render(<ProfiledCounter initialCount={10} />);
-
-      const incrementButton = screen.getByText("Increment");
-      const decrementButton = screen.getByText("Decrement");
-      const resetButton = screen.getByText("Reset");
-
-      fireEvent.click(incrementButton);
-      fireEvent.click(decrementButton);
-      fireEvent.click(resetButton);
-
-      expect(ProfiledCounter).toHaveRenderedTimes(4);
-
-      const avgRenderTime = ProfiledCounter.getAverageRenderTime();
-
-      console.log(`Average render time: ${avgRenderTime}ms`);
-
-      expect(ProfiledCounter).toHaveRenderedWithin(50);
     });
 
     it("should track render phases separately", () => {
@@ -86,11 +49,6 @@ describe("Basic vitest-react-profiler Examples", () => {
 
       expect(mounts).toHaveLength(1);
       expect(updates).toHaveLength(2);
-
-      console.log(`Mount phase: ${mounts[0]?.actualDuration}ms`);
-      console.log(
-        `Update phases: ${updates.map((u) => u.actualDuration).join(", ")}ms`,
-      );
     });
   });
 
@@ -115,65 +73,6 @@ describe("Basic vitest-react-profiler Examples", () => {
       fireEvent.click(addButton);
 
       expect(ProfiledTodoList).toHaveRenderedTimes(5);
-
-      const renders = ProfiledTodoList.getRenderHistory();
-
-      console.log(
-        "TodoList render times:",
-        renders.map((r) => r.actualDuration),
-      );
-    });
-
-    it("should measure performance of todo operations", () => {
-      const ProfiledTodoList = withProfiler(TodoList, "TodoList");
-
-      render(<ProfiledTodoList />);
-
-      const input = screen.getByPlaceholderText("Add a todo...");
-      const addButton = screen.getByText("Add");
-
-      for (let i = 1; i <= 5; i++) {
-        fireEvent.change(input, { target: { value: `Todo ${i}` } });
-        fireEvent.click(addButton);
-      }
-
-      const todoItems = screen.getAllByText(/^Todo \d$/);
-
-      fireEvent.click(todoItems[0]!);
-
-      const removeButtons = screen.getAllByText("Remove");
-
-      fireEvent.click(removeButtons[0]!);
-
-      const totalRenders = ProfiledTodoList.getRenderCount();
-      const avgTime = ProfiledTodoList.getAverageRenderTime();
-
-      console.log(`Total renders: ${totalRenders}, Average time: ${avgTime}ms`);
-      expect(ProfiledTodoList).toHaveRenderedWithin(100);
-    });
-
-    it("should track filtering performance", () => {
-      const ProfiledTodoList = withProfiler(TodoList, "TodoList");
-
-      render(<ProfiledTodoList />);
-
-      const input = screen.getByPlaceholderText("Add a todo...");
-      const addButton = screen.getByText("Add");
-
-      const todos = ["Buy milk", "Write tests", "Review PR", "Fix bug"];
-
-      todos.forEach((todo) => {
-        fireEvent.change(input, { target: { value: todo } });
-        fireEvent.click(addButton);
-      });
-
-      const renderCount = ProfiledTodoList.getRenderCount();
-
-      console.log(
-        `TodoList with ${todos.length} todos rendered ${renderCount} times total`,
-      );
-
-      expect(ProfiledTodoList.getAverageRenderTime()).toBeLessThan(50);
     });
   });
 
@@ -192,11 +91,6 @@ describe("Basic vitest-react-profiler Examples", () => {
       });
 
       expect(ProfiledUserProfile).toHaveRenderedTimes(2);
-
-      const renders = ProfiledUserProfile.getRenderHistory();
-
-      console.log("Loading phase:", renders[0]?.actualDuration, "ms");
-      console.log("Loaded phase:", renders[1]?.actualDuration, "ms");
     });
 
     it("should measure edit mode performance", async () => {
@@ -234,39 +128,6 @@ describe("Basic vitest-react-profiler Examples", () => {
       expect(ProfiledUserProfile.getRenderCount()).toBe(
         renderCountBeforeEdit + 3,
       );
-
-      const editRenders = ProfiledUserProfile.getRenderHistory();
-
-      console.log(
-        "Edit mode renders:",
-        editRenders.map((r) => r.actualDuration),
-      );
-    });
-
-    it("should track re-renders on prop changes", async () => {
-      const ProfiledUserProfile = withProfiler(UserProfile, "UserProfile");
-
-      const { rerender } = render(<ProfiledUserProfile userId="1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Name: User 1")).toBeInTheDocument();
-      });
-
-      const initialRenders = ProfiledUserProfile.getRenderCount();
-
-      rerender(<ProfiledUserProfile userId="2" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Name: User 2")).toBeInTheDocument();
-      });
-
-      const totalRenders = ProfiledUserProfile.getRenderCount();
-
-      console.log(
-        `Prop change caused ${totalRenders - initialRenders} additional renders`,
-      );
-
-      expect(ProfiledUserProfile.getAverageRenderTime()).toBeLessThan(100);
     });
   });
 
@@ -290,166 +151,12 @@ describe("Basic vitest-react-profiler Examples", () => {
       fireEvent.click(screen.getByText("Show Content"));
 
       expect(ProfiledConditional).toHaveRenderedTimes(3);
-
-      const renders = ProfiledConditional.getRenderHistory();
-
-      console.log(
-        "Conditional renders:",
-        renders.map((r) => ({
-          phase: r.phase,
-          duration: r.actualDuration,
-        })),
-      );
-    });
-
-    it("should measure tab switching performance", () => {
-      const ProfiledConditional = withProfiler(
-        ConditionalComponent,
-        "ConditionalComponent",
-      );
-
-      render(<ProfiledConditional showContent={true} renderCount={10} />);
-
-      const initialRenderCount = ProfiledConditional.getRenderCount();
-
-      const tab2 = screen.getByText("Tab 2");
-      const tab3 = screen.getByText("Tab 3");
-      const tab1 = screen.getByText("Tab 1");
-
-      fireEvent.click(tab2);
-      expect(screen.getByText("Content for Tab 2")).toBeInTheDocument();
-
-      fireEvent.click(tab3);
-      expect(screen.getByText("Content for Tab 3")).toBeInTheDocument();
-
-      fireEvent.click(tab1);
-      expect(screen.getByText("Content for Tab 1")).toBeInTheDocument();
-
-      // Tab switching caused 3 additional renders
-      expect(ProfiledConditional.getRenderCount()).toBe(initialRenderCount + 3);
-
-      const avgTime = ProfiledConditional.getAverageRenderTime();
-
-      console.log(`Tab switching average render time: ${avgTime}ms`);
-
-      expect(avgTime).toBeLessThan(50);
-    });
-
-    it("should validate performance with different content sizes", () => {
-      const ProfiledConditional = withProfiler(
-        ConditionalComponent,
-        "ConditionalComponent",
-      );
-
-      const sizes = [1, 5, 10, 20];
-      const renderTimes: number[] = [];
-
-      sizes.forEach((size) => {
-        const { unmount } = render(
-          <ProfiledConditional showContent={true} renderCount={size} />,
-        );
-
-        const lastRender = ProfiledConditional.getLastRender();
-
-        renderTimes.push(lastRender?.actualDuration ?? 0);
-
-        console.log(
-          `Render with ${size} items: ${lastRender?.actualDuration}ms`,
-        );
-
-        unmount();
-      });
-
-      expect(renderTimes[0]).toBeLessThan(renderTimes[3]!);
-    });
-  });
-
-  describe("Performance Comparison", () => {
-    it("should compare performance of different components", () => {
-      const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
-      const ProfiledTodoList = withProfiler(TodoList, "TodoList");
-      const ProfiledConditional = withProfiler(
-        ConditionalComponent,
-        "ConditionalComponent",
-      );
-
-      render(
-        <>
-          <ProfiledCounter />
-          <ProfiledTodoList />
-          <ProfiledConditional />
-        </>,
-      );
-
-      const counterTime = ProfiledCounter.getLastRender()?.actualDuration ?? 0;
-      const todoTime = ProfiledTodoList.getLastRender()?.actualDuration ?? 0;
-      const conditionalTime =
-        ProfiledConditional.getLastRender()?.actualDuration ?? 0;
-
-      console.log("Initial render comparison:");
-      console.log(`  SimpleCounter: ${counterTime}ms`);
-      console.log(`  TodoList: ${todoTime}ms`);
-      console.log(`  ConditionalComponent: ${conditionalTime}ms`);
-
-      expect(ProfiledCounter).toHaveRenderedWithin(100);
-      expect(ProfiledTodoList).toHaveRenderedWithin(100);
-      expect(ProfiledConditional).toHaveRenderedWithin(100);
-    });
-
-    it("should establish performance budgets", () => {
-      const budgets = {
-        SimpleCounter: 10,
-        TodoList: 20,
-        UserProfile: 50,
-        ConditionalComponent: 30,
-      };
-
-      const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
-      const ProfiledTodoList = withProfiler(TodoList, "TodoList");
-      const ProfiledConditional = withProfiler(
-        ConditionalComponent,
-        "ConditionalComponent",
-      );
-
-      render(<ProfiledCounter />);
-      render(<ProfiledTodoList />);
-      render(<ProfiledConditional />);
-
-      expect(ProfiledCounter).toHaveRenderedWithin(budgets.SimpleCounter);
-      expect(ProfiledTodoList).toHaveRenderedWithin(budgets.TodoList);
-      expect(ProfiledConditional).toHaveRenderedWithin(
-        budgets.ConditionalComponent,
-      );
-
-      console.log("Performance budget validation passed!");
     });
   });
 
   describe("Advanced Testing Patterns", () => {
     beforeEach(() => {
       // Clean up any previous profiling data
-    });
-
-    it("should detect performance regression", () => {
-      const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
-
-      const baseline: number[] = [];
-
-      for (let i = 0; i < 5; i++) {
-        const { unmount } = render(<ProfiledCounter initialCount={i} />);
-
-        baseline.push(ProfiledCounter.getLastRender()?.actualDuration ?? 0);
-        unmount();
-      }
-
-      const avgBaseline = baseline.reduce((a, b) => a + b, 0) / baseline.length;
-
-      console.log(`Baseline average: ${avgBaseline}ms`);
-
-      render(<ProfiledCounter initialCount={100} />);
-      const currentTime = ProfiledCounter.getLastRender()?.actualDuration ?? 0;
-
-      expect(currentTime).toBeLessThanOrEqual(avgBaseline * 2);
     });
 
     it("should track render counts across component lifecycle", () => {
@@ -476,38 +183,6 @@ describe("Basic vitest-react-profiler Examples", () => {
       );
 
       unmount2();
-    });
-
-    it("should measure render batch performance", () => {
-      const ProfiledCounter = withProfiler(SimpleCounter, "SimpleCounter");
-
-      render(<ProfiledCounter />);
-
-      const startTime = performance.now();
-
-      const button = screen.getByText("Increment");
-
-      for (let i = 0; i < 10; i++) {
-        fireEvent.click(button);
-      }
-
-      const endTime = performance.now();
-      const totalTime = endTime - startTime;
-
-      const renders = ProfiledCounter.getRenderHistory();
-      const totalRenderTime = renders.reduce(
-        (sum, r) => sum + r.actualDuration,
-        0,
-      );
-
-      console.log(`Batch operation time: ${totalTime}ms`);
-      console.log(`Total render time: ${totalRenderTime}ms`);
-      console.log(`Overhead: ${totalTime - totalRenderTime}ms`);
-
-      // Initial render (1) + 10 clicks (10) = 11 total renders
-      // Note: In React 19, automatic batching may combine some updates
-      expect(ProfiledCounter).toHaveRenderedTimes(11);
-      expect(totalRenderTime).toBeLessThan(totalTime);
     });
   });
 });

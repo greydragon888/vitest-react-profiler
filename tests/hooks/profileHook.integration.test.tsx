@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { describe, it, expect } from "vitest";
 
-import { profileHook } from "../../src";
+import { profileHook } from "@/hooks";
 
 describe("profileHook - Integration with matchers", () => {
   it("should work with toHaveRendered", () => {
@@ -14,12 +14,6 @@ describe("profileHook - Integration with matchers", () => {
     const { ProfiledHook } = profileHook(() => useState(0));
 
     expect(ProfiledHook).toHaveMountedOnce();
-  });
-
-  it("should work with toHaveRenderedWithin", () => {
-    const { ProfiledHook } = profileHook(() => useState(0));
-
-    expect(ProfiledHook).toHaveRenderedWithin(100);
   });
 
   it("should work with getRenderHistory", () => {

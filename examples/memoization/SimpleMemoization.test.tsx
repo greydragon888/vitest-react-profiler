@@ -209,15 +209,11 @@ describe("Simple Memoization Tests", () => {
       render(<ProfiledComponent />);
 
       expect(ProfiledComponent).toHaveRendered();
-      expect(ProfiledComponent).toHaveRenderedWithin(200);
 
       const lastRender = ProfiledComponent.getLastRender();
 
       expect(lastRender).toBeDefined();
       expect(lastRender?.phase).toBe("mount");
-      expect(lastRender?.actualDuration).toBeGreaterThan(0);
-
-      console.log(`Render took ${lastRender?.actualDuration.toFixed(2)}ms`);
     });
 
     it("should track mount vs update phases", () => {
@@ -255,13 +251,6 @@ describe("Simple Memoization Tests", () => {
       }
 
       expect(ProfiledComponent).toHaveRenderedTimes(6);
-
-      const avgTime = ProfiledComponent.getAverageRenderTime();
-
-      expect(avgTime).toBeGreaterThan(0);
-      expect(ProfiledComponent).toHaveAverageRenderTime(100);
-
-      console.log(`Average render time: ${avgTime.toFixed(2)}ms`);
     });
   });
 
