@@ -1,5 +1,5 @@
-import type { ProfilerStorage } from "@/profiler/core/ProfilerStorage.ts";
-import type { AnyComponentType } from "@/types.ts";
+import type { ProfilerStorage } from "@/profiler/core/ProfilerStorage";
+import type { AnyComponentType } from "@/types";
 import type { ProfilerOnRenderCallback } from "react";
 
 /**

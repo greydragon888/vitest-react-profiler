@@ -1,4 +1,4 @@
-import type { PhaseType } from "@/types.ts";
+import type { PhaseType } from "@/types";
 
 /**
  * Manages all types of caching for profiler data

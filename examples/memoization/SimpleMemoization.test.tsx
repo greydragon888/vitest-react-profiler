@@ -213,7 +213,7 @@ describe("Simple Memoization Tests", () => {
       const lastRender = ProfiledComponent.getLastRender();
 
       expect(lastRender).toBeDefined();
-      expect(lastRender?.phase).toBe("mount");
+      expect(lastRender).toBe("mount");
     });
 
     it("should track mount vs update phases", () => {
@@ -236,8 +236,8 @@ describe("Simple Memoization Tests", () => {
 
       const history = ProfiledComponent.getRenderHistory();
 
-      expect(history[0]?.phase).toBe("mount");
-      expect(history[1]?.phase).toBe("update");
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update");
     });
 
     it("should calculate average render time", () => {

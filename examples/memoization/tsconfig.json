@@ -16,6 +16,9 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../src/*"]
+    },
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "skipLibCheck": true,

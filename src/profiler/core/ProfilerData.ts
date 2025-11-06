@@ -1,6 +1,6 @@
 import { ProfilerCache } from "./ProfilerCache";
 
-import type { PhaseType } from "@/types.ts";
+import type { PhaseType } from "@/types";
 
 /**
  * Manages profiling data for a single component

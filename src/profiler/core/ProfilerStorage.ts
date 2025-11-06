@@ -1,6 +1,6 @@
 import { ProfilerData } from "./ProfilerData";
 
-import type { AnyComponentType } from "@/types.ts";
+import type { AnyComponentType } from "@/types";
 
 /**
  * Type-safe storage for profiler data

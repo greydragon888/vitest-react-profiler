@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { withProfiler } from "../../src";
-import { SimpleCounter } from "./components/SimpleCounter.tsx";
-import { TodoList } from "./components/TodoList.tsx";
-import { UserProfile } from "./components/UserProfile.tsx";
-import { ConditionalComponent } from "./components/ConditionalComponent.tsx";
+import { SimpleCounter } from "./components/SimpleCounter";
+import { TodoList } from "./components/TodoList";
+import { UserProfile } from "./components/UserProfile";
+import { ConditionalComponent } from "./components/ConditionalComponent";
 
 describe("Basic vitest-react-profiler Examples", () => {
   describe("SimpleCounter", () => {
@@ -25,15 +25,10 @@ describe("Basic vitest-react-profiler Examples", () => {
 
       const renders = ProfiledCounter.getRenderHistory();
 
-      expect(renders[0]?.phase).toBe("mount");
-      expect(renders[1]?.phase).toBe("update");
+      expect(renders[0]).toBe("mount");
+      expect(renders[1]).toBe("update");
 
-      console.log(
-        "Render history:",
-        renders.map((r) => ({
-          phase: r.phase,
-        })),
-      );
+      console.log("Render history:", renders);
     });
 
     it("should track render phases separately", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { createHookProfiler } from "../../src";
+import { createHookProfiler } from "@/hooks";
 
 /**
  * Examples of performance issues when composing custom hooks

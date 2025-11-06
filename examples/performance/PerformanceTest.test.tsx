@@ -1,13 +1,6 @@
-import { render, fireEvent, screen, waitFor } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { withProfiler } from "../../src";
 import { AnimationStressTest } from "./components/AnimationStressTest";
-import { ConditionalRendering } from "./components/ConditionalRendering";
-import { ExpensiveInitialRender } from "./components/ExpensiveInitialRender";
-import { FrequentUpdates } from "./components/FrequentUpdates";
-import { HeavyComputation } from "./components/HeavyComputation";
-import { LargeList } from "./components/LargeList";
-import { ReconciliationTest } from "./components/ReconciliationTest";
-import { RecursiveTree } from "./components/RecursiveTree";
 
 describe("Performance Testing Suite", () => {
   describe("Animation Performance", () => {

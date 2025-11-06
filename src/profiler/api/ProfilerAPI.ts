@@ -1,9 +1,5 @@
 import type { ProfilerStorage } from "../core/ProfilerStorage";
-import type {
-  AnyComponentType,
-  PhaseType,
-  ProfiledComponent,
-} from "@/types.ts";
+import type { AnyComponentType, PhaseType, ProfiledComponent } from "@/types";
 import type { ComponentType } from "react";
 
 // Frozen empty array to return when no data exists

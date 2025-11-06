@@ -5,13 +5,13 @@ import {
   MemoizedList,
   UnmemoizedList,
   ListItem,
-} from "./components/MemoizedList.tsx";
+} from "./components/MemoizedList";
 import {
   MemoizedForm,
   UnmemoizedForm,
   FormField,
-} from "./components/ComplexForm.tsx";
-import { MemoizedDataGrid, GridRow } from "./components/DataGrid.tsx";
+} from "./components/ComplexForm";
+import { MemoizedDataGrid, GridRow } from "./components/DataGrid";
 
 describe("Memoization Performance Tests", () => {
   describe("List Component Memoization", () => {

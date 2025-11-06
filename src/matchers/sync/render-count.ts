@@ -1,10 +1,10 @@
-import { isProfiledComponent } from "@/matchers/type-guards.ts";
+import { isProfiledComponent } from "@/matchers/type-guards";
 import {
   formatRenderHistory,
   formatRenderSummary,
-} from "@/utils/formatRenderHistory.ts";
+} from "@/utils/formatRenderHistory";
 
-import type { MatcherResult } from "@/matchers/types.ts";
+import type { MatcherResult } from "@/matchers/types";
 
 /**
  * Assert that component has rendered at least once

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { useState, useEffect } from "react";
-import { profileHook, createHookProfiler } from "../../src";
+import { profileHook, createHookProfiler } from "@/hooks";
 
 /**
  * Examples of detecting unnecessary renders caused by improper state management
@@ -28,8 +28,8 @@ describe("Unnecessary Renders Detection", () => {
       expect(ProfiledHook).toHaveRenderedTimes(2); // ❌ Extra render!
 
       const history = ProfiledHook.getRenderHistory();
-      expect(history[0]!.phase).toBe("mount");
-      expect(history[1]!.phase).toBe("update"); // Unnecessary update
+      expect(history[0]).toBe("mount");
+      expect(history[1]).toBe("update"); // Unnecessary update
     });
 
     it("should verify fix: derive state instead of effect", () => {

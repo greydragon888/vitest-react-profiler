@@ -1,11 +1,11 @@
-import { createOnRenderCallback } from "@/profiler/components/createOnRenderCallback.ts";
-import { registry } from "@/registry.ts";
+import { createOnRenderCallback } from "@/profiler/components/createOnRenderCallback";
+import { registry } from "@/registry";
 
 import { ProfiledComponentWrapper } from "./ProfiledComponent";
 import { ProfilerAPI } from "../api/ProfilerAPI";
 import { ProfilerStorage } from "../core/ProfilerStorage";
 
-import type { ProfiledComponentType } from "@/types.ts";
+import type { ProfiledComponentType } from "@/types";
 import type { ComponentType, ReactElement } from "react";
 
 // Global singletons - single instance for entire application

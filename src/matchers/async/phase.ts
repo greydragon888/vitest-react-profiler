@@ -1,8 +1,8 @@
-import { isProfiledComponent } from "@/matchers/type-guards.ts";
-import { formatRenderSummary } from "@/utils/formatRenderHistory.ts";
+import { isProfiledComponent } from "@/matchers/type-guards";
+import { formatRenderSummary } from "@/utils/formatRenderHistory";
 
-import type { WaitOptions, MatcherResult } from "@/matchers/types.ts";
-import type { PhaseType } from "@/types.ts";
+import type { WaitOptions, MatcherResult } from "@/matchers/types";
+import type { PhaseType } from "@/types";
 
 /**
  * Assert that component eventually reaches specific render phase (async)

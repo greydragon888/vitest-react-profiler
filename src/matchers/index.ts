@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 
-import { toEventuallyReachPhase } from "@/matchers/async/phase.ts";
+import { toEventuallyReachPhase } from "@/matchers/async/phase";
 
 import {
   toEventuallyRenderAtLeast,

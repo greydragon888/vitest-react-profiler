@@ -1,7 +1,7 @@
-import { isProfiledComponent } from "@/matchers/type-guards.ts";
-import { formatRenderHistory } from "@/utils/formatRenderHistory.ts";
+import { isProfiledComponent } from "@/matchers/type-guards";
+import { formatRenderHistory } from "@/utils/formatRenderHistory";
 
-import type { MatcherResult } from "@/matchers/types.ts";
+import type { MatcherResult } from "@/matchers/types";
 
 /**
  * Assert that component mounted exactly once
