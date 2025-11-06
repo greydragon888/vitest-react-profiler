@@ -26,8 +26,6 @@ describe("Performance Testing Suite", () => {
         { timeout: duration + 50 },
       );
 
-      const rafRenders = ProfiledRAF.getRenderCount();
-
       unmountRAF();
 
       // Test with setInterval

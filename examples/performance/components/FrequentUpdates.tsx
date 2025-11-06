@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect } from "react";
 import type { FC } from "react";
 
 // Component with frequent state updates
