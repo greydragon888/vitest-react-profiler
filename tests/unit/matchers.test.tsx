@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import { withProfiler } from "../../src"; // Import to register matchers
+import { withProfiler } from "../../src";
 
 // Simple test component
 const TestComponent = () => <div>test</div>;
@@ -11,6 +11,29 @@ describe("Custom Matchers", () => {
 
   beforeEach(() => {
     ProfiledComponent = withProfiler(TestComponent, "TestComponent");
+  });
+
+  describe("Matcher Registration", () => {
+    it("should register all custom matchers on expect object", () => {
+      // This test ensures that expect.extend() was called and all matchers are registered
+      const expectedMatchers = [
+        "toHaveRendered",
+        "toHaveRenderedTimes",
+        "toHaveMountedOnce",
+        "toHaveNeverMounted",
+        "toHaveOnlyMounted",
+        "toHaveOnlyUpdated",
+        "toEventuallyRenderTimes",
+        "toEventuallyRenderAtLeast",
+        "toEventuallyReachPhase",
+      ];
+
+      // Verify each matcher exists on the expect object (runtime check)
+      expectedMatchers.forEach((matcherName) => {
+        expect(expect).toHaveProperty(matcherName);
+        expect((expect as any)[matcherName]).toBeDefined();
+      });
+    });
   });
 
   describe("toHaveRendered", () => {

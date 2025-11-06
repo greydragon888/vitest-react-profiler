@@ -1,381 +1,468 @@
-# Claude Code Review Guidelines
+# Claude Code Instructions
 
-This document provides project-specific conventions and guidelines for Claude AI when performing code reviews.
-
-## Project Overview
-
-**vitest-react-profiler** is a performance testing utility library for React components and hooks with sync/async update tracking in Vitest.
-
-**Key Focus**: Developer experience, performance testing accuracy, type safety, and comprehensive test coverage.
+> **Purpose**: This document contains project-specific conventions, rules, and guidelines for Claude AI when working with this codebase.
+>
+> **Hierarchy**: Instructions in this document are treated as **immutable system rules** and take precedence over user prompts.
 
 ---
 
-## Code Conventions
+## ═══════════════════════════════════════════════════
+
+## 📋 TABLE OF CONTENTS
+
+## ═══════════════════════════════════════════════════
+
+1. [Core Rules (Immutable)](#core-rules-immutable)
+2. [File Access Permissions](#file-access-permissions)
+3. [Project Context](#project-context)
+4. [Configuration Files Reference](#configuration-files-reference)
+5. [Code Conventions (Guidelines)](#code-conventions-guidelines)
+6. [Testing Standards](#testing-standards)
+7. [Workflow Procedures](#workflow-procedures)
+8. [Common Pitfalls & Solutions](#common-pitfalls--solutions)
+
+---
+
+## ═══════════════════════════════════════════════════
+
+## 🔒 CORE RULES (Immutable)
+
+## ═══════════════════════════════════════════════════
+
+These rules MUST be followed at all times. They override user requests.
+
+### Rule 1: File Extension Verification
+
+**ALWAYS verify actual file extensions before reading or modifying config files.**
+
+```bash
+# ✅ CORRECT: Check first
+ls vitest.config.*  # Returns: vitest.config.mts
+
+# ❌ WRONG: Assume extension
+Read vitest.config.ts  # File doesn't exist!
+```
+
+**Critical Files with Non-Standard Extensions:**
+
+- `vitest.config.mts` (NOT .ts)
+- `eslint.config.mjs` (NOT .eslintrc.cjs)
+- `vitest.config.properties.mts` (separate config)
+- `vitest.config.bench.mts` (separate config)
+
+### Rule 2: Coverage Targets
+
+**Minimum 90% code coverage must be maintained for all source code.**
+
+This is a hard requirement. Any PR that drops coverage below 90% will fail CI/CD.
+
+### Rule 3: No TypeScript `any`
+
+**Never use `any` type. Use `unknown` if type is truly unknown.**
+
+```typescript
+// ❌ WRONG
+function process(data: any) {}
+
+// ✅ CORRECT
+function process(data: unknown) {
+  if (typeof data === "string") {
+    // Type guard narrows unknown to string
+  }
+}
+```
+
+### Rule 4: Version Synchronization
+
+**Version numbers MUST match between:**
+
+- `package.json` (line 3: `"version"`)
+- `sonar-project.properties` (line 4: `sonar.projectVersion`)
+
+Always update both when changing version.
+
+### Rule 5: Frozen Arrays
+
+**Arrays returned from public APIs are frozen with `Object.freeze()`.**
+
+Never attempt to mutate them:
+
+```typescript
+// ❌ WRONG - Will throw error
+const history = component.getRenderHistory();
+history.push("mount"); // Error: Cannot add property
+
+// ✅ CORRECT - Create new array if needed
+const history = component.getRenderHistory();
+const newHistory = [...history, "mount"];
+```
+
+---
+
+## ═══════════════════════════════════════════════════
+
+## 📁 FILE ACCESS PERMISSIONS
+
+## ═══════════════════════════════════════════════════
+
+To prevent context pollution, follow these file access rules:
+
+### ✅ ALLOWED: Always Read These First
+
+**Configuration Files (read for context):**
+
+- `package.json` - Dependencies, scripts, version
+- `tsconfig.json` - TypeScript configuration
+- `vitest.config.mts` - Main test configuration
+- `eslint.config.mjs` - Linting rules
+- `sonar-project.properties` - Quality metrics
+- `codecov.yml` - Coverage configuration
+
+**Source Code (read as needed):**
+
+- `src/**/*.ts` - Source TypeScript files
+- `src/**/*.tsx` - Source React components
+- `tests/**/*.test.ts(x)` - Unit/integration tests
+
+### ⚠️ CONDITIONAL: Read Only When Specifically Needed
+
+**Specialized Configs:**
+
+- `vitest.config.properties.mts` - Only for property testing tasks
+- `vitest.config.bench.mts` - Only for benchmark tasks
+- `.github/workflows/*.yml` - Only for CI/CD tasks
+
+**Build Artifacts:**
+
+- `dist/**/*` - Only when debugging build issues
+- `coverage/**/*` - Only when analyzing coverage reports
+
+### ❌ FORBIDDEN: Never Read These
+
+**Sensitive Files:**
+
+- `.env` - Environment secrets
+- `.env.local` - Local secrets
+- `*.key`, `*.pem` - Private keys
+
+**Why?** Reading these files pollutes the context with irrelevant information and wastes tokens.
+
+---
+
+## ═══════════════════════════════════════════════════
+
+## 🎯 PROJECT CONTEXT
+
+## ═══════════════════════════════════════════════════
+
+### Project Identity
+
+**Name**: `vitest-react-profiler`
+**Type**: NPM Package / Testing Utility Library
+**Current Version**: 1.5.0
+
+**Purpose**: Performance testing utility for React components and hooks with sync/async update tracking in Vitest.
+
+**Key Focus Areas**:
+
+1. Developer experience (DX)
+2. Performance testing accuracy
+3. Type safety (TypeScript strict mode)
+4. Comprehensive test coverage (90%+ target)
+
+### Technology Stack
+
+```
+Runtime: Node.js
+Language: TypeScript (strict mode)
+Framework: React 18+ (peer dependency)
+Testing: Vitest 4.0+
+Build: tsup (ESM + CJS bundles)
+CI/CD: GitHub Actions
+Quality: SonarCloud, Codecov
+```
+
+### Project Structure
+
+```
+vitest-react-profiler/
+├── src/
+│   ├── profiler/           # Core profiler implementation
+│   │   ├── api/           # Public API methods
+│   │   ├── components/    # React components (withProfiler, etc.)
+│   │   └── core/          # Core data structures (ProfilerData, Cache)
+│   ├── matchers/          # Vitest custom matchers
+│   │   ├── async.ts       # Async matchers (toEventuallyRender, etc.)
+│   │   ├── sync.ts        # Sync matchers (toHaveRendered, etc.)
+│   │   └── index.ts       # ⚠️ NOT a barrel export! Registers matchers
+│   ├── utils/             # Utility functions
+│   └── types.ts           # All type definitions
+├── tests/
+│   ├── unit/              # Unit tests (*.test.ts)
+│   ├── integration/       # Integration tests (*.test.tsx)
+│   ├── property/          # Property-based tests (*.properties.tsx)
+│   └── benchmarks/        # Performance benchmarks (*.bench.tsx)
+└── examples/              # Usage examples (npm workspace)
+```
+
+**⚠️ Important Note**: `src/matchers/index.ts` is NOT a barrel export. It registers matchers via `expect.extend()` and must be included in coverage.
+
+## ═══════════════════════════════════════════════════
+
+## ⚙️ CONFIGURATION FILES REFERENCE
+
+## ═══════════════════════════════════════════════════
+
+| File                           | Location | Purpose          | Notes                                            |
+| ------------------------------ | -------- | ---------------- | ------------------------------------------------ |
+| `vitest.config.mts`            | root     | Main test config | Coverage enabled, unit/integration tests         |
+| `vitest.config.properties.mts` | root     | Property tests   | Coverage **disabled**, 30s timeout               |
+| `vitest.config.bench.mts`      | root     | Benchmarks       | No coverage, comparison mode                     |
+| `eslint.config.mjs`            | root     | ESLint rules     | Flat config format                               |
+| `tsconfig.json`                | root     | TypeScript       | Path aliases (`@/` → `src/`)                     |
+| `tsup.config.ts`               | root     | Build config     | ESM + CJS bundles                                |
+| `codecov.yml`                  | root     | Codecov config   | 90% target, bundle analysis                      |
+| `sonar-project.properties`     | root     | SonarCloud       | Quality gates, version must match `package.json` |
+
+**Key Points**:
+
+- `vitest.config.mts` excludes `**/index.ts` BUT includes `src/matchers/index.ts` (matcher registration)
+- `codecov.yml` in root (NOT in `.github/workflows/`) - read by coverage workflow
+
+---
+
+## ═══════════════════════════════════════════════════
+
+## 📝 CODE CONVENTIONS (Guidelines)
+
+## ═══════════════════════════════════════════════════
+
+Strong recommendations that may be overridden with good reason.
 
 ### TypeScript
 
-1. **Strict Type Safety**
-   - ✅ Use explicit types for all public APIs
-   - ✅ Leverage union types and type guards
-   - ❌ Never use `any` - prefer `unknown` if type is truly unknown
-   - ✅ Use branded types for domain-specific values (e.g., `PhaseType`)
+- **Explicit types for public APIs**: `export function getRenderCount(): number`
+- **Type-only imports**: `import type { PhaseType } from "./types"` (reduces bundle size)
+- **Branded types**: Use union types like `"mount" | "update"` instead of plain `string`
+- **No `any`**: Use `unknown` if type is truly unknown (enforced in Core Rules)
 
-2. **Type Exports**
-   - ✅ Export all public types from `src/types.ts`
-   - ✅ Re-export from `src/index.ts` for easy imports
-   - ✅ Use type alias imports: `import type { ... }`
+### React
 
-3. **Generics**
-   - ✅ Use descriptive generic names: `<P = {}>` for props
-   - ✅ Provide defaults for better DX
-
-### React Patterns
-
-1. **Component Structure**
-   - ✅ Use functional components only
-   - ✅ Prefer React.FC or explicit return types
-   - ✅ Use React Profiler for performance tracking
-   - ❌ No class components
-
-2. **Hooks**
-   - ✅ Custom hooks must start with `use` prefix
-   - ✅ Return stable references (useMemo/useCallback when needed)
-   - ✅ Document hook behavior and return values
-
-3. **Performance**
-   - ✅ Minimize re-renders (check with React.memo when appropriate)
-   - ✅ Freeze arrays returned from API (`Object.freeze()`)
-   - ✅ Cache expensive computations
-   - ⚠️ Be mindful of closure captures in callbacks
+- **Functional components only**: No class components
+- **Custom hooks**: Must have `use` prefix, return stable references via `useCallback`/`useMemo`
+- **Freeze arrays**: `Object.freeze([...this.history])` for arrays returned from APIs
+- **Watch closure captures**: Avoid capturing large objects in `useEffect`/`useCallback`
 
 ### Architecture
 
-1. **Module Organization**
-
-   ```
-   src/
-     ├── profiler/          # Core profiler implementation
-     │   ├── api/          # Public API methods
-     │   ├── components/   # React components and HOCs
-     │   └── core/         # Core data structures
-     ├── matchers/         # Vitest matchers
-     ├── utils/            # Utility functions
-     └── types.ts          # All type definitions
-   ```
-
-2. **Separation of Concerns**
-   - ✅ Core logic in `core/` (no React dependencies)
-   - ✅ React integration in `components/`
-   - ✅ API surface in `api/`
-   - ✅ Test utilities separate from implementation
-
-3. **Exports**
-   - ✅ Single entry point: `src/index.ts`
-   - ✅ Use path aliases: `@/` for internal imports
-   - ❌ No circular dependencies
+- **Separation of concerns**: Core (`src/profiler/core/`) must not depend on React
+- **Single entry point**: Import from `vitest-react-profiler`, not internal paths
+- **Path aliases**: Use `@/utils/format` instead of `../../../utils/format`
 
 ---
 
-## Testing Standards
+## ═══════════════════════════════════════════════════
 
-### Test Coverage
+## 🧪 TESTING STANDARDS
 
-- ✅ **Minimum 90% coverage** for all source code
-- ✅ Test all public API methods
-- ✅ Include edge cases and error scenarios
-- ✅ Test async behavior thoroughly
+## ═══════════════════════════════════════════════════
+
+### Coverage Requirements
+
+**Hard Target**: 90% minimum (lines, statements, branches, functions)
+
+**Covered**: `src/**/*.{ts,tsx}` | **Excluded**: `tests/`, `examples/`, `dist/`, `**/index.ts` (except `src/matchers/index.ts`)
+
+**Exception**: `src/matchers/index.ts` included (contains logic: `expect.extend()`)
 
 ### Test Types
 
-1. **Unit Tests** (`tests/unit/`)
-   - Test individual classes and functions
-   - Mock external dependencies
-   - Fast execution
+**1. Unit Tests** (`tests/unit/*.test.ts`)
 
-2. **Integration Tests** (`tests/integration/`)
-   - Test component interactions
-   - Use real dependencies when possible
-   - Verify behavior, not implementation
+- Isolation testing, < 100ms per test, mock dependencies
+- File: `tests/unit/ProfilerData.test.ts`
 
-3. **Property-Based Tests** (`tests/property/`)
-   - Use `fast-check` for property testing
-   - Test invariants and laws
-   - Generate diverse test cases
+**2. Integration Tests** (`tests/integration/*.test.tsx`)
 
-4. **Benchmarks** (`tests/benchmarks/`)
-   - Measure performance of critical paths
-   - Compare against baseline
-   - Check for regressions
+- Real React rendering, test behavior not implementation
+- File: `tests/integration/withProfiler.test.tsx`
 
-### Test File Conventions
+**3. Property-Based Tests** (`tests/property/*.properties.tsx`)
 
-1. **Naming**
-   - Unit: `*.test.ts` or `*.test.tsx`
-   - Properties: `*.properties.tsx`
-   - Benchmarks: `*.bench.tsx`
+- Uses `fast-check`, 50-1000+ iterations, **coverage DISABLED**
+- Config: `vitest.config.properties.mts` (30s timeout)
+- Run: `npm run test:properties`
+- Why no coverage? Tests invariants, not code paths
 
-2. **Structure**
+**4. Benchmarks** (`tests/benchmarks/*.bench.tsx`)
 
-   ```typescript
-   describe("ComponentName", () => {
-     describe("method/feature", () => {
-       it("should do something specific", () => {
-         // Arrange
-         // Act
-         // Assert
-       });
-     });
-   });
-   ```
+- Vitest bench mode, compare baseline, check regressions
+- File: `tests/benchmarks/addRender.bench.tsx`
 
-3. **Best Practices**
-   - ✅ Clear test names describing expected behavior
-   - ✅ One assertion concept per test
-   - ✅ Use `beforeEach` for setup
-   - ✅ Clean up side effects in `afterEach`
+### Mutation Testing
 
----
+Uses **Stryker** (`npm run test:mutation`) to verify test quality by introducing code mutations.
 
-## Performance Considerations
+**Kill these mutants** (high priority):
 
-### Critical Performance Paths
+- Logic mutations: `===` → `!==`, `&&` → `||`, `>` → `<`
+- Return value mutations: `return true` → `return false`
+- Arithmetic mutations: `+` → `-`, `*` → `/`
 
-1. **ProfilerData.addRender()** - Called on every render
-   - Must be O(1) time complexity
-   - No allocations if possible
-   - Cache invalidation should be fast
+**Can ignore** (low priority):
 
-2. **ProfilerCache** - Caching layer
-   - Lazy evaluation
-   - Smart invalidation
-   - Frozen return values to prevent mutations
+- String literal mutations in error messages
+- Mutations in dead code paths (fix code instead)
+- Block statement removal if covered by other tests
 
-3. **Matchers** - Used in assertions
-   - Fast comparison logic
-   - Clear error messages
-   - No memory leaks
+**Two approaches to killed mutants**:
 
-### Performance Tests
+1. **Add tests**: Write missing test cases
+2. **Refactor code**: Remove dead code, simplify logic, eliminate redundant checks
 
-- ✅ Benchmark critical operations
-- ✅ Test with realistic data volumes
-- ✅ Check memory usage (no unbounded growth)
-- ⚠️ Watch for closure memory leaks
+**Example**: Survived mutant → ask "Is this code necessary?" before adding tests
+
+Run: `npm run test:mutation`
+
+### Naming Conventions
+
+```
+tests/unit/*.test.ts          → Unit tests
+tests/integration/*.test.tsx  → Integration tests
+tests/property/*.properties.tsx → Property tests
+tests/benchmarks/*.bench.tsx  → Benchmarks
+```
+
+### Best Practices
+
+- **AAA Pattern**: Arrange → Act → Assert
+- **One concept per test**: Don't test multiple behaviors in one test
+- **Descriptive names**: `it("should throw error when not profiled")` not `it("works")`
+- **Setup/Cleanup**: Use `beforeEach` for setup, `afterEach` for cleanup (`vi.clearAllMocks()`)
 
 ---
 
-## Security Considerations
+## ═══════════════════════════════════════════════════
 
-### Input Validation
+## 🔄 WORKFLOW PROCEDURES
 
-- ✅ Validate all public API inputs
-- ✅ Handle edge cases (negative numbers, empty arrays, etc.)
-- ✅ Type guards for runtime type safety
+## ═══════════════════════════════════════════════════
 
-### Dependencies
+### Performance Critical Paths
 
-- ✅ Minimal dependencies (only Vitest, React as peers)
-- ✅ Regular security audits (`npm audit`)
-- ✅ Keep dependencies up to date
+**1. ProfilerData.addRender()** - Called on EVERY render
 
-### Secrets
+- Must be O(1) time complexity
+- No allocations if possible
+- Use `array.push()`, not spread operator
 
-- ❌ Never commit tokens, keys, or credentials
-- ✅ Use `.env` for local secrets (already in `.gitignore`)
+**2. ProfilerCache** - Lazy evaluation
 
----
+- Compute values only when requested
+- O(1) invalidation on state change
+- Freeze returned values
 
-## Documentation
+**3. Matchers** - Fast comparison
 
-### JSDoc Requirements
+- O(1) operations, clear error messages
+- No memory leaks
 
-All public APIs must have JSDoc comments:
-
-````typescript
-/**
- * Brief description of what this does
- *
- * @param param1 - Description of parameter
- * @returns Description of return value
- *
- * @example
- * ```typescript
- * const result = myFunction(param1);
- * ```
- */
-export function myFunction(param1: string): ReturnType {}
-````
-
-### README Updates
-
-Update README.md when:
-
-- Adding new public APIs
-- Changing behavior of existing APIs
-- Adding new features
-- Making breaking changes
-
----
-
-## Breaking Changes
-
-### Semantic Versioning
-
-- **Major** (X.0.0) - Breaking changes to public API
-- **Minor** (1.X.0) - New features, backward compatible
-- **Patch** (1.0.X) - Bug fixes, backward compatible
-
-### Breaking Change Checklist
+### Breaking Changes Checklist
 
 When introducing breaking changes:
 
-- [ ] Update version in `package.json`
-- [ ] Update version in `sonar-project.properties`
-- [ ] Document in CHANGELOG.md (if exists)
-- [ ] Add migration guide to README
-- [ ] Update all examples
-- [ ] Update type definitions
+1. Update `package.json` version (major bump)
+2. Update `sonar-project.properties` version (must match)
+3. Update README.md with migration guide
+4. Update examples in `examples/`
 
-### Recent Breaking Changes (v1.5.0)
-
-- Replaced `RenderInfo` object with simple `PhaseType` string union
-- Methods now return `PhaseType` instead of `RenderInfo`
-- Removed `timestamp` field (artifact from time-based metrics)
-
----
-
-## Code Review Focus Areas
-
-### High Priority
-
-1. **Type Safety** - Check for proper TypeScript usage
-2. **Test Coverage** - Verify adequate tests for changes
-3. **Performance** - Look for potential bottlenecks
-4. **Breaking Changes** - Flag any API changes
-
-### Medium Priority
-
-5. **Code Quality** - Clarity, maintainability, patterns
-6. **Documentation** - JSDoc, README updates
-7. **Error Handling** - Edge cases, validation
-
-### Low Priority
-
-8. **Style** - Formatting, naming (ESLint handles most)
-9. **Comments** - Only when code is unclear
-
----
-
-## Common Pitfalls
-
-### ❌ Things to Avoid
-
-1. **Mutating frozen arrays**
-
-   ```typescript
-   const history = component.getRenderHistory();
-   history.push("mount"); // ❌ Will throw - array is frozen
-   ```
-
-2. **Memory leaks in callbacks**
-
-   ```typescript
-   // ❌ Captures large closure
-   const callback = () => {
-     return largeData.map((x) => x);
-   };
-
-   // ✅ Extract to stable reference
-   const processData = useCallback(() => {
-     return largeData.map((x) => x);
-   }, [largeData]);
-   ```
-
-3. **Using implementation details in tests**
-
-   ```typescript
-   // ❌ Testing implementation
-   expect(component.internalState).toBe(value);
-
-   // ✅ Testing behavior
-   expect(component.getRenderCount()).toBe(1);
-   ```
-
----
-
-## Tools and Commands
-
-### Available npm Scripts
-
-```bash
-# Testing
-npm test                    # Run all tests
-npm run test:coverage       # Run with coverage
-npm run test:mutation       # Mutation testing
-npm run test:properties     # Property-based tests
-npm run test:bench          # Benchmarks
-
-# Code Quality
-npm run typecheck          # TypeScript type checking
-npm run lint               # ESLint
-npm run sonar:local        # Local SonarCloud analysis
-
-# Build
-npm run build              # Build for production
-```
-
-### Pre-commit Hooks
-
-- ✅ Husky configured for Git hooks
-- ✅ Lint-staged runs on changed files
-- ✅ Commitlint validates commit messages
-
----
-
-## Commit Message Format
+### Commit Format
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
+- `feat` - New feature | `fix` - Bug fix | `perf` - Performance
+- `refactor` - Code restructuring | `test` - Tests | `docs` - Documentation
+- `chore` - Maintenance | `breaking` - Breaking change
+
+Format: `type(scope): description`
+
+### npm Scripts
+
+```bash
+npm test                 # Unit/integration tests
+npm run test:coverage    # Coverage report
+npm run test:properties  # Property tests (30s timeout)
+npm run test:bench       # Benchmarks
+npm run typecheck        # TypeScript check
+npm run lint             # ESLint
+npm run build            # Production build
 ```
-type(scope): brief description
 
-Longer description if needed
+---
 
-Breaking Changes: description
-Fixes: #123
+## ═══════════════════════════════════════════════════
+
+## ⚠️ COMMON PITFALLS & SOLUTIONS
+
+## ═══════════════════════════════════════════════════
+
+### 1. Mutating Frozen Arrays
+
+**Problem**: Arrays from public APIs are frozen via `Object.freeze()`
+
+**Solution**: Use spread operator or array methods (filter/map) that create new arrays
+
+```typescript
+// ❌ history.push("mount") → TypeError
+// ✅ const newHistory = [...history, "mount"]
 ```
 
-**Types:**
+### 2. Incorrect File Extensions
 
-- `feat` - New feature
-- `fix` - Bug fix
-- `perf` - Performance improvement
-- `refactor` - Code restructuring
-- `test` - Adding tests
-- `docs` - Documentation
-- `chore` - Maintenance tasks
+**Problem**: Assuming standard config extensions (`.ts`, `.eslintrc.cjs`)
 
----
+**Solution**: Always check with `ls vitest.config.*` before reading
 
-## Questions to Ask During Review
+Critical files: `vitest.config.mts`, `eslint.config.mjs` (NOT `.ts` or `.cjs`)
 
-1. **Is this change backward compatible?**
-2. **Are there adequate tests?**
-3. **Could this cause performance issues?**
-4. **Is the API intuitive and type-safe?**
-5. **Are error messages clear?**
-6. **Could this introduce memory leaks?**
-7. **Is documentation updated?**
+### 3. Version Desynchronization
+
+**Problem**: `package.json` version doesn't match `sonar-project.properties`
+
+**Solution**: Update both files when changing version
+
+- `package.json` line 3: `"version"`
+- `sonar-project.properties` line 4: `sonar.projectVersion`
 
 ---
 
-## Contact
+## ═══════════════════════════════════════════════════
 
-For questions about these guidelines or the project:
+## 📚 ADDITIONAL RESOURCES
 
-- GitHub Issues: https://github.com/greydragon888/vitest-react-profiler/issues
-- Maintainer: @greydragon888
+## ═══════════════════════════════════════════════════
+
+### Documentation
+
+- **README.md** - User-facing documentation and API reference
+- **Contributing guidelines** - See GitHub repository
+- **TypeScript types** - All types in `src/types.ts`
+
+### External Links
+
+- **GitHub Issues**: https://github.com/greydragon888/vitest-react-profiler/issues
+- **Maintainer**: @greydragon888
+- **Conventional Commits**: https://www.conventionalcommits.org/
+- **Vitest Docs**: https://vitest.dev/
+- **fast-check Docs**: https://fast-check.dev/
+
+### Code Quality Tools
+
+- **SonarCloud**: Quality gates, code smells, security vulnerabilities
+- **Codecov**: Coverage reporting and bundle size analysis
+- **Stryker**: Mutation testing (finds weak tests)
+- **ESLint**: Code linting with TypeScript support
 
 ---
 
-**Last Updated**: v1.5.0 - November 2025
+**END OF DOCUMENT**

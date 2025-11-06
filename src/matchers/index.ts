@@ -18,19 +18,23 @@ import { toHaveRendered, toHaveRenderedTimes } from "./sync/render-count";
  * Register all custom Vitest matchers for profiled components
  *
  * This combines:
- * - Synchronous render count matchers (toHaveRendered, toHaveRenderedTimes)
- * - Synchronous phase matchers (toHaveMountedOnce, toHaveNeverMounted, toHaveOnlyMounted, toHaveOnlyUpdated)
- * - Asynchronous render count matchers (toEventuallyRenderTimes, toEventuallyRenderAtLeast)
- * - Asynchronous phase matchers (toEventuallyReachPhase)
+ * -  (toHaveRendered, toHaveRenderedTimes)
+ * -  (toHaveMountedOnce, toHaveNeverMounted, toHaveOnlyMounted, toHaveOnlyUpdated)
+ * -  (toEventuallyRenderTimes, toEventuallyRenderAtLeast)
+ * -  (toEventuallyReachPhase)
  */
 expect.extend({
+  // Synchronous render count matchers
   toHaveRendered,
   toHaveRenderedTimes,
+  // Synchronous phase matchers
   toHaveMountedOnce,
   toHaveNeverMounted,
   toHaveOnlyMounted,
   toHaveOnlyUpdated,
+  // Asynchronous render count matchers
   toEventuallyRenderTimes,
   toEventuallyRenderAtLeast,
+  // Asynchronous phase matchers
   toEventuallyReachPhase,
 });

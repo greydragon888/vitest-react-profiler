@@ -51,6 +51,7 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
         "**/index.ts", // Exclude barrel exports
+        "!src/matchers/index.ts", // But include matchers registration
         "**/types.ts", // Exclude type definitions
         "src/test-utils/",
       ],
