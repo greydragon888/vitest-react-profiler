@@ -539,7 +539,6 @@ describe("Property-Based Tests: Async Matcher Invariants", () => {
         try {
           await expect(Component).toEventuallyRenderTimes(targetRenders, {
             timeout,
-            interval: 10,
           });
 
           const elapsed = Date.now() - start;
@@ -568,7 +567,6 @@ describe("Property-Based Tests: Async Matcher Invariants", () => {
         try {
           await expect(Component).toEventuallyRenderTimes(100, {
             timeout,
-            interval: 20,
           });
 
           return false; // Should have thrown
@@ -609,7 +607,6 @@ describe("Property-Based Tests: Async Matcher Invariants", () => {
         try {
           await expect(Component).toEventuallyRenderAtLeast(minRenders, {
             timeout,
-            interval: 10,
           });
 
           const elapsed = Date.now() - start;
@@ -675,7 +672,6 @@ describe("Property-Based Tests: Async Matcher Invariants", () => {
         try {
           await expect(Component).toEventuallyRenderAtLeast(minRenders, {
             timeout: 1000,
-            interval: 10,
           });
 
           const elapsed = Date.now() - start;
@@ -811,6 +807,311 @@ describe("Property-Based Tests: Error Message Consistency", () => {
             return message.includes(expectedPhrase);
           }
         });
+      },
+    );
+  });
+});
+
+describe("Property-Based Tests: Event-based Matcher Invariants", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe("Event-based Performance Invariants", () => {
+    test.prop([fc.integer({ min: 2, max: 10 })], { numRuns: 50 })(
+      "toEventuallyRenderTimes always resolves in < 50ms (event-based, not polling)",
+      async (targetRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Start async renders
+        for (let i = 1; i < targetRenders; i++) {
+          setTimeout(() => {
+            rerender(<Component value={i} />);
+          }, i * 5);
+        }
+
+        const start = Date.now();
+
+        await expect(Component).toEventuallyRenderTimes(targetRenders, {
+          timeout: 500,
+        });
+
+        const elapsed = Date.now() - start;
+
+        // Event-based should be < 50ms (polling would be 50ms+ minimum)
+        return elapsed < 50;
+      },
+    );
+
+    test.prop([fc.integer({ min: 2, max: 10 })], { numRuns: 50 })(
+      "toEventuallyRenderAtLeast always resolves in < 50ms (event-based)",
+      async (minRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Start async renders
+        for (let i = 1; i < minRenders; i++) {
+          setTimeout(() => {
+            rerender(<Component value={i} />);
+          }, i * 5);
+        }
+
+        const start = Date.now();
+
+        await expect(Component).toEventuallyRenderAtLeast(minRenders, {
+          timeout: 500,
+        });
+
+        const elapsed = Date.now() - start;
+
+        return elapsed < 50;
+      },
+    );
+
+    test.prop([fc.constantFrom("mount", "update")], { numRuns: 50 })(
+      "toEventuallyReachPhase always resolves in < 50ms (event-based)",
+      async (phase) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        if (phase === "update") {
+          setTimeout(() => {
+            rerender(<Component value={1} />);
+          }, 10);
+        }
+
+        const start = Date.now();
+
+        await expect(Component).toEventuallyReachPhase(phase, {
+          timeout: 500,
+        });
+
+        const elapsed = Date.now() - start;
+
+        return elapsed < 50;
+      },
+    );
+  });
+
+  describe("Race Condition Protection Invariants", () => {
+    test.prop([fc.integer({ min: 1, max: 20 })], { numRuns: 50 })(
+      "toEventuallyRenderTimes handles condition already satisfied (< 10ms)",
+      async (numRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Perform all renders before calling matcher
+        for (let i = 1; i < numRenders; i++) {
+          rerender(<Component value={i} />);
+        }
+
+        const start = Date.now();
+
+        await expect(Component).toEventuallyRenderTimes(numRenders, {
+          timeout: 500,
+        });
+
+        const elapsed = Date.now() - start;
+
+        // Should resolve instantly (race condition protection)
+        return elapsed < 10;
+      },
+    );
+
+    test.prop([fc.integer({ min: 1, max: 20 })], { numRuns: 50 })(
+      "toEventuallyRenderAtLeast handles condition already satisfied (< 10ms)",
+      async (minRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Perform more renders than minimum
+        for (let i = 1; i < minRenders + 5; i++) {
+          rerender(<Component value={i} />);
+        }
+
+        const start = Date.now();
+
+        await expect(Component).toEventuallyRenderAtLeast(minRenders, {
+          timeout: 500,
+        });
+
+        const elapsed = Date.now() - start;
+
+        return elapsed < 10;
+      },
+    );
+
+    test.prop([fc.constantFrom("mount", "update")], { numRuns: 50 })(
+      "toEventuallyReachPhase handles condition already satisfied (< 10ms)",
+      async (phase) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Create update phase if needed
+        if (phase === "update") {
+          rerender(<Component value={1} />);
+        }
+
+        const start = Date.now();
+
+        await expect(Component).toEventuallyReachPhase(phase, {
+          timeout: 500,
+        });
+
+        const elapsed = Date.now() - start;
+
+        return elapsed < 10;
+      },
+    );
+  });
+
+  describe("Cleanup Invariants", () => {
+    test.prop([fc.integer({ min: 2, max: 10 })], { numRuns: 30 })(
+      "matchers cleanup listeners properly on successful resolution",
+      async (targetRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Trigger renders
+        for (let i = 1; i < targetRenders; i++) {
+          setTimeout(() => {
+            rerender(<Component value={i} />);
+          }, i * 5);
+        }
+
+        await expect(Component).toEventuallyRenderTimes(targetRenders, {
+          timeout: 500,
+        });
+
+        // Component should still work after cleanup
+        const beforeCount = Component.getRenderCount();
+
+        rerender(<Component value={100} />);
+
+        const afterCount = Component.getRenderCount();
+
+        return afterCount === beforeCount + 1;
+      },
+    );
+
+    test.prop([fc.integer({ min: 100, max: 200 })], { numRuns: 20 })(
+      "matchers cleanup properly on timeout",
+      async (impossibleRenders) => {
+        const Component = createSimpleProfiledComponent();
+
+        render(<Component value={0} />);
+
+        try {
+          await expect(Component).toEventuallyRenderTimes(impossibleRenders, {
+            timeout: 100,
+          });
+
+          return false; // Should have timed out
+        } catch {
+          // Component should still work after cleanup
+          const count = Component.getRenderCount();
+
+          return count === 1;
+        }
+      },
+    );
+  });
+
+  describe("Concurrent Matchers Invariants", () => {
+    test.prop([fc.integer({ min: 3, max: 10 })], { numRuns: 30 })(
+      "multiple matchers can wait on same component concurrently",
+      async (maxRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        // Start multiple matchers with different targets
+        const matcher1 = expect(Component).toEventuallyRenderTimes(2, {
+          timeout: 500,
+        });
+        const matcher2 = expect(Component).toEventuallyRenderAtLeast(
+          maxRenders,
+          { timeout: 500 },
+        );
+        const matcher3 = expect(Component).toEventuallyReachPhase("update", {
+          timeout: 500,
+        });
+
+        // Trigger renders
+        for (let i = 1; i < maxRenders; i++) {
+          setTimeout(() => {
+            rerender(<Component value={i} />);
+          }, i * 5);
+        }
+
+        // All matchers should complete successfully
+        await Promise.all([matcher1, matcher2, matcher3]);
+
+        return Component.getRenderCount() >= maxRenders;
+      },
+    );
+
+    test.prop([fc.integer({ min: 2, max: 8 })], { numRuns: 30 })(
+      "concurrent toEventuallyRenderTimes matchers with different targets work independently",
+      async (renders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        const matcher1 = expect(Component).toEventuallyRenderTimes(2, {
+          timeout: 500,
+        });
+        const matcher2 = expect(Component).toEventuallyRenderTimes(renders, {
+          timeout: 500,
+        });
+
+        // Trigger renders
+        for (let i = 1; i < renders; i++) {
+          setTimeout(() => {
+            rerender(<Component value={i} />);
+          }, i * 5);
+        }
+
+        await Promise.all([matcher1, matcher2]);
+
+        return Component.getRenderCount() === renders;
+      },
+    );
+
+    test.prop([fc.integer({ min: 2, max: 8 })], { numRuns: 30 })(
+      "concurrent matchers of different types work correctly",
+      async (targetRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        const matcherRenderTimes = expect(Component).toEventuallyRenderTimes(
+          targetRenders,
+          { timeout: 500 },
+        );
+        const matcherRenderAtLeast = expect(
+          Component,
+        ).toEventuallyRenderAtLeast(targetRenders - 1, { timeout: 500 });
+        const matcherReachPhase = expect(Component).toEventuallyReachPhase(
+          "update",
+          { timeout: 500 },
+        );
+
+        // Trigger renders
+        for (let i = 1; i < targetRenders; i++) {
+          setTimeout(() => {
+            rerender(<Component value={i} />);
+          }, i * 5);
+        }
+
+        await Promise.all([
+          matcherRenderTimes,
+          matcherRenderAtLeast,
+          matcherReachPhase,
+        ]);
+
+        return (
+          Component.getRenderCount() === targetRenders &&
+          Component.getRenderHistory().includes("update")
+        );
       },
     );
   });

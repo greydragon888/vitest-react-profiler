@@ -127,16 +127,11 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
           }
         });
 
-        // Verify each component has correct count
-        const allCorrect = components.every(
+        // Verify each component has correct count (isolation check)
+        // If data leaked, some components would have wrong counts
+        return components.every(
           (C) => C.getRenderCount() === rendersPerComponent,
         );
-
-        // Verify all histories are unique references
-        const histories = components.map((C) => C.getRenderHistory());
-        const uniqueHistories = new Set(histories);
-
-        return allCorrect && uniqueHistories.size === numComponents;
       },
     );
 

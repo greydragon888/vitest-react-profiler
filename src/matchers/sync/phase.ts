@@ -103,7 +103,9 @@ export function toHaveOnlyMounted(received: unknown): MatcherResult {
       if (hasMounts && hasUpdates) {
         return `Expected component to have only mounts, but it also updated`;
       }
-      if (!hasMounts && hasUpdates) {
+      // At this point, if hasUpdates is true, hasMounts must be false
+      // (otherwise the previous condition would have returned)
+      if (hasUpdates) {
         return `Expected component to have only mounts, but it only updated`;
       }
 

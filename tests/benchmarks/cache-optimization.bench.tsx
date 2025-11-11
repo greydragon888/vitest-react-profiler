@@ -67,6 +67,27 @@ describe("getRendersByPhase() caching", () => {
       ProfiledComponent.getRendersByPhase("update");
     }
   });
+
+  bench(
+    "1000 calls - 500 renders (999 cache hits)",
+    () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent />);
+
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent />);
+      }
+
+      // Demonstrate cache effectiveness with many calls
+      for (let i = 0; i < 1000; i++) {
+        ProfiledComponent.getRendersByPhase("update");
+      }
+    },
+    {
+      warmupTime: 200, // V8 JIT warmup
+      time: 1000, // More samples for stability
+    },
+  );
 });
 
 describe("hasMounted() caching", () => {
@@ -116,6 +137,20 @@ describe("hasMounted() caching", () => {
     }
 
     for (let i = 0; i < 100; i++) {
+      ProfiledComponent.hasMounted();
+    }
+  });
+
+  bench("1000 calls - 500 renders (999 cache hits)", () => {
+    const ProfiledComponent = withProfiler(TestComponent);
+    const { rerender } = render(<ProfiledComponent />);
+
+    for (let i = 1; i < 500; i++) {
+      rerender(<ProfiledComponent />);
+    }
+
+    // Demonstrate cache effectiveness with many calls
+    for (let i = 0; i < 1000; i++) {
       ProfiledComponent.hasMounted();
     }
   });

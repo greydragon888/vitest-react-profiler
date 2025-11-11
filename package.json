@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",
@@ -67,10 +67,10 @@
     "test:properties": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --config vitest.config.properties.mts",
     "test:bench": "vitest bench --config vitest.config.bench.mts",
     "test:bench:stable": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "bundle:analyze": "npm run build && npx @codecov/bundle-analyzer ./dist --bundle-name=vitest-react-profiler",
-    "bundle:size": "npm run build && du -sh dist/* | sort -h",
+    "bundle:size": "npm run build && echo '\n📊 Bundle Size Report:' && for file in dist/*; do name=$(basename \"$file\"); size=$(du -h \"$file\" | cut -f1); if [[ \"$name\" == \"index.js\" || \"$name\" == \"index.cjs\" ]]; then gzsize=$(gzip -c \"$file\" | wc -c | awk '{printf \"%.2fK\", $1/1024}'); echo \"  $name: $size (gzipped: $gzsize)\"; else echo \"  $name: $size\"; fi; done",
     "sonar": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN",
     "sonar:debug": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.log.level=DEBUG -Dsonar.verbose=true",
     "sonar:local": "npm run typecheck && npm run test:coverage && npm run sonar",
@@ -117,6 +117,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "sonarqube-scanner": "4.3.2",
+    "terser": "5.44.0",
     "tsup": "8.5.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.46.4",

@@ -62,18 +62,45 @@ describe("Core Methods - Performance", () => {
       }
     });
 
-    bench("500 renders - 1000 calls (stress)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+    bench(
+      "500 renders - 1000 calls (stress)",
+      () => {
+        const ProfiledComponent = withProfiler(TestComponent);
+        const { rerender } = render(<ProfiledComponent value={0} />);
 
-      for (let i = 1; i < 500; i++) {
-        rerender(<ProfiledComponent value={i} />);
-      }
+        for (let i = 1; i < 500; i++) {
+          rerender(<ProfiledComponent value={i} />);
+        }
 
-      for (let i = 0; i < 1000; i++) {
-        void ProfiledComponent.getRenderCount();
-      }
-    });
+        for (let i = 0; i < 1000; i++) {
+          void ProfiledComponent.getRenderCount();
+        }
+      },
+      {
+        warmupTime: 200, // V8 JIT warmup
+        time: 1000, // More samples for stability
+      },
+    );
+
+    bench(
+      "1000 renders - 2000 calls (extreme stress)",
+      () => {
+        const ProfiledComponent = withProfiler(TestComponent);
+        const { rerender } = render(<ProfiledComponent value={0} />);
+
+        for (let i = 1; i < 1000; i++) {
+          rerender(<ProfiledComponent value={i} />);
+        }
+
+        for (let i = 0; i < 2000; i++) {
+          void ProfiledComponent.getRenderCount();
+        }
+      },
+      {
+        warmupTime: 300, // Longer warmup for larger dataset
+        time: 1000, // More samples for stability
+      },
+    );
   });
 
   describe("getLastRender()", () => {
@@ -101,18 +128,45 @@ describe("Core Methods - Performance", () => {
       }
     });
 
-    bench("500 renders - 1000 calls (stress)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+    bench(
+      "500 renders - 1000 calls (stress)",
+      () => {
+        const ProfiledComponent = withProfiler(TestComponent);
+        const { rerender } = render(<ProfiledComponent value={0} />);
 
-      for (let i = 1; i < 500; i++) {
-        rerender(<ProfiledComponent value={i} />);
-      }
+        for (let i = 1; i < 500; i++) {
+          rerender(<ProfiledComponent value={i} />);
+        }
 
-      for (let i = 0; i < 1000; i++) {
-        void ProfiledComponent.getLastRender();
-      }
-    });
+        for (let i = 0; i < 1000; i++) {
+          void ProfiledComponent.getLastRender();
+        }
+      },
+      {
+        warmupTime: 200, // V8 JIT warmup
+        time: 1000, // More samples for stability
+      },
+    );
+
+    bench(
+      "1000 renders - 2000 calls (extreme stress)",
+      () => {
+        const ProfiledComponent = withProfiler(TestComponent);
+        const { rerender } = render(<ProfiledComponent value={0} />);
+
+        for (let i = 1; i < 1000; i++) {
+          rerender(<ProfiledComponent value={i} />);
+        }
+
+        for (let i = 0; i < 2000; i++) {
+          void ProfiledComponent.getLastRender();
+        }
+      },
+      {
+        warmupTime: 300, // Longer warmup for larger dataset
+        time: 1000, // More samples for stability
+      },
+    );
   });
 
   describe("getRenderAt()", () => {

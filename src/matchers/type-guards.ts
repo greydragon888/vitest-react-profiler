@@ -7,7 +7,6 @@ export function isProfiledComponent(
   received: unknown,
 ): received is ProfiledComponent<unknown> {
   return (
-    received !== null &&
     typeof received === "function" &&
     "getRenderCount" in received &&
     "getRenderHistory" in received &&

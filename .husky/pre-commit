@@ -17,4 +17,6 @@ npm run typecheck
 echo "🧪 Running tests with coverage..."
 npm run test:coverage
 
+npm run bundle:size
+
 echo "✅ Pre-commit checks passed!"

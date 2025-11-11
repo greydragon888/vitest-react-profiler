@@ -75,42 +75,39 @@ export interface ProfilerMatchers<R = unknown> {
    * Assert that component eventually renders exact number of times (async)
    *
    * @param count - Expected number of renders
-   * @param options - Wait options (timeout, interval)
+   * @param options - Wait options (timeout)
    * @returns - Matcher result promise
    * @example await expect(ProfiledComponent).toEventuallyRenderTimes(3)
    * @example await expect(ProfiledComponent).toEventuallyRenderTimes(5, { timeout: 2000 })
    */
-  toEventuallyRenderTimes: (
-    count: number,
-    options?: { timeout?: number; interval?: number },
-  ) => Promise<R>;
+  toEventuallyRenderTimes: (count: number, options?: WaitOptions) => Promise<R>;
 
   /**
    * Assert that component eventually renders at least N times (async)
    *
    * @param minCount - Minimum expected number of renders
-   * @param options - Wait options (timeout, interval)
+   * @param options - Wait options (timeout)
    * @returns - Matcher result promise
    * @example await expect(ProfiledComponent).toEventuallyRenderAtLeast(2)
    * @example await expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: 2000 })
    */
   toEventuallyRenderAtLeast: (
     minCount: number,
-    options?: { timeout?: number; interval?: number },
+    options?: WaitOptions,
   ) => Promise<R>;
 
   /**
    * Assert that component eventually reaches specific render phase (async)
    *
    * @param phase - Expected render phase ('mount', 'update', or 'nested-update')
-   * @param options - Wait options (timeout, interval)
+   * @param options - Wait options (timeout)
    * @returns - Matcher result promise
    * @example await expect(ProfiledComponent).toEventuallyReachPhase('update')
    * @example await expect(ProfiledComponent).toEventuallyReachPhase('mount', { timeout: 2000 })
    */
   toEventuallyReachPhase: (
     phase: PhaseType,
-    options?: { timeout?: number; interval?: number },
+    options?: WaitOptions,
   ) => Promise<R>;
 }
 
@@ -122,6 +119,31 @@ export interface ProfilerMatchers<R = unknown> {
  * - `nested-update` - Update triggered during another component's render
  */
 export type PhaseType = "mount" | "update" | "nested-update";
+
+/**
+ * Information passed to render event listeners
+ *
+ * @since v1.6.0 - history changed to getter property for lazy evaluation
+ */
+export interface RenderEventInfo {
+  /** Total render count */
+  count: number;
+  /** Current render phase */
+  phase: PhaseType;
+  /** Full render history (frozen) - lazily evaluated on first access */
+  readonly history: readonly PhaseType[];
+}
+
+/**
+ * Options for async wait operations
+ *
+ * @since v1.6.0
+ * @remarks Breaking change in v1.6.0: 'interval' field removed (polling removed)
+ */
+export interface WaitOptions {
+  /** Maximum wait time in milliseconds (default: 1000) */
+  timeout?: number;
+}
 
 /**
  * Extended component with profiling capabilities
@@ -173,6 +195,64 @@ export interface ProfiledComponent<P> {
    * @returns - True if component mounted at least once
    */
   hasMounted: () => boolean;
+
+  /**
+   * Subscribe to render events
+   *
+   * Receives notification on each render with full render info.
+   * Returns unsubscribe function that can be called multiple times safely.
+   *
+   * @param callback - Function to call on each render
+   * @returns Unsubscribe function
+   *
+   * @since v1.6.0
+   *
+   * @example
+   * const unsubscribe = ProfiledComponent.onRender((info) => {
+   *   console.log(`Rendered ${info.count} times, phase: ${info.phase}`);
+   * });
+   *
+   * // Later...
+   * unsubscribe();
+   *
+   * @example
+   * // Multiple subscribers
+   * const unsub1 = ProfiledComponent.onRender((info) => console.log('Listener 1:', info.count));
+   * const unsub2 = ProfiledComponent.onRender((info) => console.log('Listener 2:', info.count));
+   */
+  onRender: (callback: (info: RenderEventInfo) => void) => () => void;
+
+  /**
+   * Wait for the next render to occur
+   *
+   * Returns a promise that resolves when the next render happens.
+   * Useful for testing async state updates and component re-renders.
+   *
+   * @param options - Wait options (timeout)
+   * @returns Promise that resolves with render info
+   * @throws Error if timeout is exceeded or component has no profiler data
+   *
+   * @since v1.6.0
+   *
+   * @example
+   * // Wait for next render with default timeout (1000ms)
+   * const info = await ProfiledComponent.waitForNextRender();
+   * console.log(`New render: ${info.phase}`);
+   *
+   * @example
+   * // Wait with custom timeout
+   * const info = await ProfiledComponent.waitForNextRender({ timeout: 2000 });
+   * console.log(`Render count: ${info.count}`);
+   *
+   * @example
+   * // Test async state updates
+   * const { rerender } = render(<ProfiledButton />);
+   * const promise = ProfiledButton.waitForNextRender();
+   * rerender(<ProfiledButton value={2} />);
+   * const info = await promise;
+   * expect(info.phase).toBe('update');
+   */
+  waitForNextRender: (options?: WaitOptions) => Promise<RenderEventInfo>;
 
   /** Original component for reference */
   OriginalComponent: ComponentType<P>;

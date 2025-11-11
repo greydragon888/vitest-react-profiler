@@ -97,6 +97,24 @@ const history = component.getRenderHistory();
 const newHistory = [...history, "mount"];
 ```
 
+### Rule 6: Strict Equality in Tests
+
+**ALWAYS use `toStrictEqual` instead of `toEqual` in test assertions.**
+
+`toStrictEqual` checks types and object class, preventing false positives.
+
+### Rule 7: Reports Location
+
+**All generated reports and documentation MUST be saved to `/docs/reports/`, NOT `/tmp`.**
+
+```bash
+# ❌ WRONG
+cat > /tmp/my-report.md << 'EOF'
+
+# ✅ CORRECT
+cat > /docs/reports/my-report.md << 'EOF'
+```
+
 ---
 
 ## ═══════════════════════════════════════════════════
@@ -145,8 +163,6 @@ To prevent context pollution, follow these file access rules:
 - `.env.local` - Local secrets
 - `*.key`, `*.pem` - Private keys
 
-**Why?** Reading these files pollutes the context with irrelevant information and wastes tokens.
-
 ---
 
 ## ═══════════════════════════════════════════════════
@@ -159,7 +175,7 @@ To prevent context pollution, follow these file access rules:
 
 **Name**: `vitest-react-profiler`
 **Type**: NPM Package / Testing Utility Library
-**Current Version**: 1.5.0
+**Current Version**: 1.6.0
 
 **Purpose**: Performance testing utility for React components and hooks with sync/async update tracking in Vitest.
 
@@ -339,6 +355,7 @@ tests/benchmarks/*.bench.tsx  → Benchmarks
 - **One concept per test**: Don't test multiple behaviors in one test
 - **Descriptive names**: `it("should throw error when not profiled")` not `it("works")`
 - **Setup/Cleanup**: Use `beforeEach` for setup, `afterEach` for cleanup (`vi.clearAllMocks()`)
+- **Strict equality**: ALWAYS use `toStrictEqual` instead of `toEqual` (enforced in Core Rules)
 
 ---
 
@@ -398,6 +415,57 @@ npm run lint             # ESLint
 npm run build            # Production build
 ```
 
+### MCP Servers Integration
+
+This project has **4 MCP servers** configured for AI-optimized workflows.
+
+**Installed Servers:**
+
+1. **vitest** (`@djankies/vitest-mcp`) - Test execution
+2. **sonarqube** (JetBrains) - Code quality analysis
+3. **jetbrains** (`@jetbrains/mcp-proxy`) - WebStorm IDE integration
+4. **eslint** (`@eslint/mcp@latest`) - Linting integration
+
+**Usage Priority:**
+
+**For Testing** (PREFER MCP over npm commands):
+
+```bash
+# ✅ PREFERRED: Use vitest-mcp tools
+mcp__vitest__set_project_root     # Initialize project
+mcp__vitest__list_tests            # Discover test files
+mcp__vitest__run_tests             # Run specific tests (AI-optimized output)
+mcp__vitest__analyze_coverage      # Line-by-line coverage gaps
+
+# ⚠️ FALLBACK: Use npm only when MCP unavailable
+npm test
+npm run test:coverage
+```
+
+**For Code Quality:**
+
+```bash
+# SonarQube analysis
+mcp__sonarqube__search_sonar_issues_in_projects
+mcp__sonarqube__get_project_quality_gate_status
+mcp__sonarqube__get_component_measures
+
+# ESLint integration
+mcp__eslint__*  # Check/fix linting issues
+```
+
+**For WebStorm:**
+
+```bash
+# IDE integration (requires WebStorm running)
+mcp__ide__getDiagnostics  # Get IDE diagnostics
+```
+
+**Configuration Location:**
+
+- Local config: `/Users/olegivanov/.claude.json` (project-scoped)
+- All servers: `claude mcp list`
+
 ---
 
 ## ═══════════════════════════════════════════════════
@@ -433,35 +501,6 @@ Critical files: `vitest.config.mts`, `eslint.config.mjs` (NOT `.ts` or `.cjs`)
 
 - `package.json` line 3: `"version"`
 - `sonar-project.properties` line 4: `sonar.projectVersion`
-
----
-
-## ═══════════════════════════════════════════════════
-
-## 📚 ADDITIONAL RESOURCES
-
-## ═══════════════════════════════════════════════════
-
-### Documentation
-
-- **README.md** - User-facing documentation and API reference
-- **Contributing guidelines** - See GitHub repository
-- **TypeScript types** - All types in `src/types.ts`
-
-### External Links
-
-- **GitHub Issues**: https://github.com/greydragon888/vitest-react-profiler/issues
-- **Maintainer**: @greydragon888
-- **Conventional Commits**: https://www.conventionalcommits.org/
-- **Vitest Docs**: https://vitest.dev/
-- **fast-check Docs**: https://fast-check.dev/
-
-### Code Quality Tools
-
-- **SonarCloud**: Quality gates, code smells, security vulnerabilities
-- **Codecov**: Coverage reporting and bundle size analysis
-- **Stryker**: Mutation testing (finds weak tests)
-- **ESLint**: Code linting with TypeScript support
 
 ---
 

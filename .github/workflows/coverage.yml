@@ -53,10 +53,10 @@ jobs:
             FUNCTIONS_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.functions.pct)" 2>/dev/null || echo "0")
             STATEMENTS_PCT=$(node -e "const c=require('./coverage/coverage-summary.json'); console.log(c.total.statements.pct)" 2>/dev/null || echo "0")
 
-            echo "lines=$LINES_PCT" >> $GITHUB_OUTPUT
-            echo "branches=$BRANCHES_PCT" >> $GITHUB_OUTPUT
-            echo "functions=$FUNCTIONS_PCT" >> $GITHUB_OUTPUT
-            echo "statements=$STATEMENTS_PCT" >> $GITHUB_OUTPUT
+            echo "lines=$LINES_PCT" >> "$GITHUB_OUTPUT"
+            echo "branches=$BRANCHES_PCT" >> "$GITHUB_OUTPUT"
+            echo "functions=$FUNCTIONS_PCT" >> "$GITHUB_OUTPUT"
+            echo "statements=$STATEMENTS_PCT" >> "$GITHUB_OUTPUT"
 
             echo "✅ Coverage extracted successfully"
             echo "📊 Lines: $LINES_PCT%"

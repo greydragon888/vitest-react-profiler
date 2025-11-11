@@ -377,27 +377,41 @@ describe("Property-Based Tests: Cache Behavior", () => {
       },
     );
 
-    test.prop(
-      [
-        fc.integer({ min: 2, max: 30 }),
-        fc.constantFrom("mount", "update", "nested-update"),
-      ],
-      { numRuns: 1000 },
-    )(
-      "getRendersByPhase cache is invalidated after each new render",
-      (numRenders, phase) => {
+    test.prop([fc.integer({ min: 2, max: 30 })], { numRuns: 1000 })(
+      "smart cache invalidation: only affected phase cache is invalidated",
+      (numRenders) => {
         const Component = createSimpleProfiledComponent();
         const { rerender } = render(<Component value={0} />);
 
+        // After first render: history = ["mount"]
         for (let i = 1; i < numRenders; i++) {
-          const before = Component.getRendersByPhase(phase);
+          const beforeMount = Component.getRendersByPhase("mount");
+          const beforeUpdate = Component.getRendersByPhase("update");
+          const beforeMountLen = beforeMount.length;
+          const beforeUpdateLen = beforeUpdate.length;
 
+          // rerender adds "update" phase
           rerender(<Component value={i} />);
-          const after = Component.getRendersByPhase(phase);
 
-          // Cache MUST be invalidated - different references
-          if (before === after) {
-            return false; // Found a bug!
+          const afterMount = Component.getRendersByPhase("mount");
+          const afterUpdate = Component.getRendersByPhase("update");
+
+          // Smart invalidation checks:
+          // 1. "mount" cache NOT invalidated (phase not affected)
+          //    - Length unchanged (still just initial mount)
+          if (afterMount.length !== beforeMountLen) {
+            return false;
+          }
+
+          // 2. "update" cache invalidated (new "update" added)
+          //    - Length increased by 1
+          if (afterUpdate.length !== beforeUpdateLen + 1) {
+            return false;
+          }
+
+          // 3. Mount cache should still have exactly 1 element
+          if (afterMount.length !== 1) {
+            return false;
           }
         }
 

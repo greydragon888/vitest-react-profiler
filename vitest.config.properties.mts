@@ -76,21 +76,14 @@ export default defineConfig({
     teardownTimeout: 10000, // 10 seconds for cleanup
 
     /**
-     * Pool options for worker threads
+     * Worker configuration (Vitest 4+)
      * Limit parallelism to prevent "Timeout calling onTaskUpdate" errors
      * during long-running property-based tests
      */
-    poolOptions: {
-      threads: {
-        // Limit number of concurrent workers to reduce load
-        maxThreads: 2,
-        minThreads: 1,
-        // Enable isolation for accurate profiling
-        isolate: true,
-        // Use lower priority for worker threads
-        execArgv: [],
-      },
-    },
+    // Limit number of concurrent workers to reduce load
+    maxWorkers: 2,
+    // Use lower priority for worker threads
+    execArgv: [],
 
     // Use threads pool for better performance with async tests
     pool: "threads",
@@ -102,5 +95,6 @@ export default defineConfig({
   define: {
     __TEST__: true,
     __DEV__: process.env.NODE_ENV !== "production",
+    "import.meta.env.INTERNAL_TESTS": "true", // Enable CacheMetrics for property tests
   },
 });

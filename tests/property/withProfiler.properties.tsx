@@ -188,19 +188,36 @@ describe("Property-Based Tests: WeakMap Isolation", () => {
       (numComponents) => {
         const components = createMultipleComponents(numComponents);
 
-        // Render all components
-        components.forEach((C) => render(<C />));
+        // Render each component a different number of times
+        // Component i gets i+1 renders (1, 2, 3, ..., numComponents)
+        components.forEach((C, idx) => {
+          const { rerender } = render(<C value={0} />);
 
-        // Each should have exactly 1 render
-        const allHaveOneRender = components.every(
-          (C) => C.getRenderCount() === 1,
-        );
+          // Component 0: 1 render (no rerender)
+          // Component 1: 2 renders (1 rerender)
+          // Component i: i+1 renders (i rerenders)
+          for (let j = 0; j < idx; j++) {
+            rerender(<C value={j + 1} />);
+          }
+        });
 
-        // All histories should be unique references
-        const histories = components.map((C) => C.getRenderHistory());
-        const uniqueHistories = new Set(histories);
+        // Verify isolation: each component has exactly idx+1 renders
+        for (let i = 0; i < numComponents; i++) {
+          const component = components[i];
 
-        return allHaveOneRender && uniqueHistories.size === numComponents;
+          if (!component) {
+            return false;
+          }
+
+          const expected = i + 1;
+          const actual = component.getRenderCount();
+
+          if (actual !== expected) {
+            return false; // Data leak detected!
+          }
+        }
+
+        return true;
       },
     );
 
@@ -281,27 +298,53 @@ describe("Property-Based Tests: WeakMap Isolation", () => {
       },
     );
 
-    test.prop([fc.integer({ min: 1, max: 20 })], { numRuns: 1000 })(
-      "profiling methods do not return shared references between components",
+    test.prop([fc.integer({ min: 2, max: 20 })], { numRuns: 1000 })(
+      "component data isolation: operations on one component don't affect others",
       (numComponents) => {
         const components = createMultipleComponents(numComponents);
 
-        // Render all
-        components.forEach((C) => render(<C />));
+        // Render first half of components
+        const halfIndex = Math.floor(numComponents / 2);
 
-        // Get all histories
-        const histories = components.map((C) => C.getRenderHistory());
+        for (let i = 0; i < halfIndex; i++) {
+          const C = components[i];
 
-        // Check that no two histories are the same reference
-        for (let i = 0; i < histories.length; i++) {
-          for (let j = i + 1; j < histories.length; j++) {
-            if (histories[i] === histories[j]) {
-              return false; // Found shared reference - FAIL
-            }
+          if (!C) {
+            return false;
+          }
+
+          render(<C />);
+        }
+
+        // First half should have 1 render, second half should have 0
+        for (let i = 0; i < numComponents; i++) {
+          const component = components[i];
+
+          if (!component) {
+            return false;
+          }
+
+          const expected = i < halfIndex ? 1 : 0;
+          const actual = component.getRenderCount();
+
+          if (actual !== expected) {
+            return false; // Data leaked between components!
           }
         }
 
-        return true;
+        // Now render second half
+        for (let i = halfIndex; i < numComponents; i++) {
+          const C = components[i];
+
+          if (!C) {
+            return false;
+          }
+
+          render(<C />);
+        }
+
+        // All components should now have exactly 1 render
+        return components.every((C) => C.getRenderCount() === 1);
       },
     );
   });

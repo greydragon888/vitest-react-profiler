@@ -45,20 +45,30 @@ describe("Sync Matchers - Performance", () => {
   });
 
   describe("toHaveRenderedTimes() - CRITICAL", () => {
-    bench("10 renders - fail scenario (with formatting)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+    bench(
+      "10 renders - fail scenario (with formatting) - 50 iterations",
+      () => {
+        // 50 iterations to amortize GC spikes and stabilize measurements
+        for (let rep = 0; rep < 50; rep++) {
+          const ProfiledComponent = withProfiler(TestComponent);
+          const { rerender } = render(<ProfiledComponent value={0} />);
 
-      for (let i = 1; i < 10; i++) {
-        rerender(<ProfiledComponent value={i} />);
-      }
+          for (let i = 1; i < 10; i++) {
+            rerender(<ProfiledComponent value={i} />);
+          }
 
-      try {
-        expect(ProfiledComponent).toHaveRenderedTimes(5);
-      } catch {
-        // Expected to fail - triggers formatRenderHistory()
-      }
-    });
+          try {
+            expect(ProfiledComponent).toHaveRenderedTimes(5);
+          } catch {
+            // Expected to fail - triggers formatRenderHistory()
+          }
+        }
+      },
+      {
+        time: 1000, // Time-based for better stability
+        warmupTime: 200, // Warmup V8 JIT compiler
+      },
+    );
 
     bench("100 renders - fail scenario (expensive formatting)", () => {
       const ProfiledComponent = withProfiler(TestComponent);
@@ -89,35 +99,77 @@ describe("Sync Matchers - Performance", () => {
         // Expected to fail - very expensive formatting
       }
     });
+
+    bench(
+      "1000 renders - fail scenario (extreme stress)",
+      () => {
+        const ProfiledComponent = withProfiler(TestComponent);
+        const { rerender } = render(<ProfiledComponent value={0} />);
+
+        for (let i = 1; i < 1000; i++) {
+          rerender(<ProfiledComponent value={i} />);
+        }
+
+        try {
+          expect(ProfiledComponent).toHaveRenderedTimes(500);
+        } catch {
+          // Expected to fail - demonstrates O(n) formatting degradation
+        }
+      },
+      {
+        warmupTime: 300, // Longer warmup for large formatting
+        time: 1000, // More samples for stability
+      },
+    );
   });
 
   describe("toHaveMountedOnce()", () => {
-    bench("2 mounts - fail scenario (with formatting)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { unmount } = render(<ProfiledComponent value={0} />);
+    bench(
+      "2 mounts - fail scenario (with formatting) - 50 iterations",
+      () => {
+        // 50 iterations to amortize GC spikes and stabilize measurements
+        for (let rep = 0; rep < 50; rep++) {
+          const ProfiledComponent = withProfiler(TestComponent);
+          const { unmount } = render(<ProfiledComponent value={0} />);
 
-      unmount();
-      render(<ProfiledComponent value={1} />);
+          unmount();
+          render(<ProfiledComponent value={1} />);
 
-      try {
-        expect(ProfiledComponent).toHaveMountedOnce();
-      } catch {
-        // Expected to fail - triggers mount formatting
-      }
-    });
+          try {
+            expect(ProfiledComponent).toHaveMountedOnce();
+          } catch {
+            // Expected to fail - triggers mount formatting
+          }
+        }
+      },
+      {
+        time: 1000, // Run for 1 second (auto-adjust iterations)
+        warmupTime: 200, // Longer warmup for very fast operations
+      },
+    );
   });
 
   describe("toHaveNeverMounted()", () => {
-    bench("1 mount - fail scenario", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
+    bench(
+      "1 mount - fail scenario - 50 iterations",
+      () => {
+        // 50 iterations to amortize GC spikes and stabilize measurements
+        for (let rep = 0; rep < 50; rep++) {
+          const ProfiledComponent = withProfiler(TestComponent);
 
-      render(<ProfiledComponent value={0} />);
+          render(<ProfiledComponent value={0} />);
 
-      try {
-        expect(ProfiledComponent).toHaveNeverMounted();
-      } catch {
-        // Expected to fail
-      }
-    });
+          try {
+            expect(ProfiledComponent).toHaveNeverMounted();
+          } catch {
+            // Expected to fail
+          }
+        }
+      },
+      {
+        time: 1000, // Run for 1 second (auto-adjust iterations)
+        warmupTime: 200, // Longer warmup for very fast operations
+      },
+    );
   });
 });

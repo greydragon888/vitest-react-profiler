@@ -127,6 +127,51 @@ describe("getRenderHistory - Cache Performance (Optimized)", () => {
       void ProfiledComponent.getRenderHistory();
     }
   });
+
+  // Extreme stress tests - 1000 renders
+  bench("1000 renders - first call (extreme cache miss)", () => {
+    const TestComponent: FC<{ value: number }> = ({ value }) => (
+      <div>{value}</div>
+    );
+    const ProfiledComponent = withProfiler(TestComponent);
+
+    const { rerender } = render(<ProfiledComponent value={0} />);
+
+    for (let i = 1; i < 1000; i++) {
+      rerender(<ProfiledComponent value={i} />);
+    }
+
+    // First call - cache miss, expensive array copy
+    void ProfiledComponent.getRenderHistory();
+  });
+
+  bench(
+    "1000 renders - 500 calls (extreme cache hit)",
+    () => {
+      const TestComponent: FC<{ value: number }> = ({ value }) => (
+        <div>{value}</div>
+      );
+      const ProfiledComponent = withProfiler(TestComponent);
+
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 1000; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      // Prime the cache
+      ProfiledComponent.getRenderHistory();
+
+      // 500 cached calls - reduced from 1000 to improve stability
+      for (let i = 0; i < 500; i++) {
+        void ProfiledComponent.getRenderHistory();
+      }
+    },
+    {
+      warmupTime: 500, // Extended warmup to reduce GC variance
+      time: 1000, // More samples for stability
+    },
+  );
 });
 
 describe("getRenderHistory - Methods Using Cache", () => {
@@ -164,42 +209,58 @@ describe("getRenderHistory - Methods Using Cache", () => {
 });
 
 describe("getRenderHistory - Realistic Test Patterns", () => {
-  bench("Typical test - multiple method calls", () => {
-    const TestComponent: FC<{ value: number }> = ({ value }) => (
-      <div>{value}</div>
-    );
-    const ProfiledComponent = withProfiler(TestComponent);
+  bench(
+    "Typical test - multiple method calls",
+    () => {
+      const TestComponent: FC<{ value: number }> = ({ value }) => (
+        <div>{value}</div>
+      );
+      const ProfiledComponent = withProfiler(TestComponent);
 
-    const { rerender } = render(<ProfiledComponent value={0} />);
+      const { rerender } = render(<ProfiledComponent value={0} />);
 
-    for (let i = 1; i < 50; i++) {
-      rerender(<ProfiledComponent value={i} />);
-    }
+      for (let i = 1; i < 50; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
 
-    // Typical test pattern: check history, average, and phases
-    void ProfiledComponent.getRenderHistory();
-    void ProfiledComponent.getRendersByPhase("mount");
-    void ProfiledComponent.getRendersByPhase("update");
-  });
+      // Repeat typical test pattern 10 times for stable measurements
+      for (let rep = 0; rep < 10; rep++) {
+        void ProfiledComponent.getRenderHistory();
+        void ProfiledComponent.getRendersByPhase("mount");
+        void ProfiledComponent.getRendersByPhase("update");
+      }
+    },
+    {
+      time: 1000, // Run for 1 second
+      warmupTime: 200, // Warmup for JIT
+    },
+  );
 
-  bench("Stress test - heavy repeated access", () => {
-    const TestComponent: FC<{ value: number }> = ({ value }) => (
-      <div>{value}</div>
-    );
-    const ProfiledComponent = withProfiler(TestComponent);
+  bench(
+    "Stress test - heavy repeated access",
+    () => {
+      const TestComponent: FC<{ value: number }> = ({ value }) => (
+        <div>{value}</div>
+      );
+      const ProfiledComponent = withProfiler(TestComponent);
 
-    const { rerender } = render(<ProfiledComponent value={0} />);
+      const { rerender } = render(<ProfiledComponent value={0} />);
 
-    for (let i = 1; i < 100; i++) {
-      rerender(<ProfiledComponent value={i} />);
-    }
+      for (let i = 1; i < 100; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
 
-    // Simulate heavy usage
-    for (let i = 0; i < 20; i++) {
-      void ProfiledComponent.getRenderHistory();
-      void ProfiledComponent.getRendersByPhase("update");
-    }
-  });
+      // Simulate heavy usage - increased from 20 to 50 iterations
+      for (let i = 0; i < 50; i++) {
+        void ProfiledComponent.getRenderHistory();
+        void ProfiledComponent.getRendersByPhase("update");
+      }
+    },
+    {
+      time: 1000, // Run for 1 second
+      warmupTime: 200, // Warmup for JIT
+    },
+  );
 });
 
 describe("getRenderHistory - Cache Invalidation Pattern", () => {

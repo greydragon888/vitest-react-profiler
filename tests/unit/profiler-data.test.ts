@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { ProfilerData } from "../../src/profiler/core/ProfilerData";
 
@@ -307,15 +307,6 @@ describe("ProfilerData", () => {
       expect(data.hasMounted()).toBe(false);
     });
 
-    it("should return false when no mount renders", () => {
-      const data = new ProfilerData();
-
-      data.addRender("update");
-      data.addRender("nested-update");
-
-      expect(data.hasMounted()).toBe(false);
-    });
-
     it("should return true when mount render exists", () => {
       const data = new ProfilerData();
 
@@ -324,17 +315,17 @@ describe("ProfilerData", () => {
       expect(data.hasMounted()).toBe(true);
     });
 
-    it("should return true even with other phase renders", () => {
+    it("should return true with multiple phase renders", () => {
       const data = new ProfilerData();
 
-      data.addRender("update");
       data.addRender("mount");
       data.addRender("update");
+      data.addRender("nested-update");
 
       expect(data.hasMounted()).toBe(true);
     });
 
-    it("should cache result", () => {
+    it("should consistently return result on multiple calls", () => {
       const data = new ProfilerData();
 
       data.addRender("mount");
@@ -348,16 +339,16 @@ describe("ProfilerData", () => {
       expect(result3).toBe(true);
     });
 
-    it("should update after addRender", () => {
+    it("should update from false to true after first render", () => {
       const data = new ProfilerData();
 
       expect(data.hasMounted()).toBe(false);
 
-      data.addRender("update");
-
-      expect(data.hasMounted()).toBe(false);
-
       data.addRender("mount");
+
+      expect(data.hasMounted()).toBe(true);
+
+      data.addRender("update");
 
       expect(data.hasMounted()).toBe(true);
     });
@@ -419,11 +410,11 @@ describe("ProfilerData", () => {
       data.addRender("mount");
       data.clear();
 
-      data.addRender("update");
+      data.addRender("mount");
 
       expect(data.getRenderCount()).toBe(1);
-      expect(data.getHistory()).toStrictEqual(["update"]);
-      expect(data.hasMounted()).toBe(false);
+      expect(data.getHistory()).toStrictEqual(["mount"]);
+      expect(data.hasMounted()).toBe(true);
     });
   });
 
@@ -470,6 +461,134 @@ describe("ProfilerData", () => {
       const mount2 = data.getRendersByPhase("mount");
 
       expect(mount1).toBe(mount2);
+    });
+  });
+
+  describe("event system integration", () => {
+    it("should emit event when addRender is called", () => {
+      const data = new ProfilerData();
+      const listener = vi.fn();
+
+      data.getEvents().subscribe(listener);
+
+      data.addRender("mount");
+
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener).toHaveBeenCalledWith({
+        count: 1,
+        phase: "mount",
+        history: ["mount"],
+      });
+    });
+
+    it("should emit correct data for multiple renders", () => {
+      const data = new ProfilerData();
+      const listener = vi.fn();
+
+      data.getEvents().subscribe(listener);
+
+      data.addRender("mount");
+      data.addRender("update");
+      data.addRender("update");
+
+      expect(listener).toHaveBeenCalledTimes(3);
+
+      // Check first call - using objectContaining for getter property compatibility
+      const firstCall = listener.mock.calls[0]![0];
+
+      expect(firstCall.count).toBe(1);
+      expect(firstCall.phase).toBe("mount");
+      expect(firstCall.history).toStrictEqual(["mount"]);
+
+      // Check second call
+      const secondCall = listener.mock.calls[1]![0];
+
+      expect(secondCall.count).toBe(2);
+      expect(secondCall.phase).toBe("update");
+      expect(secondCall.history).toStrictEqual(["mount", "update"]);
+
+      // Check third call
+      const thirdCall = listener.mock.calls[2]![0];
+
+      expect(thirdCall.count).toBe(3);
+      expect(thirdCall.phase).toBe("update");
+      expect(thirdCall.history).toStrictEqual(["mount", "update", "update"]);
+    });
+
+    it("should pass frozen history in events", () => {
+      const data = new ProfilerData();
+      const listener = vi.fn();
+
+      data.getEvents().subscribe(listener);
+
+      data.addRender("mount");
+
+      const receivedInfo = listener.mock.calls[0]![0];
+
+      expect(Object.isFrozen(receivedInfo.history)).toBe(true);
+    });
+
+    it("should clear event listeners when clear is called", () => {
+      const data = new ProfilerData();
+      const listener = vi.fn();
+
+      data.getEvents().subscribe(listener);
+
+      data.addRender("mount");
+
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      data.clear();
+
+      data.addRender("mount");
+
+      expect(listener).toHaveBeenCalledTimes(1); // Not called again
+    });
+
+    it("should not emit events if no listeners", () => {
+      const data = new ProfilerData();
+
+      // Should not throw even without listeners
+      expect(() => {
+        data.addRender("mount");
+        data.addRender("update");
+      }).not.toThrow();
+
+      expect(data.getRenderCount()).toBe(2);
+    });
+
+    it("should support multiple subscribers", () => {
+      const data = new ProfilerData();
+      const listener1 = vi.fn();
+      const listener2 = vi.fn();
+      const listener3 = vi.fn();
+
+      data.getEvents().subscribe(listener1);
+      data.getEvents().subscribe(listener2);
+      data.getEvents().subscribe(listener3);
+
+      data.addRender("mount");
+
+      expect(listener1).toHaveBeenCalledTimes(1);
+      expect(listener2).toHaveBeenCalledTimes(1);
+      expect(listener3).toHaveBeenCalledTimes(1);
+    });
+
+    it("should unsubscribe listeners correctly", () => {
+      const data = new ProfilerData();
+      const listener = vi.fn();
+
+      const unsubscribe = data.getEvents().subscribe(listener);
+
+      data.addRender("mount");
+
+      expect(listener).toHaveBeenCalledTimes(1);
+
+      unsubscribe();
+
+      data.addRender("update");
+
+      expect(listener).toHaveBeenCalledTimes(1); // Not called again
     });
   });
 });

@@ -253,6 +253,74 @@ describe("Custom Matchers", () => {
       }).toThrow(/Expected component to have only mounts, but it also updated/);
     });
 
+    it("should distinguish 'only updated' vs 'also updated' error messages", () => {
+      // This test verifies the AND logic in: if (!hasMounts && hasUpdates)
+      // Mutant changes to: if (!hasMounts || hasUpdates)
+
+      // Case 1: hasMounts=true, hasUpdates=true
+      // Correct message: "but it also updated"
+      // Mutant message: "but it only updated" (WRONG!)
+      const Component1 = ({ n }: { n: number }) => <div>{n}</div>;
+      const TestProfiledComponent1 = withProfiler(Component1, "BothPhases");
+
+      const { rerender } = render(<TestProfiledComponent1 n={1} />);
+
+      rerender(<TestProfiledComponent1 n={2} />);
+
+      // hasMounts=true, hasUpdates=true
+      // With AND: (!hasMounts && hasUpdates) = false → won't enter this branch
+      // With OR: (!hasMounts || hasUpdates) = true → enters and returns wrong message
+
+      // First verify it throws
+      expect(() => {
+        expect(TestProfiledComponent1).toHaveOnlyMounted();
+      }).toThrow();
+
+      // Capture error message
+      let message1 = "";
+
+      try {
+        expect(TestProfiledComponent1).toHaveOnlyMounted();
+      } catch (error) {
+        message1 = (error as Error).message;
+      }
+
+      // Check message outside try/catch (avoids lint warning)
+      expect(message1).toContain("but it also updated");
+      expect(message1).not.toMatch(/but it only updated/);
+
+      // Case 2: hasMounts=false, hasUpdates=true
+      // This is the "only updated" case
+      const Component2 = () => <div>test</div>;
+      const TestProfiledComponent2 = withProfiler(Component2, "OnlyUpdated");
+
+      // Mock to return only update phases (no mount)
+      vi.spyOn(TestProfiledComponent2, "getRenderHistory").mockReturnValue([
+        "update",
+        "update",
+      ]);
+
+      // First verify it throws
+      expect(() => {
+        expect(TestProfiledComponent2).toHaveOnlyMounted();
+      }).toThrow();
+
+      // Capture error message
+      let message2 = "";
+
+      try {
+        expect(TestProfiledComponent2).toHaveOnlyMounted();
+      } catch (error) {
+        message2 = (error as Error).message;
+      }
+
+      // Check message outside try/catch (avoids lint warning)
+      expect(message2).toContain("but it only updated");
+      expect(message2).not.toMatch(/but it also updated/);
+
+      vi.restoreAllMocks();
+    });
+
     it("should work with .not matcher when component updated", () => {
       const Component = ({ value }: { value: string }) => <div>{value}</div>;
       const TestProfiledComponent = withProfiler(Component, "NotTest");

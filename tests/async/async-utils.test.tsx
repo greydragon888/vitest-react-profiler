@@ -9,6 +9,40 @@ import {
   waitForPhase,
 } from "../../src";
 
+// Helper component for fast performance tests (triggers 2 renders with 5ms delay)
+const createFastCounter = () => {
+  const Counter = () => {
+    const [count, setCount] = useState(0);
+
+    if (count === 0) {
+      setTimeout(() => {
+        setCount(1);
+      }, 5);
+    }
+
+    return <div>{count}</div>;
+  };
+
+  return Counter;
+};
+
+// Helper component for multiple renders (triggers N renders with 10ms delay)
+const createMultiRenderCounter = (maxCount: number) => {
+  const Counter = () => {
+    const [count, setCount] = useState(0);
+
+    if (count < maxCount) {
+      setTimeout(() => {
+        setCount(count + 1);
+      }, 10);
+    }
+
+    return <div>{count}</div>;
+  };
+
+  return Counter;
+};
+
 describe("waitForRenders", () => {
   it("should wait for exact render count", async () => {
     const Counter = () => {
@@ -80,29 +114,6 @@ describe("waitForRenders", () => {
     // Should timeout around 200ms (with some tolerance)
     expect(elapsed).toBeGreaterThanOrEqual(180);
     expect(elapsed).toBeLessThan(300);
-  });
-
-  it("should use custom interval", async () => {
-    const Counter = () => {
-      const [count, setCount] = useState(0);
-
-      if (count === 0) {
-        setTimeout(() => {
-          setCount(1);
-        }, 80);
-      }
-
-      return <div>{count}</div>;
-    };
-
-    const ProfiledCounter = withProfiler(Counter);
-
-    render(<ProfiledCounter />);
-
-    // With 100ms interval, this should succeed before first check
-    await waitForRenders(ProfiledCounter, 2, { timeout: 200, interval: 100 });
-
-    expect(ProfiledCounter.getRenderCount()).toBe(2);
   });
 });
 
@@ -180,7 +191,7 @@ describe("waitForMinimumRenders", () => {
     });
   });
 
-  it("should respect custom timeout and interval options", async () => {
+  it("should respect custom timeout", async () => {
     const Static = () => <div>Static</div>;
     const ProfiledStatic = withProfiler(Static);
 
@@ -191,7 +202,6 @@ describe("waitForMinimumRenders", () => {
     try {
       await waitForMinimumRenders(ProfiledStatic, 3, {
         timeout: 200,
-        interval: 30,
       });
 
       throw new Error("Should have thrown");
@@ -324,7 +334,7 @@ describe("waitForPhase", () => {
     });
   });
 
-  it("should use custom timeout and interval for waitForPhase", async () => {
+  it("should use custom timeout for waitForPhase", async () => {
     const Static = () => <div>Static</div>;
     const ProfiledStatic = withProfiler(Static);
 
@@ -335,7 +345,6 @@ describe("waitForPhase", () => {
     try {
       await waitForPhase(ProfiledStatic, "update", {
         timeout: 150,
-        interval: 25,
       });
 
       throw new Error("Should have thrown");
@@ -348,6 +357,262 @@ describe("waitForPhase", () => {
     // Should timeout around 150ms (with some tolerance)
     expect(elapsed).toBeGreaterThanOrEqual(130);
     expect(elapsed).toBeLessThan(250);
+  });
+
+  it("should NOT resolve on wrong phase (only timeout on correct phase)", async () => {
+    // This test ensures that we only resolve when renderPhase === phase
+    // Mutant changes to: if (true) which would resolve on ANY phase
+    const OnlyMountsComponent = () => <div>Static</div>;
+    const ProfiledComponent = withProfiler(OnlyMountsComponent);
+
+    render(<ProfiledComponent />);
+
+    // Component only has "mount" phase, we're waiting for "update"
+    // Mutant: would resolve immediately on "mount" (wrong!)
+    // Correct: should timeout waiting for "update"
+    await expect(
+      waitForPhase(ProfiledComponent, "update", { timeout: 100 }),
+    ).rejects.toThrow(/Expected component to reach phase "update"/);
+
+    // Verify it only has mount phase
+    const history = ProfiledComponent.getRenderHistory();
+
+    expect(history).toStrictEqual(["mount"]);
+    expect(history).not.toContain("update");
+  });
+
+  it("should resolve only on correct phase when multiple renders occur", async () => {
+    // This test ensures we don't resolve prematurely on wrong phase
+    let renderCount = 0;
+
+    const MultiPhaseComponent = () => {
+      const [, setCount] = useState(0);
+
+      // First render: mount
+      // After 20ms: update (wrong phase for our wait)
+      // After 40ms: nested-update (correct phase!)
+      if (renderCount === 0) {
+        renderCount++;
+        setTimeout(() => {
+          setCount(1);
+        }, 20); // First update at 20ms
+      } else if (renderCount === 1) {
+        renderCount++;
+        setTimeout(() => {
+          setCount(2);
+        }, 20); // Nested update at 40ms
+      }
+
+      return <div>{renderCount}</div>;
+    };
+
+    const ProfiledComponent = withProfiler(MultiPhaseComponent);
+
+    render(<ProfiledComponent />);
+
+    // Wait for update phase (should NOT resolve on "mount")
+    // Mutant: would resolve on first "mount" phase (wrong!)
+    // Correct: should wait until "update" appears
+    await waitForPhase(ProfiledComponent, "update", { timeout: 100 });
+
+    // Verify we actually reached update phase
+    const history = ProfiledComponent.getRenderHistory();
+
+    expect(history).toContain("update");
+    expect(history.length).toBeGreaterThanOrEqual(2); // mount + update
+  });
+});
+
+describe("Event-based behavior tests", () => {
+  describe("Performance: event-based response time", () => {
+    it("waitForRenders should resolve in < 20ms (event-based, not polling)", async () => {
+      const Counter = createFastCounter();
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      const start = Date.now();
+
+      await waitForRenders(ProfiledCounter, 2);
+      const elapsed = Date.now() - start;
+
+      // Event-based should be very fast (< 20ms)
+      // Polling would take at least 50ms (one interval)
+      expect(elapsed).toBeLessThan(20);
+      expect(ProfiledCounter.getRenderCount()).toBe(2);
+    });
+
+    it("waitForMinimumRenders should resolve in < 20ms (event-based)", async () => {
+      const Counter = createFastCounter();
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      const start = Date.now();
+
+      await waitForMinimumRenders(ProfiledCounter, 2);
+      const elapsed = Date.now() - start;
+
+      // Event-based should be very fast (< 20ms)
+      expect(elapsed).toBeLessThan(20);
+      expect(ProfiledCounter.getRenderCount()).toBeGreaterThanOrEqual(2);
+    });
+
+    it("waitForPhase should resolve in < 20ms (event-based)", async () => {
+      const Counter = createFastCounter();
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      const start = Date.now();
+
+      await waitForPhase(ProfiledCounter, "update");
+      const elapsed = Date.now() - start;
+
+      // Event-based should be very fast (< 20ms)
+      expect(elapsed).toBeLessThan(20);
+      expect(ProfiledCounter.getRendersByPhase("update")).toHaveLength(1);
+    });
+  });
+
+  describe("Race condition protection", () => {
+    it("waitForRenders should work if condition already satisfied", async () => {
+      const Component = () => <div>test</div>;
+      const ProfiledComponent = withProfiler(Component);
+
+      render(<ProfiledComponent />);
+
+      // Already at 1 render
+      expect(ProfiledComponent.getRenderCount()).toBe(1);
+
+      const start = Date.now();
+
+      // Should complete immediately (race condition protection)
+      await waitForRenders(ProfiledComponent, 1);
+      const elapsed = Date.now() - start;
+
+      // Should be almost instant (< 5ms)
+      expect(elapsed).toBeLessThan(5);
+      expect(ProfiledComponent.getRenderCount()).toBe(1);
+    });
+
+    it("waitForPhase should work if phase already occurred", async () => {
+      const Component = () => <div>test</div>;
+      const ProfiledComponent = withProfiler(Component);
+
+      render(<ProfiledComponent />);
+
+      // Mount phase already occurred
+      const start = Date.now();
+
+      await waitForPhase(ProfiledComponent, "mount");
+      const elapsed = Date.now() - start;
+
+      // Should be almost instant (< 5ms)
+      expect(elapsed).toBeLessThan(5);
+    });
+  });
+
+  describe("Multiple parallel waiters", () => {
+    it("multiple waitForRenders can wait simultaneously", async () => {
+      const Counter = createMultiRenderCounter(3);
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      // Create 3 parallel waiters
+      const waiter1 = waitForRenders(ProfiledCounter, 2);
+      const waiter2 = waitForRenders(ProfiledCounter, 3);
+      const waiter3 = waitForRenders(ProfiledCounter, 4);
+
+      // All should complete successfully
+      await Promise.all([waiter1, waiter2, waiter3]);
+
+      expect(ProfiledCounter.getRenderCount()).toBe(4);
+    });
+
+    it("multiple waitForPhase can wait simultaneously", async () => {
+      const Counter = createMultiRenderCounter(1);
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      // Create 3 parallel waiters for same phase
+      const waiter1 = waitForPhase(ProfiledCounter, "update");
+      const waiter2 = waitForPhase(ProfiledCounter, "update");
+      const waiter3 = waitForPhase(ProfiledCounter, "update");
+
+      // All should complete when update phase occurs
+      await Promise.all([waiter1, waiter2, waiter3]);
+
+      expect(ProfiledCounter.getRendersByPhase("update")).toHaveLength(1);
+    });
+  });
+
+  describe("Cleanup verification", () => {
+    it("should cleanup listeners on successful resolution", async () => {
+      const Counter = createMultiRenderCounter(1);
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      // Wait for renders
+      await waitForRenders(ProfiledCounter, 2);
+
+      // Verify component still works after cleanup
+      expect(ProfiledCounter.getRenderCount()).toBe(2);
+
+      // Should be able to call other methods without issues
+      expect(ProfiledCounter.getRenderHistory()).toStrictEqual([
+        "mount",
+        "update",
+      ]);
+    });
+
+    it("should cleanup listeners on timeout", async () => {
+      const Static = () => <div>Static</div>;
+      const ProfiledStatic = withProfiler(Static);
+
+      render(<ProfiledStatic />);
+
+      try {
+        await waitForRenders(ProfiledStatic, 5, { timeout: 100 });
+      } catch {
+        // Expected timeout
+      }
+
+      // Verify component still works after timeout cleanup
+      expect(ProfiledStatic.getRenderCount()).toBe(1);
+      expect(ProfiledStatic.getRenderHistory()).toStrictEqual(["mount"]);
+    });
+
+    it("should cleanup timeout on successful resolution", async () => {
+      const Counter = () => {
+        const [count, setCount] = useState(0);
+
+        if (count === 0) {
+          setTimeout(() => {
+            setCount(1);
+          }, 10);
+        }
+
+        return <div>{count}</div>;
+      };
+
+      const ProfiledCounter = withProfiler(Counter);
+
+      render(<ProfiledCounter />);
+
+      // Wait with very long timeout
+      await waitForRenders(ProfiledCounter, 2, { timeout: 5000 });
+
+      // If timeout wasn't cleared, it would still be running
+      // This verifies that cleanup worked correctly
+      expect(ProfiledCounter.getRenderCount()).toBe(2);
+
+      // Wait a bit to ensure no hanging timeouts cause issues
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
   });
 });
 

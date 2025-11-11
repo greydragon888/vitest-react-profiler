@@ -21,7 +21,6 @@
     "vitest.config.mts",
     "examples/*/vitest.config.mts",
     "*.config.ts",
-    "*.config.mts",
-    "*.config.js"
+    "*.config.*"
   ]
 }

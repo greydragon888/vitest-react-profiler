@@ -94,8 +94,12 @@ describe("getRenderHistory caching", () => {
     const ProfiledComponent1 = withProfiler(Component1);
     const ProfiledComponent2 = withProfiler(Component2);
 
-    render(<ProfiledComponent1 />);
+    const { rerender: rerender1 } = render(<ProfiledComponent1 />);
+
     render(<ProfiledComponent2 />);
+
+    // Force different histories by triggering an update on Component1
+    rerender1(<ProfiledComponent1 />);
 
     const history1a = ProfiledComponent1.getRenderHistory();
     const history1b = ProfiledComponent1.getRenderHistory();
@@ -107,8 +111,11 @@ describe("getRenderHistory caching", () => {
     expect(history1a).toBe(history1b);
     expect(history2a).toBe(history2b);
 
-    // Different components should have different histories
+    // Components with different histories should have different references
+    // Component1: ["mount", "update"], Component2: ["mount"]
     expect(history1a).not.toBe(history2a);
+    expect(history1a).toStrictEqual(["mount", "update"]);
+    expect(history2a).toStrictEqual(["mount"]);
   });
 
   it("should return frozen arrays", () => {

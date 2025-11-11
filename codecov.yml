@@ -34,8 +34,6 @@ coverage:
 
     changes:
       default:
-        target: auto # Auto-calculate change coverage
-        threshold: 1%
         if_ci_failed: error
         informational: false
         only_pulls: true
@@ -47,6 +45,8 @@ comment:
   require_changes: false # Always show comment
   require_base: false # Don't require base commit
   require_head: true # Require head commit
+  require_bundle_changes: true # Only comment when bundle size changes
+  bundle_change_threshold: 1Kb # Warn on 1KB+ increase
 
 # Ignore paths (no coverage tracking)
 ignore:
@@ -85,16 +85,5 @@ parsers:
 # Bundle Analysis Configuration
 # Docs: https://docs.codecov.com/docs/javascript-bundle-analysis
 bundle_analysis:
-  # Require bundle changes to show in PR comments
-  require_bundle_changes: true # Only comment when bundle size changes
-
-  # Threshold for bundle change warnings (in bytes)
-  bundle_change_threshold: 1kb # Warn on 1KB+ increase
-
-  # Status check configuration
-  status:
-    # Warning threshold for bundle size increase
-    warning_threshold: 5% # Warn if bundle increases by 5%
-
-    # Status check behavior
-    status: informational # Don't block PRs, just inform
+  warning_threshold: "5%" # Warn if bundle increases by 5%
+  status: "informational" # Don't block PRs, just inform

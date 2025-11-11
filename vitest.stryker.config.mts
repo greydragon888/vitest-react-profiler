@@ -15,6 +15,13 @@ export default defineConfig({
     },
   },
 
+  // Define global constants (required for CacheMetrics to work)
+  define: {
+    __TEST__: true,
+    __DEV__: process.env.NODE_ENV !== "production",
+    "import.meta.env.INTERNAL_TESTS": "true",
+  },
+
   test: {
     clearMocks: true,
     globals: true,
@@ -32,13 +39,8 @@ export default defineConfig({
     // Include test files
     include: ["./tests/**/*.test.ts", "./tests/**/*.test.tsx"],
 
-    // Optimize memory usage
+    // Optimize memory usage (Vitest 4+)
     pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: false,
-        isolate: true,
-      },
-    },
+    isolate: true,
   },
 });

@@ -30,8 +30,6 @@ export {
   waitForPhase,
 } from "./utils/async";
 
-export type { WaitOptions } from "./utils/async";
-
 // Rendering utilities
 export { renderProfiled } from "./utils/renderProfiled";
 
@@ -45,6 +43,8 @@ export type {
   PhaseType,
   ProfiledComponent,
   ProfiledComponentType,
+  WaitOptions,
+  RenderEventInfo,
 } from "./types";
 
 // Version info

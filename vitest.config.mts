@@ -107,18 +107,11 @@ export default defineConfig({
     hookTimeout: 10000,
 
     /**
-     * Pool options for worker threads
+     * Worker configuration (Vitest 4+)
      * Limit parallelism to prevent memory exhaustion
      */
-    poolOptions: {
-      threads: {
-        // Limit number of concurrent workers to reduce memory usage
-        maxThreads: 4,
-        minThreads: 1,
-        // Enable isolation for accurate profiling
-        isolate: true,
-      },
-    },
+    // Limit number of concurrent workers to reduce memory usage
+    maxWorkers: 4,
 
     // Use threads pool for better performance with async tests
     pool: "threads",
@@ -130,5 +123,6 @@ export default defineConfig({
   define: {
     __TEST__: true,
     __DEV__: process.env.NODE_ENV !== "production",
+    "import.meta.env.INTERNAL_TESTS": "true", // Enable internal metrics for tests
   },
 });

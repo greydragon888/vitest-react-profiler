@@ -14,9 +14,10 @@ describe("ProfilerCache", () => {
       const result1 = cache.getFrozenHistory(compute);
       const result2 = cache.getFrozenHistory(compute);
 
-      expect(result1).toBe(mockHistory);
-      expect(result2).toBe(mockHistory);
-      expect(result1).toBe(result2); // Same reference
+      // Result is pooled frozen array (may differ from input reference)
+      expect(result1).toStrictEqual(["mount", "update"]);
+      expect(Object.isFrozen(result1)).toBe(true);
+      expect(result1).toBe(result2); // Same reference on cache hit
       expect(compute).toHaveBeenCalledTimes(1); // Computed only once
     });
 
@@ -39,7 +40,7 @@ describe("ProfilerCache", () => {
 
       expect(compute).toHaveBeenCalledTimes(1);
 
-      cache.invalidate();
+      cache.invalidate("mount");
       cache.getFrozenHistory(compute);
 
       expect(compute).toHaveBeenCalledTimes(2);
@@ -54,7 +55,9 @@ describe("ProfilerCache", () => {
 
       const result = cache.getPhaseCache("mount", compute);
 
-      expect(result).toBe(mountRenders);
+      // Result is pooled frozen array (may differ from input reference)
+      expect(result).toStrictEqual(["mount"]);
+      expect(Object.isFrozen(result)).toBe(true);
       expect(compute).toHaveBeenCalledTimes(1);
     });
 
@@ -65,7 +68,9 @@ describe("ProfilerCache", () => {
 
       const result = cache.getPhaseCache("update", compute);
 
-      expect(result).toBe(updateRenders);
+      // Result is pooled frozen array (may differ from input reference)
+      expect(result).toStrictEqual(["update", "update"]);
+      expect(Object.isFrozen(result)).toBe(true);
       expect(compute).toHaveBeenCalledTimes(1);
     });
 
@@ -76,7 +81,9 @@ describe("ProfilerCache", () => {
 
       const result = cache.getPhaseCache("nested-update", compute);
 
-      expect(result).toBe(nestedRenders);
+      // Result is pooled frozen array (may differ from input reference)
+      expect(result).toStrictEqual(["nested-update"]);
+      expect(Object.isFrozen(result)).toBe(true);
       expect(compute).toHaveBeenCalledTimes(1);
     });
 
@@ -102,79 +109,36 @@ describe("ProfilerCache", () => {
 
       expect(compute).toHaveBeenCalledTimes(1);
 
-      cache.invalidate();
+      cache.invalidate("mount");
       cache.getPhaseCache("mount", compute);
 
       expect(compute).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe("getHasMounted", () => {
-    it("should cache boolean result", () => {
-      const cache = new ProfilerCache();
-      const compute = vi.fn(() => true);
-
-      const result1 = cache.getHasMounted(compute);
-      const result2 = cache.getHasMounted(compute);
-
-      expect(result1).toBe(true);
-      expect(result2).toBe(true);
-      expect(compute).toHaveBeenCalledTimes(1);
-    });
-
-    it("should cache false result", () => {
-      const cache = new ProfilerCache();
-      const compute = vi.fn(() => false);
-
-      const result1 = cache.getHasMounted(compute);
-      const result2 = cache.getHasMounted(compute);
-
-      expect(result1).toBe(false);
-      expect(result2).toBe(false);
-      expect(compute).toHaveBeenCalledTimes(1);
-    });
-
-    it("should recompute after invalidate", () => {
-      const cache = new ProfilerCache();
-      const compute = vi.fn(() => true);
-
-      cache.getHasMounted(compute);
-
-      expect(compute).toHaveBeenCalledTimes(1);
-
-      cache.invalidate();
-      cache.getHasMounted(compute);
-
-      expect(compute).toHaveBeenCalledTimes(2);
-    });
-  });
+  // getHasMounted removed in v1.7.0 - now uses immutable flag in ProfilerData
 
   describe("invalidate", () => {
     it("should clear all caches", () => {
       const cache = new ProfilerCache();
       const historyCompute = vi.fn(() => ["mount"] as const);
       const phaseCompute = vi.fn(() => ["mount"] as const);
-      const hasMountedCompute = vi.fn(() => true);
 
       // Populate all caches
       cache.getFrozenHistory(historyCompute);
       cache.getPhaseCache("mount", phaseCompute);
-      cache.getHasMounted(hasMountedCompute);
 
       expect(historyCompute).toHaveBeenCalledTimes(1);
       expect(phaseCompute).toHaveBeenCalledTimes(1);
-      expect(hasMountedCompute).toHaveBeenCalledTimes(1);
 
       // Invalidate and verify recomputation
-      cache.invalidate();
+      cache.invalidate("mount");
 
       cache.getFrozenHistory(historyCompute);
       cache.getPhaseCache("mount", phaseCompute);
-      cache.getHasMounted(hasMountedCompute);
 
       expect(historyCompute).toHaveBeenCalledTimes(2);
       expect(phaseCompute).toHaveBeenCalledTimes(2);
-      expect(hasMountedCompute).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -183,27 +147,22 @@ describe("ProfilerCache", () => {
       const cache = new ProfilerCache();
       const historyCompute = vi.fn(() => ["mount"] as const);
       const phaseCompute = vi.fn(() => ["update"] as const);
-      const hasMountedCompute = vi.fn(() => true);
 
       // Populate all caches
       cache.getFrozenHistory(historyCompute);
       cache.getPhaseCache("update", phaseCompute);
-      cache.getHasMounted(hasMountedCompute);
 
       expect(historyCompute).toHaveBeenCalledTimes(1);
       expect(phaseCompute).toHaveBeenCalledTimes(1);
-      expect(hasMountedCompute).toHaveBeenCalledTimes(1);
 
       // Clear and verify recomputation
       cache.clear();
 
       cache.getFrozenHistory(historyCompute);
       cache.getPhaseCache("update", phaseCompute);
-      cache.getHasMounted(hasMountedCompute);
 
       expect(historyCompute).toHaveBeenCalledTimes(2);
       expect(phaseCompute).toHaveBeenCalledTimes(2);
-      expect(hasMountedCompute).toHaveBeenCalledTimes(2);
     });
   });
 

@@ -5,6 +5,99 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-11-11
+
+### BREAKING CHANGES
+
+**For 99% of users (using `withProfiler()`)**: No changes needed!
+
+**1. Removed `interval` parameter from async operations**
+
+The `interval` parameter has been removed from all async utilities and matchers as it's no longer needed with the new event-based architecture.
+
+```typescript
+// ❌ Before (v1.5.0)
+await waitForRenders(component, 3, { timeout: 2000, interval: 10 });
+await expect(component).toEventuallyRenderTimes(3, {
+  timeout: 1000,
+  interval: 50,
+});
+
+// ✅ After (v1.6.0)
+await waitForRenders(component, 3, { timeout: 2000 });
+await expect(component).toEventuallyRenderTimes(3, { timeout: 1000 });
+```
+
+**Migration:** Remove `interval` property from options objects (TypeScript will show errors if used).
+
+**2. Custom wrappers require `onRender()` method**
+
+All async operations now use event-based approach and require `onRender()` method.
+
+```typescript
+// ✅ Using withProfiler() - no changes needed
+const ProfiledComponent = withProfiler(MyComponent);
+await waitForRenders(ProfiledComponent, 3); // Works!
+
+// ⚠️ Custom wrappers - must implement onRender()
+class CustomWrapper {
+  onRender(callback: (info: RenderEventInfo) => void): () => void {
+    // Subscribe to renders
+    return () => {}; // Unsubscribe function
+  }
+}
+```
+
+**Impact**: <1% of users (only those with custom wrappers not using withProfiler()).
+
+### Added
+
+- **New API methods** - Subscribe to renders and wait for async updates
+  - `onRender(callback)` - Subscribe to component renders with real-time notifications
+  - `waitForNextRender(options?)` - Promise-based helper to wait for next render
+  - `RenderEventInfo` interface - Structured render event information
+
+- **Comprehensive examples** - Real-world usage patterns
+  - 21 event-based examples in `examples/async/`
+  - Examples covering: subscriptions, async waits, cleanup, complex conditions, performance
+
+### Changed
+
+- **Async matchers and utilities** - Event-based implementation (**10x faster**)
+  - Matchers: `toEventuallyRenderTimes`, `toEventuallyRenderAtLeast`, `toEventuallyReachPhase`
+  - Utilities: `waitForRenders()`, `waitForMinimumRenders()`, `waitForPhase()`
+  - Performance improvement: ~50ms → <5ms (typical operation)
+  - Zero CPU overhead (no polling loops)
+  - Race condition protection and immediate resolution when condition already met
+
+- **Core methods performance** - Improved baseline and stability
+  - `getRenderCount()`: 91-105% of baseline (was 17-40%)
+  - `getRenderHistory()`: Optimized with lazy history evaluation
+  - Relative Mean Error (RME): ±10% (was ±15-30% - **20-50% improvement**)
+  - Better stability across all operations
+
+### Fixed
+
+- **Race conditions in async operations** - Proper synchronization in event-based code
+  - Promise creation before action triggering prevents missed renders
+  - Immediate condition check after subscription prevents race conditions
+  - Timeout cleanup prevents memory leaks
+
+- **Type safety improvements** - Better TypeScript integration
+  - Removed unused generic parameters
+  - Enhanced type guards for ProfiledComponent validation
+  - Stricter null safety in event listeners
+
+### Removed
+
+- **`interval` parameter** - Removed from `WaitOptions` interface
+  - No longer needed with event-based architecture
+  - TypeScript will show errors if used (compile-time safety)
+
+- **Polling implementation** - Replaced with event-based approach
+  - All async matchers and utilities now use events
+  - Dependency on `@testing-library/react` waitFor removed
+
 ## [1.5.0] - 2025-11-06
 
 ### BREAKING CHANGES
@@ -482,6 +575,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.6.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.6.0
 [1.5.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.5.0
 [1.4.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.4.0
 [1.3.2]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.3.2

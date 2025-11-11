@@ -1,3 +1,4 @@
+import { cleanupAndResolve } from "@/helpers.ts";
 import { isProfiledComponent } from "@/matchers/type-guards";
 import {
   formatRenderHistory,
@@ -9,10 +10,16 @@ import type { WaitOptions, MatcherResult } from "@/matchers/types";
 /**
  * Assert that component eventually renders exact number of times (async)
  *
+ * Uses event-based approach with onRender() for instant notification.
+ * No polling overhead - resolves immediately when condition is met.
+ *
  * @param received - The component to check (must be created with withProfiler)
  * @param expected - Expected number of renders
- * @param options - Wait options
+ * @param options - Wait options (timeout only, no interval)
  * @returns Promise with matcher result
+ *
+ * @since v1.6.0 - Rewritten to use event-based approach (no polling)
+ *
  * @example
  * await expect(ProfiledComponent).toEventuallyRenderTimes(3)
  * await expect(ProfiledComponent).toEventuallyRenderTimes(5, { timeout: 2000 })
@@ -38,46 +45,68 @@ export async function toEventuallyRenderTimes(
     };
   }
 
-  const { timeout = 1000, interval = 50 } = options ?? {};
-  const startTime = Date.now();
+  const { timeout = 1000 } = options ?? {};
 
-  while (Date.now() - startTime < timeout) {
-    const actual = received.getRenderCount();
-
-    if (actual === expected) {
-      return {
+  return new Promise((resolve) => {
+    // Race condition protection: check if already satisfied
+    if (received.getRenderCount() === expected) {
+      resolve({
         pass: true,
         message: () =>
           `Expected component not to eventually render ${expected} times within ${timeout}ms, but it did`,
-        actual,
+        actual: expected,
         expected,
-      };
+      });
+
+      return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, interval));
-  }
+    // Setup timeout
+    const timeoutId = setTimeout(() => {
+      unsubscribe();
 
-  const actual = received.getRenderCount();
-  const history = received.getRenderHistory();
-  const summary = formatRenderSummary(history);
-  const details = formatRenderHistory(history, 10);
+      const actual = received.getRenderCount();
+      const history = received.getRenderHistory();
+      const summary = formatRenderSummary(history);
+      const details = formatRenderHistory(history, 10);
 
-  return {
-    pass: false,
-    message: () =>
-      `Expected component to eventually render ${expected} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
-    actual,
-    expected,
-  };
+      resolve({
+        pass: false,
+        message: () =>
+          `Expected component to eventually render ${expected} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
+        actual,
+        expected,
+      });
+    }, timeout);
+
+    // Subscribe to render events
+    const unsubscribe = received.onRender(({ count }) => {
+      if (count === expected) {
+        cleanupAndResolve(timeoutId, unsubscribe, resolve, {
+          pass: true,
+          message: () =>
+            `Expected component not to eventually render ${expected} times within ${timeout}ms, but it did`,
+          actual: count,
+          expected,
+        });
+      }
+    });
+  });
 }
 
 /**
  * Assert that component eventually renders at least N times (async)
  *
+ * Uses event-based approach with onRender() for instant notification.
+ * No polling overhead - resolves immediately when condition is met.
+ *
  * @param received - The component to check (must be created with withProfiler)
  * @param minCount - Minimum expected number of renders
- * @param options - Wait options
+ * @param options - Wait options (timeout only, no interval)
  * @returns Promise with matcher result
+ *
+ * @since v1.6.0 - Rewritten to use event-based approach (no polling)
+ *
  * @example
  * await expect(ProfiledComponent).toEventuallyRenderAtLeast(2)
  * await expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: 2000 })
@@ -103,35 +132,53 @@ export async function toEventuallyRenderAtLeast(
     };
   }
 
-  const { timeout = 1000, interval = 50 } = options ?? {};
-  const startTime = Date.now();
+  const { timeout = 1000 } = options ?? {};
 
-  while (Date.now() - startTime < timeout) {
-    const actual = received.getRenderCount();
+  return new Promise((resolve) => {
+    // Race condition protection: check if already satisfied
+    if (received.getRenderCount() >= minCount) {
+      const actual = received.getRenderCount();
 
-    if (actual >= minCount) {
-      return {
+      resolve({
         pass: true,
         message: () =>
           `Expected component not to eventually render at least ${minCount} times within ${timeout}ms, but it rendered ${actual} times`,
         actual,
         expected: minCount,
-      };
+      });
+
+      return;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, interval));
-  }
+    // Setup timeout
+    const timeoutId = setTimeout(() => {
+      unsubscribe();
 
-  const actual = received.getRenderCount();
-  const history = received.getRenderHistory();
-  const summary = formatRenderSummary(history);
-  const details = formatRenderHistory(history, 10);
+      const actual = received.getRenderCount();
+      const history = received.getRenderHistory();
+      const summary = formatRenderSummary(history);
+      const details = formatRenderHistory(history, 10);
 
-  return {
-    pass: false,
-    message: () =>
-      `Expected component to eventually render at least ${minCount} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
-    actual,
-    expected: minCount,
-  };
+      resolve({
+        pass: false,
+        message: () =>
+          `Expected component to eventually render at least ${minCount} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
+        actual,
+        expected: minCount,
+      });
+    }, timeout);
+
+    // Subscribe to render events
+    const unsubscribe = received.onRender(({ count }) => {
+      if (count >= minCount) {
+        cleanupAndResolve(timeoutId, unsubscribe, resolve, {
+          pass: true,
+          message: () =>
+            `Expected component not to eventually render at least ${minCount} times within ${timeout}ms, but it rendered ${count} times`,
+          actual: count,
+          expected: minCount,
+        });
+      }
+    });
+  });
 }

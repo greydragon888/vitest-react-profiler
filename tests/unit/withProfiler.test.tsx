@@ -47,6 +47,25 @@ describe("withProfiler", () => {
       expect(Unnamed.displayName).toBe("withProfiler(SimpleComponent)");
     });
 
+    it("should use 'Component' fallback for components without name", () => {
+      // Create component with empty name (edge case)
+      const AnonymousComp: FC = () => <div>test</div>;
+
+      // Force empty name (simulates IIFE or minified code)
+      Object.defineProperty(AnonymousComp, "name", { value: "" });
+      Object.defineProperty(AnonymousComp, "displayName", { value: undefined });
+
+      const ProfiledAnon = withProfiler(AnonymousComp);
+
+      // Should use fallback "Component", NOT empty string
+      expect(ProfiledAnon.displayName).toBe("withProfiler(Component)");
+
+      // Verify the component still renders
+      const { getByText } = render(<ProfiledAnon />);
+
+      expect(getByText("test")).toBeInTheDocument();
+    });
+
     it("should preserve original component reference", () => {
       const Profiled = withProfiler(SimpleComponent);
 

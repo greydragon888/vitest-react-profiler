@@ -1,6 +1,6 @@
 // vitest.config.bench.mts
 import { defineConfig } from "vitest/config";
-import path from "path";
+import path from "node:path";
 
 export default defineConfig({
   resolve: {
@@ -13,20 +13,15 @@ export default defineConfig({
 
   cacheDir: "./.vitest-bench", // Separate cache for benchmarks
   test: {
-    // Settings for benchmark stability
+    // Settings for benchmark stability (Vitest 4+)
     pool: "forks", // Process isolation
-    poolOptions: {
-      forks: {
-        singleFork: true, // One test per process
-        isolate: true, // Full isolation
-        execArgv: [
-          // Node.js flags
-          "--expose-gc", // Access to GC
-          "--max-old-space-size=4096", // More memory
-          // "--predictable", // Predictability (optional, slower)
-        ],
-      },
-    },
+    isolate: true, // Full isolation
+    execArgv: [
+      // Node.js flags
+      "--expose-gc", // Access to GC
+      "--max-old-space-size=4096", // More memory per process
+      // "--predictable", // Predictability (optional, slower)
+    ],
 
     // Disable unnecessary features for benchmarks
     globals: false,
@@ -45,8 +40,8 @@ export default defineConfig({
     includeSource: [],
     include: [], // Clear regular tests
 
-    // Setup files for React Testing Library
-    setupFiles: ["./tests/setup.ts"],
+    // Setup files for benchmarks (includes RTL cleanup)
+    setupFiles: ["./tests/setup.bench.ts"],
 
     // Benchmark settings
     benchmark: {
@@ -57,7 +52,10 @@ export default defineConfig({
       outputJson: "./.bench/results.json",
 
       // Benchmark paths
-      include: ["./tests/benchmarks/**/*.bench.ts", "./tests/benchmarks/**/*.bench.tsx"],
+      include: [
+        "./tests/benchmarks/**/*.bench.ts",
+        "./tests/benchmarks/**/*.bench.tsx",
+      ],
       exclude: ["node_modules", "dist", "**/*.test.ts"],
 
       // Result verbosity
@@ -79,6 +77,11 @@ export default defineConfig({
     // Parallelism
     maxConcurrency: 1, // One test at a time for stability
     maxWorkers: 1, // One worker
+  },
+
+  // Define global constants for benchmarks
+  define: {
+    "import.meta.env.INTERNAL_TESTS": "true", // Enable internal metrics for benchmarks
   },
 
   // Build optimization for benchmarks

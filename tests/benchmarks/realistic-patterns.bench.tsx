@@ -186,6 +186,46 @@ describe("Realistic Test Patterns - Performance", () => {
         // Expected
       }
     });
+
+    bench("500 renders → 5 fail matchers (extreme formatting)", () => {
+      const ProfiledComponent = withProfiler(TestComponent);
+      const { rerender } = render(<ProfiledComponent value={0} />);
+
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent value={i} />);
+      }
+
+      // Multiple fail matchers on very large history - worst case for formatting
+      try {
+        expect(ProfiledComponent).toHaveRenderedTimes(999);
+      } catch {
+        // Expected
+      }
+
+      try {
+        expect(ProfiledComponent).toHaveOnlyMounted();
+      } catch {
+        // Expected
+      }
+
+      try {
+        expect(ProfiledComponent).toHaveOnlyUpdated();
+      } catch {
+        // Expected
+      }
+
+      try {
+        expect(ProfiledComponent).toHaveMountedOnce();
+      } catch {
+        // Expected
+      }
+
+      try {
+        expect(ProfiledComponent).toHaveNeverMounted();
+      } catch {
+        // Expected
+      }
+    });
   });
 
   describe("Pattern 4: Realistic Test Workflows", () => {
@@ -244,5 +284,42 @@ describe("Realistic Test Patterns - Performance", () => {
         // Expected
       }
     });
+
+    bench(
+      "500 renders → multiple method calls + assertions",
+      () => {
+        const ProfiledComponent = withProfiler(TestComponent);
+        const { rerender } = render(<ProfiledComponent value={0} />);
+
+        // Simulate realistic large test with many rerenders
+        for (let i = 1; i < 500; i++) {
+          rerender(<ProfiledComponent value={i} />);
+        }
+
+        // Multiple method calls (typical complex test pattern)
+        void ProfiledComponent.getRenderHistory();
+        void ProfiledComponent.getRendersByPhase("mount");
+        void ProfiledComponent.getRendersByPhase("update");
+        void ProfiledComponent.getRenderCount();
+        void ProfiledComponent.getLastRender();
+
+        // Multiple assertions
+        try {
+          expect(ProfiledComponent).toHaveRenderedTimes(999);
+        } catch {
+          // Expected
+        }
+
+        try {
+          expect(ProfiledComponent).toHaveOnlyUpdated();
+        } catch {
+          // Expected
+        }
+      },
+      {
+        warmupTime: 200, // V8 JIT warmup
+        time: 1000, // More samples for stability
+      },
+    );
   });
 });

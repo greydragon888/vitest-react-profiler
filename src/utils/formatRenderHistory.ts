@@ -38,17 +38,16 @@ export function formatRenderHistory(
 
   const result = items.join("\n");
 
-  // Add "and X more" indicator if there are more items
-  const hasMore = history.length > maxItems;
-  const moreText = hasMore
-    ? `\n  ... and ${history.length - maxItems} more`
-    : "";
-
   // Add helpful tip at the end
   const tip =
     "\n\n  💡 Tip: Use Component.getRenderHistory() to inspect all render details";
 
-  return result + moreText + tip;
+  // Add "and X more" indicator if there are more items
+  const hasMore = history.length > maxItems;
+
+  return hasMore
+    ? `${result}\n  ... and ${history.length - maxItems} more${tip}`
+    : result + tip;
 }
 
 /**

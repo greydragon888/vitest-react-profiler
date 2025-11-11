@@ -1,12 +1,15 @@
+import { cacheMetrics } from "./CacheMetrics";
+
 import type { PhaseType } from "@/types";
 
 /**
  * Manages all types of caching for profiler data
  *
- * Supports 3 types of cache:
+ * Supports 2 types of cache:
  * 1. frozenHistory - immutable copy of entire history (array of phases)
  * 2. phaseCache - filtered renders by phase (mount/update/nested-update)
- * 3. hasMountedCache - result of checking for mount render
+ *
+ * @since v1.6.0 - Added cache metrics tracking
  */
 export class ProfilerCache {
   private frozenHistory?: readonly PhaseType[] | undefined;
@@ -17,21 +20,33 @@ export class ProfilerCache {
         "nested-update"?: readonly PhaseType[];
       }
     | undefined;
-  private hasMountedCache?: boolean | undefined;
 
   /**
    * Get or compute frozen history
    *
    * @param compute - Computation function, called only if cache is invalid
+   *
+   * @since v1.6.0 - Added cache metrics tracking
    */
   getFrozenHistory(compute: () => readonly PhaseType[]): readonly PhaseType[] {
-    this.frozenHistory ??= compute();
+    if (this.frozenHistory !== undefined) {
+      cacheMetrics.recordHit("frozenHistory");
+
+      return this.frozenHistory;
+    }
+
+    cacheMetrics.recordMiss("frozenHistory");
+    const history = compute();
+
+    this.frozenHistory = Object.freeze(history);
 
     return this.frozenHistory;
   }
 
   /**
    * Get or compute renders by phase
+   *
+   * @since v1.6.0 - Added cache metrics tracking
    */
   getPhaseCache(
     phase: PhaseType,
@@ -40,33 +55,47 @@ export class ProfilerCache {
     // Initialize phaseCache as empty object if undefined
     this.phaseCache ??= {};
 
-    this.phaseCache[phase] ??= compute();
+    if (this.phaseCache[phase] !== undefined) {
+      cacheMetrics.recordHit("phaseCache");
+
+      return this.phaseCache[phase];
+    }
+
+    cacheMetrics.recordMiss("phaseCache");
+
+    const filtered = compute();
+
+    this.phaseCache[phase] = Object.freeze(filtered);
 
     return this.phaseCache[phase];
   }
 
   /**
-   * Get or compute hasMounted
+   * Smart cache invalidation (called on new render)
+   *
+   * Invalidates only affected caches based on the phase that was added.
+   * This avoids unnecessary cache misses for unaffected phase filters.
+   *
+   * @param phase - The render phase that was just added
+   *
+   * @since v1.6.0 - Optimized: selective invalidation by phase
    */
-  getHasMounted(compute: () => boolean): boolean {
-    this.hasMountedCache ??= compute();
-
-    return this.hasMountedCache;
-  }
-
-  /**
-   * Invalidate all caches (called on new render)
-   */
-  invalidate(): void {
+  invalidate(phase: PhaseType): void {
+    // Always invalidate frozenHistory (array changed)
     this.frozenHistory = undefined;
-    this.phaseCache = undefined;
-    this.hasMountedCache = undefined;
+
+    // Smart invalidation: only invalidate cache for the current phase
+    // Other phase caches remain valid (e.g., adding "update" doesn't affect "mount" cache)
+    if (this.phaseCache) {
+      delete this.phaseCache[phase];
+    }
   }
 
   /**
    * Full clear (called on clear)
    */
   clear(): void {
-    this.invalidate();
+    this.frozenHistory = undefined;
+    this.phaseCache = undefined;
   }
 }

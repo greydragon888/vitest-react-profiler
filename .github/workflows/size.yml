@@ -34,14 +34,23 @@ jobs:
           CJS_SIZE=$(wc -c < dist/index.cjs | xargs)
           DTS_SIZE=$(wc -c < dist/index.d.ts | xargs)
 
+          # Check gzipped sizes
+          ESM_GZ_SIZE=$(gzip -c dist/index.js | wc -c | xargs)
+          CJS_GZ_SIZE=$(gzip -c dist/index.cjs | wc -c | xargs)
+          DTS_GZ_SIZE=$(gzip -c dist/index.d.ts | wc -c | xargs)
+
           # Convert to KB
           ESM_KB=$(echo "scale=2; $ESM_SIZE / 1024" | bc)
           CJS_KB=$(echo "scale=2; $CJS_SIZE / 1024" | bc)
           DTS_KB=$(echo "scale=2; $DTS_SIZE / 1024" | bc)
 
-          echo "ESM: ${ESM_KB}KB"
-          echo "CJS: ${CJS_KB}KB"
-          echo "Types: ${DTS_KB}KB"
+          ESM_GZ_KB=$(echo "scale=2; $ESM_GZ_SIZE / 1024" | bc)
+          CJS_GZ_KB=$(echo "scale=2; $CJS_GZ_SIZE / 1024" | bc)
+          DTS_GZ_KB=$(echo "scale=2; $DTS_GZ_SIZE / 1024" | bc)
+
+          echo "ESM: ${ESM_KB}KB (gzipped: ${ESM_GZ_KB}KB)"
+          echo "CJS: ${CJS_KB}KB (gzipped: ${CJS_GZ_KB}KB)"
+          echo "Types: ${DTS_KB}KB (gzipped: ${DTS_GZ_KB}KB)"
 
           # Check if files are too large (>50KB warning, >100KB error)
           if [ "$ESM_SIZE" -gt 102400 ] || [ "$CJS_SIZE" -gt 102400 ]; then
@@ -65,11 +74,17 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { execSync } = require('child_process');
 
             // Read sizes
             const esmSize = fs.statSync('dist/index.js').size;
             const cjsSize = fs.statSync('dist/index.cjs').size;
             const dtsSize = fs.statSync('dist/index.d.ts').size;
+
+            // Get gzipped sizes
+            const esmGzSize = parseInt(execSync('gzip -c dist/index.js | wc -c').toString().trim());
+            const cjsGzSize = parseInt(execSync('gzip -c dist/index.cjs | wc -c').toString().trim());
+            const dtsGzSize = parseInt(execSync('gzip -c dist/index.d.ts | wc -c').toString().trim());
 
             // Format sizes
             const formatSize = (bytes) => {
@@ -79,13 +94,13 @@ jobs:
 
             const comment = `## 📊 Bundle Size Report
 
-            | Format | Size |
-            |--------|------|
-            | ESM    | ${formatSize(esmSize)} |
-            | CJS    | ${formatSize(cjsSize)} |
-            | Types  | ${formatSize(dtsSize)} |
+            | Format | Size | Gzipped |
+            |--------|------|---------|
+            | ESM    | ${formatSize(esmSize)} | ${formatSize(esmGzSize)} |
+            | CJS    | ${formatSize(cjsSize)} | ${formatSize(cjsGzSize)} |
+            | Types  | ${formatSize(dtsSize)} | ${formatSize(dtsGzSize)} |
 
-            Total: ${formatSize(esmSize + cjsSize + dtsSize)}`;
+            **Total**: ${formatSize(esmSize + cjsSize + dtsSize)} (gzipped: ${formatSize(esmGzSize + cjsGzSize + dtsGzSize)})`;
 
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({

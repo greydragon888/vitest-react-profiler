@@ -1,14 +1,16 @@
 // @ts-check
 
-/** @type {import("eslint").Linter.FlatConfig[]} */
+/** @type {import("eslint").Linter.Config[]} */
 
 import eslint from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
 import vitestPlugin from "@vitest/eslint-plugin";
 import eslintPluginImport from "eslint-plugin-import";
 import jsdoc from "eslint-plugin-jsdoc";
+// @ts-expect-error - no type definitions available for this package
 import noOnlyTests from "eslint-plugin-no-only-tests";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+// @ts-expect-error - no type definitions available for this package
 import promisePlugin from "eslint-plugin-promise";
 import sonarjsPlugin from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
@@ -26,6 +28,8 @@ export default tsEslint.config(
       "**/node_modules/**",
       "**/examples/**",
       "**/.claude/**",
+      "**/.stryker-tmp/**", // Stryker mutation testing sandbox
+      "**/.vitest*/**", // Vitest cache directories
       "**/*.min.js",
       "**/*.d.ts",
       "**/.DS_Store",
@@ -394,6 +398,7 @@ export default tsEslint.config(
   {
     files: ["**/*.ts?(x)"],
     plugins: {
+      // @ts-expect-error - optional chaining may return undefined but type requires defined value
       prettier: eslintPluginPrettierRecommended.plugins?.prettier,
     },
     rules: {
