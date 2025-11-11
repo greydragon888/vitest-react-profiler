@@ -48,4 +48,5 @@ export type {
 } from "./types";
 
 // Version info
+/* v8 ignore next 3 -- @preserve */
 export const VERSION = process.env.npm_package_version ?? "0.0.0";

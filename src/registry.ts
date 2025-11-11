@@ -66,7 +66,7 @@ class ComponentRegistry {
    *
    * @internal
    */
-  /* c8 ignore next 3 */
+  /* v8 ignore next 3 -- @preserve */
   getRegisteredCount(): number {
     return this.activeComponents.size;
   }

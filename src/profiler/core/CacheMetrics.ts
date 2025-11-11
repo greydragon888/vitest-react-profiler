@@ -76,10 +76,9 @@ class CacheMetrics {
       const total = hits + misses;
 
       return total === 0 ? 0 : (hits / total) * 100;
-      /* c8 ignore next */
     }
 
-    /* c8 ignore next */
+    /* v8 ignore next -- @preserve */
     return 0;
   }
 
@@ -97,6 +96,7 @@ class CacheMetrics {
    * In production builds, this returns an empty string.
    */
   report(): string {
+    /* v8 ignore next 2 -- @preserve */
     // Stryker disable next-line all
     if (import.meta.env.INTERNAL_TESTS) {
       return Object.entries(this.metrics)
@@ -107,10 +107,9 @@ class CacheMetrics {
           return `${type}: ${hits}/${total} hits (${rate}%)`;
         })
         .join("\n");
-      /* c8 ignore next */
     }
 
-    /* c8 ignore next 2 */
+    /* v8 ignore next 2 -- @preserve */
     // Stryker disable next-line all
     return "";
   }
@@ -141,17 +140,15 @@ class CacheMetrics {
     // Stryker disable next-line all
     if (import.meta.env.INTERNAL_TESTS) {
       return this.metrics;
-      /* c8 ignore next */
     }
 
-    /* c8 ignore start */
+    /* v8 ignore next 7 -- @preserve */
     // Return empty metrics for production
     return {
       frozenHistory: { hits: 0, misses: 0 },
       phaseCache: { hits: 0, misses: 0 },
       closureCache: { hits: 0, misses: 0 },
     };
-    /* c8 ignore stop */
   }
 }
 

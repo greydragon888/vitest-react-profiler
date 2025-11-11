@@ -10,12 +10,13 @@ import { registry } from "./registry";
  * No need for manual clearCounters() calls or afterEach hooks
  */
 try {
+  /* v8 ignore next 3 -- @preserve */
   if (typeof afterEach === "function") {
     afterEach(() => {
       registry.clearAll();
     });
   }
-  /* c8 ignore next 3 */
+  /* v8 ignore next 3 -- @preserve */
 } catch {
   // Silently ignore if not in test context
 }

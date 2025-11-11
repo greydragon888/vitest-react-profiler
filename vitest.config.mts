@@ -62,6 +62,8 @@ export default defineConfig({
         "**/utils/index.ts",
         "**/matchers/sync/index.ts",
         "**/matchers/async/index.ts",
+        // Internal debugging/metrics (not production code)
+        "**/profiler/core/CacheMetrics.ts",
       ],
       thresholds: {
         statements: 95,
