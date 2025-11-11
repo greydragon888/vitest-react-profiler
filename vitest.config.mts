@@ -38,22 +38,30 @@ export default defineConfig({
      * Coverage configuration
      */
     coverage: {
+      enabled: true,
       provider: "v8",
       reporter: [["text", { skipFull: true }], "json", "json-summary", "lcov"],
+      reportsDirectory: "./coverage",
       exclude: [
-        "node_modules/",
-        "dist/",
-        "coverage/",
-        "examples/",
-        "tests/",
-        "*.config.*",
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/coverage/**",
+        "**/examples/**",
+        "**/tests/**",
+        "**/*.config.*",
         "**/*.d.ts",
         "**/*.test.{ts,tsx}",
         "**/*.spec.{ts,tsx}",
-        "**/index.ts", // Exclude barrel exports
-        "!src/matchers/index.ts", // But include matchers registration
         "**/types.ts", // Exclude type definitions
-        "src/test-utils/",
+        "**/test-utils/**",
+        // Barrel exports (except matchers/index.ts which has logic)
+        "**/hooks/index.ts",
+        "**/profiler/components/index.ts",
+        "**/profiler/core/index.ts",
+        "**/profiler/api/index.ts",
+        "**/utils/index.ts",
+        "**/matchers/sync/index.ts",
+        "**/matchers/async/index.ts",
       ],
       thresholds: {
         statements: 95,
@@ -61,9 +69,6 @@ export default defineConfig({
         functions: 95,
         lines: 95,
       },
-      clean: true,
-      reportsDirectory: "./coverage",
-      include: ["src/**/*.{ts,tsx}"],
     },
 
     /**
