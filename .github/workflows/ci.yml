@@ -45,8 +45,8 @@ jobs:
         with:
           checks: "files,owners,duppatterns,syntax"
           experimental_checks: "notowned"
-          # GitHub token to check if owners exist
-          github_access_token: "${{ secrets.GITHUB_TOKEN }}"
+          # Use PAT with read:org scope instead of GITHUB_TOKEN
+          github_access_token: "${{ secrets.CODEOWNERS_TOKEN }}"
 
   test:
     name: Test (Node ${{ matrix.node }} + React ${{ matrix.react }})
