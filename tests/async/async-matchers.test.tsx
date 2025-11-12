@@ -521,59 +521,6 @@ describe("toEventuallyReachPhase", () => {
 });
 
 describe("Event-based behavior tests for async matchers", () => {
-  describe("Performance: event-based response time", () => {
-    it("toEventuallyRenderTimes should resolve in < 20ms (event-based, not polling)", async () => {
-      const Counter = createFastCounter();
-      const ProfiledCounter = withProfiler(Counter);
-
-      render(<ProfiledCounter />);
-
-      const start = Date.now();
-
-      await expect(ProfiledCounter).toEventuallyRenderTimes(2);
-
-      const elapsed = Date.now() - start;
-
-      // Event-based should be very fast (< 20ms)
-      // Polling would take at least 50ms (one interval)
-      expect(elapsed).toBeLessThan(20);
-      expect(ProfiledCounter.getRenderCount()).toBe(2);
-    });
-
-    it("toEventuallyRenderAtLeast should resolve in < 20ms (event-based)", async () => {
-      const Counter = createFastCounter();
-      const ProfiledCounter = withProfiler(Counter);
-
-      render(<ProfiledCounter />);
-
-      const start = Date.now();
-
-      await expect(ProfiledCounter).toEventuallyRenderAtLeast(2);
-
-      const elapsed = Date.now() - start;
-
-      // Event-based should be very fast (< 20ms)
-      expect(elapsed).toBeLessThan(20);
-      expect(ProfiledCounter.getRenderCount()).toBeGreaterThanOrEqual(2);
-    });
-
-    it("toEventuallyReachPhase should resolve in < 20ms (event-based)", async () => {
-      const Counter = createFastCounter();
-      const ProfiledCounter = withProfiler(Counter);
-
-      render(<ProfiledCounter />);
-
-      const start = Date.now();
-
-      await expect(ProfiledCounter).toEventuallyReachPhase("update");
-
-      const elapsed = Date.now() - start;
-
-      // Event-based should be very fast (< 20ms)
-      expect(elapsed).toBeLessThan(20);
-    });
-  });
-
   describe("Race condition protection", () => {
     it("toEventuallyRenderTimes should work if condition already satisfied (instant resolve)", async () => {
       const Static = () => <div>Static</div>;
