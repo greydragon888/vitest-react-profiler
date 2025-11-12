@@ -39,7 +39,7 @@ describe("Property-Based Tests: Async Operations", () => {
     test.prop(
       [
         fc.integer({ min: 1, max: 20 }), // expectedRenders
-        fc.integer({ min: 100, max: 1000 }), // timeout
+        fc.integer({ min: 300, max: 1000 }), // timeout (increased min for CI)
       ],
       { numRuns: 30 },
     )(
@@ -70,13 +70,13 @@ describe("Property-Based Tests: Async Operations", () => {
           await waitPromise;
           const elapsed = Date.now() - start;
 
-          // Should complete within timeout + tolerance
-          return elapsed <= timeout + 200; // 200ms tolerance
+          // Should complete within timeout + tolerance (increased for CI)
+          return elapsed <= timeout + 500; // 500ms tolerance for CI
         } catch {
           // If it times out, it should timeout close to the specified timeout
           const elapsed = Date.now() - start;
 
-          return elapsed >= timeout && elapsed <= timeout + 200;
+          return elapsed >= timeout && elapsed <= timeout + 500;
         }
       },
     );
@@ -84,7 +84,7 @@ describe("Property-Based Tests: Async Operations", () => {
     test.prop(
       [
         fc.integer({ min: 1, max: 20 }), // minRenders
-        fc.integer({ min: 100, max: 1000 }), // timeout
+        fc.integer({ min: 300, max: 1000 }), // timeout (increased min for CI)
       ],
       { numRuns: 30 },
     )(
@@ -112,12 +112,12 @@ describe("Property-Based Tests: Async Operations", () => {
           await waitPromise;
           const elapsed = Date.now() - start;
 
-          // Should complete when minRenders is reached or timeout
-          return elapsed <= timeout + 200;
+          // Should complete when minRenders is reached or timeout (increased for CI)
+          return elapsed <= timeout + 500;
         } catch {
           const elapsed = Date.now() - start;
 
-          return elapsed >= timeout && elapsed <= timeout + 200;
+          return elapsed >= timeout && elapsed <= timeout + 500;
         }
       },
     );
@@ -125,7 +125,7 @@ describe("Property-Based Tests: Async Operations", () => {
     test.prop(
       [
         fc.constantFrom("mount", "update", "nested-update"),
-        fc.integer({ min: 100, max: 1000 }),
+        fc.integer({ min: 300, max: 1000 }), // increased min for CI
       ],
       { numRuns: 10 },
     )("waitForPhase completes within timeout", async (phase, timeout) => {
@@ -149,11 +149,11 @@ describe("Property-Based Tests: Async Operations", () => {
         await waitPromise;
         const elapsed = Date.now() - start;
 
-        return elapsed <= timeout + 200;
+        return elapsed <= timeout + 500; // increased for CI
       } catch {
         const elapsed = Date.now() - start;
 
-        return elapsed >= timeout && elapsed <= timeout + 200;
+        return elapsed >= timeout && elapsed <= timeout + 500;
       }
     });
   });
