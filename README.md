@@ -53,7 +53,7 @@
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
 - 🧬 **Battle-Tested Quality** - 99%+ mutation score, property-based testing, SonarCloud verified
-- 🔬 **Mathematically Verified** - 233 property tests with 130,000+ randomized checks per run
+- 🔬 **Mathematically Verified** - 227 property tests with 130,000+ randomized checks per run
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
 
 ## 👥 Who Is This For?
