@@ -9,12 +9,18 @@
 
 import { render, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
+
 import { withProfiler } from "../../src";
 import { AsyncCounter } from "./components/AsyncCounter";
 import { DataFetcher } from "./components/DataFetcher";
 import { FormValidator } from "./components/FormValidator";
 
-import type { RenderEventInfo } from "@/types";
+import type { RenderEventInfo } from "../../src";
+
+// ═══════════════════════════════════════════════════════════════════
+// Constants
+// ═══════════════════════════════════════════════════════════════════
+const INCREMENT_SYNC_BUTTON = "Increment Sync";
 
 // ═══════════════════════════════════════════════════════════════════
 // 1. BASIC ONRENDER USAGE
@@ -65,12 +71,13 @@ describe("1. Basic onRender usage", () => {
     const { getByText } = render(<ProfiledCounter />);
 
     let totalRenders = 0;
+
     ProfiledCounter.onRender(() => {
       totalRenders++;
     });
 
     // Perform sync action (single render)
-    fireEvent.click(getByText("Increment Sync"));
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
 
     expect(totalRenders).toBe(1);
     expect(ProfiledCounter.getRenderCount()).toBe(2); // mount + update
@@ -84,18 +91,17 @@ describe("1. Basic onRender usage", () => {
    * This demonstrates accessing all render information:
    * - phase: "mount" | "update"
    * - count: total render count
-   * - actualDuration: time spent rendering (React Profiler API)
+   * - history: array of all render phases
    */
   it("should log detailed render information", () => {
     const ProfiledCounter = withProfiler(AsyncCounter);
     const { rerender } = render(<ProfiledCounter />);
 
     const logs: RenderEventInfo[] = [];
+
     ProfiledCounter.onRender((info) => {
       logs.push(info);
-      console.log(
-        `[${info.phase}] Render #${info.count} took ${info.actualDuration}ms`,
-      );
+      console.log(`[${info.phase}] Render #${info.count}`);
     });
 
     // Trigger multiple re-renders
@@ -103,10 +109,10 @@ describe("1. Basic onRender usage", () => {
     rerender(<ProfiledCounter />);
 
     expect(logs).toHaveLength(2);
-    expect(logs[0].phase).toBe("update");
-    expect(logs[1].phase).toBe("update");
-    expect(logs[0].count).toBe(2);
-    expect(logs[1].count).toBe(3);
+    expect(logs[0]?.phase).toBe("update");
+    expect(logs[1]?.phase).toBe("update");
+    expect(logs[0]?.count).toBe(2);
+    expect(logs[1]?.count).toBe(3);
   });
 
   /**
@@ -123,6 +129,7 @@ describe("1. Basic onRender usage", () => {
 
     // Track only update phases (ignore mount)
     let updateCount = 0;
+
     ProfiledCounter.onRender((info) => {
       if (info.phase === "update") {
         updateCount++;
@@ -179,6 +186,7 @@ describe("2. waitForNextRender usage", () => {
    */
   it("should wait for data fetching completion", async () => {
     const ProfiledFetcher = withProfiler(DataFetcher);
+
     render(<ProfiledFetcher userId="456" />);
 
     // Wait for data to load (useEffect triggers async fetch)
@@ -202,14 +210,18 @@ describe("2. waitForNextRender usage", () => {
 
     // Wait for first re-render
     const promise1 = ProfiledCounter.waitForNextRender({ timeout: 500 });
+
     rerender(<ProfiledCounter />);
     const info1 = await promise1;
+
     expect(info1.count).toBe(2);
 
     // Wait for second re-render
     const promise2 = ProfiledCounter.waitForNextRender({ timeout: 500 });
-    fireEvent.click(getByText("Increment Sync"));
+
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
     const info2 = await promise2;
+
     expect(info2.count).toBe(3);
   });
 
@@ -223,6 +235,7 @@ describe("2. waitForNextRender usage", () => {
    */
   it("should timeout if no render occurs", async () => {
     const ProfiledCounter = withProfiler(AsyncCounter);
+
     render(<ProfiledCounter />);
 
     // Start waiting but DON'T trigger any action
@@ -281,7 +294,7 @@ describe("3. Basic cleanup patterns", () => {
    * - Clean up in afterEach hook
    */
   it("should cleanup in afterEach hook", () => {
-    const unsubscribes: Array<() => void> = [];
+    const unsubscribes: (() => void)[] = [];
 
     const ProfiledCounter = withProfiler(AsyncCounter);
     const { rerender } = render(<ProfiledCounter />);
@@ -290,13 +303,19 @@ describe("3. Basic cleanup patterns", () => {
     const unsubscribe = ProfiledCounter.onRender(() => {
       console.log("Render event");
     });
+
     unsubscribes.push(unsubscribe);
 
     rerender(<ProfiledCounter />);
 
     // Cleanup (normally in afterEach)
-    unsubscribes.forEach((fn) => fn());
+    unsubscribes.forEach((fn) => {
+      fn();
+    });
     unsubscribes.length = 0;
+
+    // Verify cleanup was successful
+    expect(unsubscribes).toHaveLength(0);
 
     // Future renders won't trigger callback
     rerender(<ProfiledCounter />);
@@ -343,33 +362,28 @@ describe("3. Basic cleanup patterns", () => {
     const ProfiledCounter = withProfiler(AsyncCounter);
     const { rerender } = render(<ProfiledCounter />);
 
-    const unsubscribes: Array<() => void> = [];
-
-    // Subscriber 1: Logger
-    unsubscribes.push(
+    // Create all subscriptions at once
+    const unsubscribes = [
+      // Subscriber 1: Logger
       ProfiledCounter.onRender((info) => {
         console.log(`[LOG] Render ${info.count}`);
       }),
-    );
-
-    // Subscriber 2: Analytics
-    unsubscribes.push(
+      // Subscriber 2: Analytics
       ProfiledCounter.onRender((info) => {
         console.log(`[ANALYTICS] ${info.phase}`);
       }),
-    );
-
-    // Subscriber 3: Debug
-    unsubscribes.push(
+      // Subscriber 3: Debug
       ProfiledCounter.onRender((info) => {
-        console.log(`[DEBUG] Duration: ${info.actualDuration}ms`);
+        console.log(`[DEBUG] Render count: ${info.count}`);
       }),
-    );
+    ];
 
     rerender(<ProfiledCounter />);
 
     // Cleanup all subscriptions
-    unsubscribes.forEach((unsubscribe) => unsubscribe());
+    unsubscribes.forEach((unsubscribe) => {
+      unsubscribe();
+    });
 
     expect(unsubscribes).toHaveLength(3);
   });
@@ -394,6 +408,7 @@ describe("4. Complex conditions with onRender", () => {
     const { getByPlaceholderText } = render(<ProfiledValidator />);
 
     let updateCount = 0;
+
     ProfiledValidator.onRender((info) => {
       if (info.phase === "update") {
         updateCount++;
@@ -403,6 +418,7 @@ describe("4. Complex conditions with onRender", () => {
 
     // Trigger form input changes
     const input = getByPlaceholderText("Enter your email");
+
     fireEvent.change(input, { target: { value: "test" } });
     fireEvent.change(input, { target: { value: "test@" } });
 
@@ -424,6 +440,7 @@ describe("4. Complex conditions with onRender", () => {
     const { getByPlaceholderText } = render(<ProfiledValidator />);
 
     const validationChanges: string[] = [];
+
     ProfiledValidator.onRender((info) => {
       if (info.phase === "update") {
         validationChanges.push(`Render ${info.count}`);
@@ -533,7 +550,8 @@ describe("5. Performance benchmarks (< 20ms)", () => {
 
     // Start waiting, then trigger async action
     const promise = ProfiledCounter.waitForNextRender({ timeout: 1000 });
-    fireEvent.click(getByText("Increment Sync"));
+
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
 
     await promise;
     const elapsed = performance.now() - start;
@@ -544,30 +562,24 @@ describe("5. Performance benchmarks (< 20ms)", () => {
   });
 
   /**
-   * Example 2: Identify slow renders
+   * Example 2: Track render history
    *
-   * Use case: Track render performance to find bottlenecks
+   * Use case: Monitor render patterns and phase transitions
    *
-   * This shows how to use the actualDuration from React Profiler
-   * to identify renders that take longer than expected.
+   * This shows how to track render history to understand
+   * component behavior over multiple render cycles.
    */
-  it("should identify slow renders", () => {
+  it("should track render history", () => {
     const ProfiledCounter = withProfiler(AsyncCounter);
     const { rerender } = render(<ProfiledCounter />);
 
-    const SLOW_RENDER_THRESHOLD = 16; // 60fps = 16.67ms per frame
-    const slowRenders: number[] = [];
+    let lastHistory: readonly string[] = [];
 
     ProfiledCounter.onRender((info) => {
-      if (
-        info.actualDuration !== undefined &&
-        info.actualDuration > SLOW_RENDER_THRESHOLD
-      ) {
-        slowRenders.push(info.count);
-        console.warn(
-          `🐌 Slow render detected: Render #${info.count} took ${info.actualDuration}ms`,
-        );
-      }
+      lastHistory = info.history;
+      console.log(
+        `Render #${info.count}: History length ${info.history.length}`,
+      );
     });
 
     // Trigger multiple renders
@@ -575,10 +587,10 @@ describe("5. Performance benchmarks (< 20ms)", () => {
       rerender(<ProfiledCounter />);
     }
 
-    // Most renders should be fast (actualDuration is often undefined in test env)
-    console.log(
-      `Slow renders: ${slowRenders.length} out of ${ProfiledCounter.getRenderCount()}`,
-    );
+    // Verify history was tracked
+    expect(ProfiledCounter.getRenderCount()).toBe(6); // mount + 5 updates
+    expect(lastHistory).toHaveLength(6);
+    console.log(`Total renders: ${ProfiledCounter.getRenderCount()}`);
   });
 
   /**
@@ -596,8 +608,8 @@ describe("5. Performance benchmarks (< 20ms)", () => {
     const BASELINE_RENDER_COUNT = 3; // Expected: mount + 2 updates
 
     // Perform action that should cause 2 updates
-    fireEvent.click(getByText("Increment Sync"));
-    fireEvent.click(getByText("Increment Sync"));
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
 
     const actualRenderCount = ProfiledCounter.getRenderCount();
 
