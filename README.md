@@ -52,11 +52,43 @@
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
-- 🧬 **Battle-Tested Quality** - 98%+ mutation score, property-based testing, SonarCloud verified
+- 🧬 **Battle-Tested Quality** - 99%+ mutation score, property-based testing, SonarCloud verified
 - 🔬 **Mathematically Verified** - 233 property tests with 130,000+ randomized checks per run
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
 
 ## 👥 Who Is This For?
+
+### 🎨 UI-Kit and Design System Developers
+
+Building a UI-kit for your project or company? You need to **track, measure, and improve component performance**. This tool helps you:
+
+- Catch unnecessary re-renders during development
+- Set performance budgets for components
+- Document performance characteristics in tests
+
+### 📦 Open Source React Library Maintainers
+
+Publishing React components? It's critical to **prove your solution is optimized** and won't degrade performance in user projects. With this tool, you can:
+
+- Add performance tests to CI/CD pipelines
+- Showcase performance metrics in documentation
+- Track performance regressions between releases
+
+### 🎯 Tech Leads and Staff Engineers
+
+Making architectural decisions requires **data, not assumptions**. Use the tool to:
+
+- Compare different state management approaches
+- Evaluate architectural changes' performance impact
+- Create performance guidelines for your team
+
+### 📊 Teams with Strict Performance SLAs
+
+Have **strict performance requirements** (fintech, healthcare, real-time systems)? The tool allows you to:
+
+- Set thresholds for render counts
+- Automatically verify SLA compliance in tests
+- Track asynchronous state updates
 
 ---
 
