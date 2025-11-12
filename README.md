@@ -37,9 +37,11 @@
 
 **React component render tracking and performance testing utilities for Vitest**
 
-[Installation](#installation) • [Quick Start](#quick-start) • [API](#api) • [Examples](#examples) • [Contributing](#contributing)
+[📖 Documentation](../../wiki) • [🚀 Quick Start](../../wiki/Getting-Started) • [📚 API Reference](../../wiki/API-Reference) • [💬 Discussions](../../discussions)
 
 </div>
+
+---
 
 ## Features
 
@@ -56,66 +58,11 @@
 
 ## 👥 Who Is This For?
 
-### 🎨 UI-Kit and Design System Developers
+---
 
-Building a UI-kit for your project or company? You need to **track, measure, and improve component performance**. This tool helps you:
+## Quick Start
 
-- Catch unnecessary re-renders during development
-- Set performance budgets for components
-- Document performance characteristics in tests
-
-### 📦 Open Source React Library Maintainers
-
-Publishing React components? It's critical to **prove your solution is optimized** and won't degrade performance in user projects. With this tool, you can:
-
-- Add performance tests to CI/CD pipelines
-- Showcase performance metrics in documentation
-- Track performance regressions between releases
-
-### 🎯 Tech Leads and Staff Engineers
-
-Making architectural decisions requires **data, not assumptions**. Use the tool to:
-
-- Compare different state management approaches
-- Evaluate architectural changes' performance impact
-- Create performance guidelines for your team
-
-### 📊 Teams with Strict Performance SLAs
-
-Have **strict performance requirements** (fintech, healthcare, real-time systems)? The tool allows you to:
-
-- Set thresholds for render counts
-- Automatically verify SLA compliance in tests
-- Track asynchronous state updates
-
-## Why vitest-react-profiler?
-
-Testing React component performance and render behavior is crucial but challenging. This library makes it easy:
-
-```typescript
-// ❌ Without vitest-react-profiler - guessing and manual counting
-let renderCount = 0;
-const Component = () => {
-  renderCount++;
-  return <div />;
-};
-
-// ✅ With vitest-react-profiler - precise and clean
-const ProfiledComponent = withProfiler(Component);
-render(<ProfiledComponent />);
-expect(ProfiledComponent).toHaveRenderedTimes(1);
-```
-
-## Requirements
-
-- **Node.js** >= 18.0.0 (for ES2022 features)
-- **npm** >= 8.0.0 (or equivalent yarn/pnpm versions)
-- **React** >= 16.8.0 (Hooks and Profiler API support required)
-- **React DOM** >= 16.8.0
-- **Vitest** >= 1.0.0
-- **@testing-library/react** >= 12.0.0 (v13.0.0+ required for React 18+, v16.0.0+ for React 19+)
-
-## Installation
+### Installation
 
 ```bash
 npm install --save-dev vitest-react-profiler
@@ -125,16 +72,14 @@ yarn add -D vitest-react-profiler
 pnpm add -D vitest-react-profiler
 ```
 
-## Quick Start
-
-### 1. Setup Vitest
-
-Add to your Vitest setup file:
+### Setup
 
 ```typescript
 // vitest-setup.ts
 import "vitest-react-profiler";
 ```
+
+Configure Vitest:
 
 ```typescript
 // vitest.config.ts
@@ -148,694 +93,54 @@ export default defineConfig({
 });
 ```
 
-### 2. Start Testing
+### Your First Test
 
 ```typescript
 import { render } from '@testing-library/react';
 import { withProfiler } from 'vitest-react-profiler';
 import { MyComponent } from './MyComponent';
 
-describe('MyComponent performance', () => {
-  it('should render only once on mount', () => {
-    const ProfiledComponent = withProfiler(MyComponent);
-    render(<ProfiledComponent />);
-
-    expect(ProfiledComponent).toHaveRenderedTimes(1);
-    expect(ProfiledComponent).toHaveMountedOnce();
-  });
-
-  // No cleanup needed - automatic between tests!
-});
-```
-
-### 3. Simplified API (Alternative)
-
-For a more streamlined experience, use `renderProfiled()` which combines `withProfiler()` and `render()` in one call:
-
-```typescript
-import { renderProfiled } from "vitest-react-profiler";
-import { MyComponent } from "./MyComponent";
-
-describe("MyComponent performance", () => {
-  it("should render only once on mount", () => {
-    const { component } = renderProfiled(MyComponent, { value: 42 });
-
-    expect(component).toHaveRenderedTimes(1);
-    expect(component).toHaveMountedOnce();
-  });
-
-  it("should handle prop updates correctly", () => {
-    const { component, rerender } = renderProfiled(MyComponent, { value: 1 });
-
-    expect(component).toHaveRenderedTimes(1);
-
-    // rerender automatically merges props
-    rerender({ value: 2 });
-
-    expect(component).toHaveRenderedTimes(2);
-  });
-});
-```
-
-#### When to use which approach?
-
-- **`withProfiler()` + `render()`**: More explicit, useful when you need fine-grained control or want to share the profiled component across tests
-- **`renderProfiled()`**: More concise, great for quick tests and when you only need profiling for a single test
-
-Both approaches are fully supported and work identically!
-
-## API
-
-### Core Functions
-
-#### `withProfiler(Component, displayName?)`
-
-Wraps a React component with profiling capabilities.
-
-```typescript
-const ProfiledComponent = withProfiler(MyComponent, "MyComponent");
-```
-
-**Parameters:**
-
-- `Component`: React component to profile
-- `displayName` (optional): Custom name for debugging
-
-#### `renderProfiled(Component, props, options?)`
-
-Simplified helper that combines `withProfiler()` and `render()` in one call.
-
-```typescript
-const { component, rerender, ...rtl } = renderProfiled(MyComponent, {
-  value: 1,
-});
-```
-
-**Parameters:**
-
-- `Component`: React component to profile
-- `props`: Initial props for the component
-- `options` (optional):
-  - `displayName`: Custom name for the profiled component
-  - `renderOptions`: React Testing Library render options (e.g., `wrapper`)
-
-**Returns:**
-
-- `component`: The profiled component with all profiling methods
-- `rerender`: Enhanced rerender function that accepts partial props
-- All React Testing Library utilities (`container`, `unmount`, `debug`, etc.)
-
-**Example with wrapper:**
-
-```typescript
-const { component } = renderProfiled(
-  MyComponent,
-  { value: 1 },
-  {
-    renderOptions: { wrapper: ThemeProvider },
-  },
-);
-```
-
-### Matchers
-
-#### `toHaveRendered()`
-
-Asserts that component has rendered at least once.
-
-#### `toHaveRenderedTimes(count)`
-
-Asserts exact number of renders.
-
-#### `toHaveMountedOnce()`
-
-Asserts that component mounted exactly once.
-
-#### `toHaveNeverMounted()`
-
-Asserts that component never mounted.
-
-#### `toHaveOnlyUpdated()`
-
-Asserts that component only updated (no mounts).
-
-### Enhanced Error Messages
-
-vitest-react-profiler provides detailed, actionable error messages to help you debug render issues faster.
-
-#### Before and After
-
-**Before (typical matcher):**
-
-```
-Expected component to render 3 time(s), but it rendered 5 time(s)
-```
-
-**After (vitest-react-profiler):**
-
-```
-Expected 3 renders, but got 5 (1 mount, 4 updates)
-
-  #1 [mount phase]
-  #2 [update phase]
-  #3 [update phase]
-  #4 [update phase]
-  #5 [update phase]
-
-  💡 Tip: Use Component.getRenderHistory() to inspect all render details
-```
-
-#### Unexpected Mount Detection
-
-When component mounts multiple times unexpectedly:
-
-```
-Expected component to mount once, but it mounted 3 times
-
-Mount renders:
-  #1 [mount phase]
-  #3 [mount phase]
-  #7 [mount phase]
-
-  💡 Tip: Use Component.getRenderHistory() to inspect all render details
-```
-
-These detailed messages help you:
-
-- **Identify patterns** - See which renders are problematic
-- **Understand timing** - Know when renders occur
-- **Fix issues faster** - No more guessing what went wrong
-
-### Async Testing Utilities
-
-vitest-react-profiler provides async utilities and matchers for testing components with asynchronous state updates.
-
-#### Async Utilities
-
-**`waitForRenders(component, count, options?)`**
-
-Wait for a component to reach an exact render count:
-
-```typescript
-import { withProfiler, waitForRenders } from "vitest-react-profiler";
-
-it("should wait for async renders", async () => {
-  const AsyncComponent = () => {
-    const [count, setCount] = useState(0);
-
-    // Trigger async re-render
-    useEffect(() => {
-      setTimeout(() => setCount(1), 100);
-    }, []);
-
-    return <div>{count}</div>;
-  };
-
-  const ProfiledComponent = withProfiler(AsyncComponent);
+it('should render only once on mount', () => {
+  const ProfiledComponent = withProfiler(MyComponent);
   render(<ProfiledComponent />);
 
-  // Wait for 2 renders (mount + update)
-  await waitForRenders(ProfiledComponent, 2);
-
-  expect(ProfiledComponent.getRenderCount()).toBe(2);
-});
-```
-
-**`waitForMinimumRenders(component, minCount, options?)`**
-
-Wait for at least N renders (useful when exact count is uncertain):
-
-```typescript
-// Wait for at least 2 renders
-await waitForMinimumRenders(ProfiledComponent, 2);
-
-expect(ProfiledComponent.getRenderCount()).toBeGreaterThanOrEqual(2);
-```
-
-**`waitForPhase(component, phase, options?)`**
-
-Wait for a specific render phase:
-
-```typescript
-// Wait for component to update
-await waitForPhase(ProfiledComponent, "update");
-
-expect(ProfiledComponent.getRendersByPhase("update").length).toBeGreaterThan(0);
-```
-
-#### Async Matchers
-
-**`toEventuallyRenderTimes(count, options?)`**
-
-Assert that component eventually renders exact number of times:
-
-```typescript
-// Default 1000ms timeout
-await expect(ProfiledComponent).toEventuallyRenderTimes(3);
-
-// Custom timeout
-await expect(ProfiledComponent).toEventuallyRenderTimes(5, { timeout: 2000 });
-```
-
-**`toEventuallyRenderAtLeast(minCount, options?)`**
-
-Assert that component eventually renders at least N times:
-
-```typescript
-await expect(ProfiledComponent).toEventuallyRenderAtLeast(2);
-```
-
-**`toEventuallyReachPhase(phase, options?)`**
-
-Assert that component eventually reaches a specific render phase:
-
-```typescript
-// Wait for component to update
-await expect(ProfiledComponent).toEventuallyReachPhase("update");
-
-// Or wait for mount
-await expect(ProfiledComponent).toEventuallyReachPhase("mount", {
-  timeout: 500,
-});
-```
-
-#### Real-World Example
-
-Testing a component with multiple async state updates:
-
-```typescript
-it("should handle complex async updates", async () => {
-  const ComplexComponent = () => {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-      // Simulate API call
-      setTimeout(() => {
-        setLoading(false);
-      }, 50);
-
-      setTimeout(() => {
-        setData({ result: "success" });
-      }, 100);
-    }, []);
-
-    return <div>{loading ? "Loading..." : data?.result}</div>;
-  };
-
-  const ProfiledComponent = withProfiler(ComplexComponent);
-  render(<ProfiledComponent />);
-
-  // Wait for all updates to complete
-  await expect(ProfiledComponent).toEventuallyRenderTimes(3);
-
-  // Verify render phases
-  expect(ProfiledComponent).toHaveMountedOnce();
-  expect(ProfiledComponent.getRendersByPhase("update")).toHaveLength(2);
-
-  // Check final state
-  const history = ProfiledComponent.getRenderHistory();
-  expect(history.length).toBe(3);
-});
-```
-
-#### Options
-
-All async utilities and matchers accept options:
-
-```typescript
-interface WaitOptions {
-  timeout?: number; // Maximum wait time in ms (default: 1000)
-}
-```
-
-### Profiled Component API
-
-```typescript
-interface ProfiledComponent<P> {
-  // Methods
-  getRenderCount(): number;
-  getRenderHistory(): readonly RenderInfo[];
-  getLastRender(): RenderInfo | undefined;
-  getRenderAt(index: number): RenderInfo | undefined;
-  getRendersByPhase(phase: Phase): readonly RenderInfo[];
-  hasMounted(): boolean;
-  onRender(callback: (info: RenderEventInfo) => void): () => void;
-  waitForNextRender(options?: WaitOptions): Promise<RenderEventInfo>;
-
-  // Properties
-  readonly OriginalComponent: FC<P>;
-}
-
-// Note: Cleanup is automatic between tests - no manual intervention needed!
-```
-
-#### `onRender(callback)`
-
-Subscribe to component renders and receive real-time notifications.
-
-```typescript
-const unsubscribe = ProfiledComponent.onRender((info) => {
-  console.log(`Render #${info.count}: ${info.phase}`);
-});
-
-// Cleanup
-unsubscribe();
-```
-
-**Parameters:**
-
-- `callback` - Function called on each render
-  - `info.count` - Total render count
-  - `info.phase` - Render phase (`"mount"` | `"update"`)
-  - `info.history` - Array of all render phases (read-only)
-
-**Returns:**
-
-- Unsubscribe function `() => void`
-
----
-
-#### `waitForNextRender(options?)`
-
-Wait for the next component render.
-
-```typescript
-// Start waiting BEFORE triggering action
-const promise = ProfiledComponent.waitForNextRender({ timeout: 1000 });
-
-// Trigger action
-fireEvent.click(button);
-
-// Wait for render
-const info = await promise;
-expect(info.phase).toBe("update");
-```
-
-**Parameters:**
-
-- `options.timeout` - Maximum wait time in ms (default: 1000)
-
-**Returns:**
-
-- `Promise<RenderEventInfo>` - Resolves with render information
-- Rejects with `TimeoutError` on timeout
-
-**⚠️ Important:** Create the promise BEFORE triggering the action!
-
----
-
-#### `RenderEventInfo` Interface
-
-Information about a render event.
-
-```typescript
-interface RenderEventInfo {
-  count: number; // Total render count
-  phase: PhaseType; // "mount" | "update"
-  readonly history: readonly PhaseType[]; // All render phases
-}
-```
-
-## Hook Profiling ⚡
-
-Profile React hooks to detect extra renders caused by improper state management.
-
-### `profileHook(hook, initialProps?)`
-
-Profile a React hook to track its render behavior.
-
-```typescript
-import { profileHook } from "vitest-react-profiler";
-
-it("should not cause extra renders", () => {
-  const { ProfiledHook } = profileHook(() => useMyHook());
-
-  // Expect only 1 render on mount
-  expect(ProfiledHook).toHaveRenderedTimes(1);
-});
-```
-
-### Detecting Extra Renders
-
-Common anti-pattern: using `useEffect` to sync state instead of deriving it.
-
-```typescript
-// ❌ Bad hook - causes extra render
-function useBadHook(value: number) {
-  const [state, setState] = useState(value);
-
-  useEffect(() => {
-    setState(value * 2); // Extra render!
-  }, [value]);
-
-  return state;
-}
-
-// Test it
-const { ProfiledHook } = profileHook(({ value }) => useBadHook(value), {
-  value: 1,
-});
-
-// Detected: mount + effect = 2 renders
-expect(ProfiledHook).toHaveRenderedTimes(2); // ❌ Extra render detected!
-```
-
-**Fix:** Derive state directly instead of using effect:
-
-```typescript
-// ✅ Good hook - no extra renders
-function useGoodHook(value: number) {
-  const [multiplier] = useState(2);
-  return value * multiplier; // Derived on each render
-}
-
-const { ProfiledHook } = profileHook(({ value }) => useGoodHook(value), {
-  value: 1,
-});
-
-expect(ProfiledHook).toHaveRenderedTimes(1); // ✅ Perfect!
-```
-
-### Simplified API with `createHookProfiler`
-
-For cleaner test code with built-in assertions:
-
-```typescript
-import { createHookProfiler } from "vitest-react-profiler";
-
-it("should handle rerenders correctly", () => {
-  const profiler = createHookProfiler(({ value }) => useMyHook(value), {
-    value: 1,
-  });
-
-  profiler.expectRenderCount(1); // Throws if not 1
-
-  profiler.rerender({ value: 2 });
-  profiler.expectRenderCount(2);
-});
-```
-
-**Compatibility:** Since hook profiling reuses the component profiling engine, all component matchers work seamlessly:
-
-```typescript
-const { ProfiledHook } = profileHook(() => useMyHook());
-
-expect(ProfiledHook).toHaveRendered();
-expect(ProfiledHook).toHaveRenderedTimes(1);
-expect(ProfiledHook).toHaveMountedOnce();
-```
-
-### Batch Testing
-
-No special API needed - just use `forEach`:
-
-```typescript
-describe("useMyHook edge cases", () => {
-  [0, -1, 10, 100, Number.MAX_SAFE_INTEGER].forEach((value) => {
-    it(`should handle value ${value}`, () => {
-      const { ProfiledHook } = profileHook(({ val }) => useMyHook(val), {
-        val: value,
-      });
-      expect(ProfiledHook).toHaveRenderedTimes(1);
-    });
-  });
-});
-```
-
-### React.StrictMode Behavior
-
-⚠️ **Important:** In development mode, `React.StrictMode` intentionally double-invokes hooks to detect side effects. This means:
-
-- **Development with StrictMode**: Hooks may render 2× (mount + strict mode re-mount)
-- **Production or without StrictMode**: Hooks render exactly once
-
-vitest-react-profiler **respects this behavior** - render counts will reflect StrictMode's double-invocation. This is expected and helps ensure your hooks work correctly in all environments.
-
-**Tip:** If your tests fail due to doubled render counts, check if your test environment has StrictMode enabled.
-
-## Examples
-
-### Testing Memoization
-
-```typescript
-import { memo } from 'react';
-
-const ExpensiveComponent = memo(({ data }) => {
-  return <ComplexVisualization data={data} />;
-});
-
-it('should skip re-renders with memo', () => {
-  const ProfiledComponent = withProfiler(ExpensiveComponent);
-  const { rerender } = render(<ProfiledComponent data={data} />);
-
-  // Same props - should not re-render
-  rerender(<ProfiledComponent data={data} />);
   expect(ProfiledComponent).toHaveRenderedTimes(1);
-
-  // Different props - should re-render
-  rerender(<ProfiledComponent data={newData} />);
-  expect(ProfiledComponent).toHaveRenderedTimes(2);
+  expect(ProfiledComponent).toHaveMountedOnce();
 });
 ```
 
-#### ⚠️ Important: Testing React.memo Components
+---
 
-When testing memoized components, wrap the ProfiledComponent with memo for accurate results:
+## Documentation
 
-```typescript
-it('should verify memo prevents unnecessary renders', () => {
-  const ProfiledComponent = withProfiler(MemoizedComponent);
+📖 **Full documentation is available in the [Wiki](../../wiki)**
 
-  // ✅ Correct: Additional memo wrapper for ProfiledComponent
-  const MemoProfiled = memo(ProfiledComponent);
-  const { rerender } = render(<MemoProfiled data={data} />);
+### Quick Links
 
-  rerender(<MemoProfiled data={data} />); // Same reference
-  expect(ProfiledComponent).toHaveRenderedTimes(1); // memo worked!
+- **[Getting Started Guide](../../wiki/Getting-Started)** - Installation and configuration
+- **[API Reference](../../wiki/API-Reference)** - Complete API documentation
+- **[Hook Profiling](../../wiki/Hook-Profiling)** - Testing React hooks
+- **[Examples](../../wiki/Examples)** - Real-world usage patterns
+- **[Best Practices](../../wiki/Best-Practices)** - Tips and recommendations
+- **[Troubleshooting](../../wiki/Troubleshooting)** - Common issues and solutions
 
-  rerender(<MemoProfiled data={[...data]} />); // New reference
-  expect(ProfiledComponent).toHaveRenderedTimes(2); // re-rendered
-});
-```
-
-**Why?** React Profiler always triggers even when memo prevents re-render. The additional memo wrapper ensures accurate testing.
-
-### Real-Time Render Tracking
-
-Subscribe to renders and track component behavior in real-time.
-
-```typescript
-it('should track renders with subscription', () => {
-  const ProfiledCounter = withProfiler(Counter);
-  const { rerender } = render(<ProfiledCounter />);
-
-  const renders: RenderEventInfo[] = [];
-  const unsubscribe = ProfiledCounter.onRender((info) => {
-    renders.push(info);
-  });
-
-  rerender(<ProfiledCounter />);
-  rerender(<ProfiledCounter />);
-
-  expect(renders).toHaveLength(2);
-  expect(renders[0]!.phase).toBe("update");
-
-  unsubscribe();
-});
-```
-
-### Waiting for Async Renders
-
-Wait for component renders with async/await pattern.
-
-```typescript
-it('should wait for async state update', async () => {
-  const ProfiledAsync = withProfiler(AsyncComponent);
-  const { getByText } = render(<ProfiledAsync />);
-
-  // Start waiting before action
-  const promise = ProfiledAsync.waitForNextRender({ timeout: 1000 });
-
-  // Trigger async action
-  fireEvent.click(getByText("Load"));
-
-  // Wait for render
-  const info = await promise;
-  expect(info.count).toBe(2);
-  expect(getByText("Loaded")).toBeInTheDocument();
-});
-```
-
-**More examples:** See [`examples/async/`](./examples/async/) for 21 comprehensive examples.
-
-## Advanced Usage
-
-### Custom Assertions
-
-Create domain-specific assertions for render count patterns:
-
-```typescript
-// test-utils/custom-matchers.ts
-expect.extend({
-  toHaveRenderedOnlyOnMount(component: ProfiledComponent<any>) {
-    const renderCount = component.getRenderCount();
-    const pass = renderCount === 1 && component.hasMounted();
-    return {
-      pass,
-      message: () =>
-        pass
-          ? `Expected component to render more than once`
-          : `Expected component to render only on mount, but it rendered ${renderCount} times`,
-    };
-  },
-});
-```
-
-## Best Practices
-
-1. **Automatic Cleanup**: All profiled components are automatically cleared between tests - no manual cleanup needed!
-2. **Use Descriptive Names**: `withProfiler(Component, 'UserDashboard')` for better debugging.
-3. **Set Performance Budgets**: Define and test against realistic performance goals.
-4. **Test With Real Data**: Use production-like data sizes for meaningful results.
-
-## TypeScript
-
-Full TypeScript support with type definitions included:
-
-```typescript
-import { withProfiler, ProfiledComponent, RenderInfo } from 'vitest-react-profiler';
-
-const Component: React.FC<{ title: string }> = ({ title }) => <h1>{title}</h1>;
-const Profiled: ProfiledComponent<{ title: string }> = withProfiler(Component);
-
-// Full type safety
-const render: RenderInfo | undefined = Profiled.getLastRender();
-```
+---
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md).
 
 ```bash
-# Clone the repository
-git clone https://github.com/greydragon888/vitest-react-profiler.git
-
-# Install dependencies
-npm install
-
 # Run tests
-npm test                    # Standard tests (245 tests)
-npm run test:properties     # Property-based tests (38 tests)
-npm run test:bench          # Performance benchmarks
+npm test                    # Unit/integration tests
+npm run test:properties     # Property-based tests
 npm run test:mutation       # Mutation testing
 
-# Coverage
-npm run test:coverage       # Generate coverage report
-
-# Build the project
+# Build
 npm run build
 ```
+
+---
 
 ## License
 
@@ -847,6 +152,6 @@ MIT © [Oleg Ivanov](https://github.com/greydragon888)
 
 Made with ❤️ by the community
 
-[Report Bug](https://github.com/greydragon888/vitest-react-profiler/issues) • [Request Feature](https://github.com/greydragon888/vitest-react-profiler/issues) • [Discussions](https://github.com/greydragon888/vitest-react-profiler/discussions)
+[Report Bug](../../issues) • [Request Feature](../../issues) • [Discussions](../../discussions)
 
 </div>
