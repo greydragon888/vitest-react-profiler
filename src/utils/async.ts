@@ -1,7 +1,4 @@
-import {
-  cleanupAndResolve,
-  cleanupAndResolveIfPhaseMatches,
-} from "@/helpers.ts";
+import { cleanupAndResolve, cleanupAndResolveIfPhaseMatches } from "@/helpers";
 
 import type { PhaseType, ProfiledComponent, WaitOptions } from "../types";
 

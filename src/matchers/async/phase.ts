@@ -1,4 +1,4 @@
-import { cleanupAndResolveIfPhaseMatches } from "@/helpers.ts";
+import { cleanupAndResolveIfPhaseMatches } from "@/helpers";
 import { isProfiledComponent } from "@/matchers/type-guards";
 import { formatRenderSummary } from "@/utils/formatRenderHistory";
 

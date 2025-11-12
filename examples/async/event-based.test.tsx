@@ -8,13 +8,13 @@
  */
 
 import { render, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { withProfiler } from "../../src";
 import { AsyncCounter } from "./components/AsyncCounter";
 import { DataFetcher } from "./components/DataFetcher";
 import { FormValidator } from "./components/FormValidator";
 
-import type { RenderEventInfo } from "../../src/types";
+import type { RenderEventInfo } from "@/types";
 
 // ═══════════════════════════════════════════════════════════════════
 // 1. BASIC ONRENDER USAGE
@@ -93,7 +93,9 @@ describe("1. Basic onRender usage", () => {
     const logs: RenderEventInfo[] = [];
     ProfiledCounter.onRender((info) => {
       logs.push(info);
-      console.log(`[${info.phase}] Render #${info.count} took ${info.actualDuration}ms`);
+      console.log(
+        `[${info.phase}] Render #${info.count} took ${info.actualDuration}ms`,
+      );
     });
 
     // Trigger multiple re-renders
@@ -227,7 +229,9 @@ describe("2. waitForNextRender usage", () => {
     const promise = ProfiledCounter.waitForNextRender({ timeout: 100 });
 
     // Should reject with timeout error
-    await expect(promise).rejects.toThrow("Timeout: No render occurred within 100ms");
+    await expect(promise).rejects.toThrow(
+      "Timeout: No render occurred within 100ms",
+    );
   });
 });
 
@@ -345,21 +349,21 @@ describe("3. Basic cleanup patterns", () => {
     unsubscribes.push(
       ProfiledCounter.onRender((info) => {
         console.log(`[LOG] Render ${info.count}`);
-      })
+      }),
     );
 
     // Subscriber 2: Analytics
     unsubscribes.push(
       ProfiledCounter.onRender((info) => {
         console.log(`[ANALYTICS] ${info.phase}`);
-      })
+      }),
     );
 
     // Subscriber 3: Debug
     unsubscribes.push(
       ProfiledCounter.onRender((info) => {
         console.log(`[DEBUG] Duration: ${info.actualDuration}ms`);
-      })
+      }),
     );
 
     rerender(<ProfiledCounter />);
@@ -456,7 +460,9 @@ describe("4. Complex conditions with onRender", () => {
     ProfiledCounter.onRender((info) => {
       if (info.count > THRESHOLD) {
         excessiveRenderWarning = true;
-        console.warn(`⚠️ Excessive renders detected: ${info.count} > ${THRESHOLD}`);
+        console.warn(
+          `⚠️ Excessive renders detected: ${info.count} > ${THRESHOLD}`,
+        );
       }
     });
 
@@ -553,9 +559,14 @@ describe("5. Performance benchmarks (< 20ms)", () => {
     const slowRenders: number[] = [];
 
     ProfiledCounter.onRender((info) => {
-      if (info.actualDuration !== undefined && info.actualDuration > SLOW_RENDER_THRESHOLD) {
+      if (
+        info.actualDuration !== undefined &&
+        info.actualDuration > SLOW_RENDER_THRESHOLD
+      ) {
         slowRenders.push(info.count);
-        console.warn(`🐌 Slow render detected: Render #${info.count} took ${info.actualDuration}ms`);
+        console.warn(
+          `🐌 Slow render detected: Render #${info.count} took ${info.actualDuration}ms`,
+        );
       }
     });
 
@@ -565,7 +576,9 @@ describe("5. Performance benchmarks (< 20ms)", () => {
     }
 
     // Most renders should be fast (actualDuration is often undefined in test env)
-    console.log(`Slow renders: ${slowRenders.length} out of ${ProfiledCounter.getRenderCount()}`);
+    console.log(
+      `Slow renders: ${slowRenders.length} out of ${ProfiledCounter.getRenderCount()}`,
+    );
   });
 
   /**
@@ -590,7 +603,7 @@ describe("5. Performance benchmarks (< 20ms)", () => {
 
     if (actualRenderCount > BASELINE_RENDER_COUNT) {
       console.error(
-        `⚠️ REGRESSION: Expected ${BASELINE_RENDER_COUNT} renders, got ${actualRenderCount}`
+        `⚠️ REGRESSION: Expected ${BASELINE_RENDER_COUNT} renders, got ${actualRenderCount}`,
       );
     }
 

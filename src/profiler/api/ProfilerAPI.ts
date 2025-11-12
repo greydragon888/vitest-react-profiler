@@ -1,4 +1,4 @@
-import { cleanupAndResolve } from "@/helpers.ts";
+import { cleanupAndResolve } from "@/helpers";
 
 import { cacheMetrics } from "../core/CacheMetrics";
 
