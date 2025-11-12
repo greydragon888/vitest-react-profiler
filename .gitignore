@@ -13,6 +13,7 @@ coverage/
 *.lcov
 .nyc_output/
 test-results/
+test-report.junit.xml
 playwright-report/
 playwright/.cache/
 
