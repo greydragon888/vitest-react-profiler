@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",
@@ -60,13 +60,15 @@
   ],
   "scripts": {
     "build": "tsup",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest run --config vitest.config.unit.mts",
+    "test:coverage": "vitest run --coverage --config vitest.config.unit.mts",
     "test:mutation": "stryker run",
     "test:mutation:report": "open reports/mutation-report.html",
     "test:properties": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --config vitest.config.properties.mts",
     "test:bench": "vitest bench --config vitest.config.bench.mts",
     "test:bench:stable": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
+    "test:memory": "node --expose-gc node_modules/.bin/vitest run --config vitest.config.memory.mts",
+    "test:memory:debug": "node --expose-gc --trace-gc node_modules/.bin/vitest run --config vitest.config.memory.mts",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "bundle:analyze": "npm run build && npx @codecov/bundle-analyzer ./dist --bundle-name=vitest-react-profiler",
@@ -111,6 +113,7 @@
     "eslint-plugin-unicorn": "62.0.0",
     "fast-check": "4.3.0",
     "husky": "9.1.7",
+    "jest-leak-detector": "^30.2.0",
     "jsdom": "27.1.0",
     "lint-staged": "16.2.6",
     "prettier": "3.6.2",

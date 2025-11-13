@@ -45,10 +45,14 @@ Read vitest.config.ts  # File doesn't exist!
 
 **Critical Files with Non-Standard Extensions:**
 
-- `vitest.config.mts` (NOT .ts)
-- `eslint.config.mjs` (NOT .eslintrc.cjs)
-- `vitest.config.properties.mts` (separate config)
-- `vitest.config.bench.mts` (separate config)
+- `vitest.config.common.mts` - **Base config** (shared by all test configs)
+- `vitest.config.unit.mts` - Unit/integration tests (main config)
+- `vitest.config.mts` - **Symlink** → `vitest.config.unit.mts` (backward compatibility)
+- `vitest.config.properties.mts` - Property-based tests
+- `vitest.config.bench.mts` - Benchmarks
+- `vitest.config.memory.mts` - Memory leak tests
+- `vitest.stryker.config.mts` - Mutation testing
+- `eslint.config.mjs` (NOT .eslintrc.cjs) - ESLint config
 
 ### Rule 2: Coverage Targets
 
@@ -146,8 +150,12 @@ To prevent context pollution, follow these file access rules:
 
 **Specialized Configs:**
 
+- `vitest.config.common.mts` - **Base config** (read for understanding shared settings)
+- `vitest.config.unit.mts` - Only for unit/integration testing tasks
 - `vitest.config.properties.mts` - Only for property testing tasks
 - `vitest.config.bench.mts` - Only for benchmark tasks
+- `vitest.config.memory.mts` - Only for memory leak testing tasks
+- `vitest.stryker.config.mts` - Only for mutation testing tasks
 - `.github/workflows/*.yml` - Only for CI/CD tasks
 
 **Build Artifacts:**
@@ -229,20 +237,28 @@ vitest-react-profiler/
 
 ## ═══════════════════════════════════════════════════
 
-| File                           | Location | Purpose          | Notes                                            |
-| ------------------------------ | -------- | ---------------- | ------------------------------------------------ |
-| `vitest.config.mts`            | root     | Main test config | Coverage enabled, unit/integration tests         |
-| `vitest.config.properties.mts` | root     | Property tests   | Coverage **disabled**, 30s timeout               |
-| `vitest.config.bench.mts`      | root     | Benchmarks       | No coverage, comparison mode                     |
-| `eslint.config.mjs`            | root     | ESLint rules     | Flat config format                               |
-| `tsconfig.json`                | root     | TypeScript       | Path aliases (`@/` → `src/`)                     |
-| `tsup.config.ts`               | root     | Build config     | ESM + CJS bundles                                |
-| `codecov.yml`                  | root     | Codecov config   | 90% target, bundle analysis                      |
-| `sonar-project.properties`     | root     | SonarCloud       | Quality gates, version must match `package.json` |
+| File                           | Location | Purpose                | Notes                                                               |
+| ------------------------------ | -------- | ---------------------- | ------------------------------------------------------------------- |
+| `vitest.config.common.mts`     | root     | **Base config**        | Shared settings for all test configs (resolve, define, environment) |
+| `vitest.config.unit.mts`       | root     | Unit/Integration tests | Coverage enabled (95%), 10s timeout, 4 workers                      |
+| `vitest.config.mts`            | root     | Symlink to unit        | **→ vitest.config.unit.mts** (backward compatibility)               |
+| `vitest.config.properties.mts` | root     | Property tests         | Extends common, coverage disabled, 30s timeout                      |
+| `vitest.config.bench.mts`      | root     | Benchmarks             | Extends common, forks pool, 600s timeout                            |
+| `vitest.config.memory.mts`     | root     | Memory leak tests      | Extends common, coverage disabled, 60s timeout                      |
+| `vitest.stryker.config.mts`    | root     | Mutation testing       | Extends common, forks pool, 5s timeout                              |
+| `eslint.config.mjs`            | root     | ESLint rules           | Flat config format                                                  |
+| `tsconfig.json`                | root     | TypeScript             | Path aliases (`@/` → `src/`)                                        |
+| `tsup.config.ts`               | root     | Build config           | ESM + CJS bundles                                                   |
+| `codecov.yml`                  | root     | Codecov config         | 90% target, bundle analysis                                         |
+| `sonar-project.properties`     | root     | SonarCloud             | Quality gates, version must match `package.json`                    |
 
 **Key Points**:
 
-- `vitest.config.mts` excludes `**/index.ts` BUT includes `src/matchers/index.ts` (matcher registration)
+- **DRY Architecture**: All configs extend `vitest.config.common.mts` using `mergeConfig()`
+- **Backward Compatibility**: `vitest.config.mts` is a symlink → `vitest.config.unit.mts`
+- **Coverage**: Only `vitest.config.unit.mts` has coverage enabled (95% thresholds)
+- **Exclusions**: Unit config excludes `**/index.ts` BUT includes `src/matchers/index.ts` (matcher registration)
+- **Separation**: Property/memory/bench tests have dedicated configs and are excluded from unit runs
 - `codecov.yml` in root (NOT in `.github/workflows/`) - read by coverage workflow
 
 ---
@@ -315,6 +331,49 @@ Strong recommendations that may be overridden with good reason.
 - Vitest bench mode, compare baseline, check regressions
 - File: `tests/benchmarks/addRender.bench.tsx`
 
+**5. Memory Leak Tests** (`tests/memory/*.test.tsx`)
+
+- Uses `jest-leak-detector`, verifies garbage collection
+- Config: Requires `--expose-gc` flag (run via `npm run test:memory`)
+- Run: `npm run test:memory`
+- Purpose: Prevent memory retention regressions
+
+**Test structure**:
+
+```typescript
+import LeakDetector from "jest-leak-detector";
+
+it("should not leak", async () => {
+  let obj: any = createObject();
+  const detector = new LeakDetector(obj);
+
+  // Use object
+  useObject(obj);
+
+  // Cleanup
+  obj = null;
+  if (global.gc) global.gc();
+
+  // Verify
+  expect(await detector.isLeaking()).toBe(false);
+});
+```
+
+**Critical scenarios covered**:
+
+1. Component lifecycle (mount/unmount)
+2. Event subscriptions (onRender cleanup)
+3. Render history (large arrays)
+
+**When to add memory tests**:
+
+- Adding new event listeners
+- Creating new data structures
+- Implementing caching logic
+- Working with WeakMap/WeakSet
+
+**Current status**: Tests detect systematic memory retention (see Phase 2-4 findings)
+
 ### Mutation Testing
 
 Uses **Stryker** (`npm run test:mutation`) to verify test quality by introducing code mutations.
@@ -347,6 +406,7 @@ tests/unit/*.test.ts          → Unit tests
 tests/integration/*.test.tsx  → Integration tests
 tests/property/*.properties.tsx → Property tests
 tests/benchmarks/*.bench.tsx  → Benchmarks
+tests/memory/*.test.tsx       → Memory leak tests
 ```
 
 ### Best Practices

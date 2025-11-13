@@ -10,6 +10,23 @@ describe("profileHook - Edge cases", () => {
     expect(ProfiledHook).toHaveRenderedTimes(1);
   });
 
+  it("should set correct displayName with hook name", () => {
+    // Named function passed directly (not wrapped in arrow function)
+    function useCustomCounter() {
+      return useState(0);
+    }
+
+    const { ProfiledHook } = profileHook(useCustomCounter);
+
+    // Verify withProfiler sets displayName
+    expect(ProfiledHook.displayName).toBe("withProfiler(useCustomCounter)");
+
+    // Verify exact inner HookComponent displayName format "HookWrapper(hookName)" (kills StringLiteral mutation)
+    expect(ProfiledHook.OriginalComponent.displayName).toBe(
+      "HookWrapper(useCustomCounter)",
+    );
+  });
+
   it("should handle multiple rerenders", () => {
     const { rerender, ProfiledHook } = profileHook(
       ({ value }) => useState(value),

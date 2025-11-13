@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-11-12
+
+### Added
+
+- **Built-in safety mechanisms** - Infinite render loop (10K) & memory leak (100 listeners) detection
+  - New constants: `MAX_SAFE_RENDERS`, `MAX_LISTENERS` in `src/profiler/core/constants.ts`
+
+- **Parameter validation in async utilities** - Validates count/timeout parameters, catches NaN/Infinity/negative/zero values (20 new tests)
+
+- **Enhanced error messages** - Component name context and `withProfiler()` usage hints (3 new tests)
+
+- **Comprehensive benchmark suite** - 25 benchmarks in `tests/benchmarks/formatting.bench.ts` verifying O(n) scalability across different history sizes
+
+### Changed
+
+- **`formatRenderSummary()` optimization** - 3x faster with O(3n) → O(n) single-loop implementation
+
+- **Async matcher error messages** - Improved timeout validation with clear error messages for invalid values (3 new tests)
+
+### Fixed
+
+- **Mutation testing coverage gaps** - 99.4% → 100.00% (all 6 survived mutants eliminated)
+  - Enhanced tests for error messages, string literals, and edge cases
+
+### Infrastructure
+
+- **Code quality metrics**
+  - **Coverage**: 100% (maintained across all metrics)
+  - **Mutation Score**: 100.00%
+
+### Security
+
+- **Safety limits** - Internal constants with 100x margin for legitimate use cases (10K renders, 100 listeners)
+
 ## [1.6.0] - 2025-11-11
 
 ### BREAKING CHANGES
@@ -575,6 +609,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.7.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.7.0
 [1.6.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.6.0
 [1.5.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.5.0
 [1.4.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.4.0

@@ -51,6 +51,7 @@
 - ⏱️ **Async Testing** - Subscribe to renders with `onRender()` and wait with `waitForNextRender()`
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
+- 🛡️ **Built-in Safety Mechanisms** - Automatic detection of infinite render loops and memory leaks
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
 - 🧬 **Battle-Tested Quality** - 99%+ mutation score, property-based testing, SonarCloud verified
 - 🔬 **Mathematically Verified** - 227 property tests with 130,000+ randomized checks per run
@@ -167,10 +168,21 @@ We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md).
 npm test                    # Unit/integration tests
 npm run test:properties     # Property-based tests
 npm run test:mutation       # Mutation testing
+npm run test:memory         # Memory leak detection (requires --expose-gc)
 
 # Build
 npm run build
 ```
+
+### Memory Leak Testing
+
+Automated memory leak detection tests verify garbage collection of:
+
+- Component instances after unmount
+- Event listeners after unsubscribe
+- Large render history arrays
+
+All memory tests run automatically in CI to prevent regressions.
 
 ---
 

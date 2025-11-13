@@ -333,8 +333,8 @@ describe("ProfilerAPI", () => {
       const Component = createComponent("TestComponent");
       const data = storage.getOrCreate(Component);
 
-      data.addRender("update");
       data.addRender("mount");
+      data.addRender("update");
       data.addRender("update");
 
       const hasMounted = api.createHasMounted(Component);

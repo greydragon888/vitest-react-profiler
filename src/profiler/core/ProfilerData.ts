@@ -1,3 +1,4 @@
+import { MAX_SAFE_RENDERS } from "./constants";
 import { ProfilerCache } from "./ProfilerCache";
 import { ProfilerEvents, type RenderEventInfo } from "./ProfilerEvents";
 
@@ -28,8 +29,32 @@ export class ProfilerData {
    * Add a new render to history
    *
    * Emits render event to all subscribers after adding to history
+   *
+   * @throws {Error} If render count exceeds MAX_SAFE_RENDERS (likely infinite loop)
    */
   addRender(phase: PhaseType): void {
+    // Circuit breaker: detect infinite render loops BEFORE adding
+    if (this.renderHistory.length >= MAX_SAFE_RENDERS) {
+      // Show last 10 phases from current history + the phase we're trying to add
+      const last9 = this.renderHistory
+        .slice(-9)
+        .map((p) => `"${p}"`)
+        .join(", ");
+      const last10 = `${last9}, "${phase}"`;
+
+      throw new Error(
+        `🔥 Infinite render loop detected!\n\n` +
+          `Component rendered ${this.renderHistory.length} times.\n` +
+          `Attempted to add render #${this.renderHistory.length + 1}.\n` +
+          `This likely indicates a bug:\n` +
+          `  • useEffect with missing/wrong dependencies\n` +
+          `  • setState called during render\n` +
+          `  • Circular state updates\n\n` +
+          `Last 10 phases: [${last10}]\n\n` +
+          `💡 Check your useEffect dependencies and state update logic.`,
+      );
+    }
+
     this.renderHistory.push(phase);
 
     // Smart cache invalidation: only invalidate cache for current phase
@@ -108,13 +133,24 @@ export class ProfilerData {
    * Check if component has ever mounted
    *
    * React guarantees that first render phase is always "mount" in normal usage.
-   * However, this checks if "mount" phase occurred at any point in history
-   * to handle edge cases.
+   * This method checks the first element and throws an invariant violation
+   * if it's not "mount", helping catch integration bugs early.
    *
-   * @since v1.6.0 - Optimized: uses array includes (O(n) worst case)
+   * @since v1.6.0 - Optimized: O(1) direct array access
    */
   hasMounted(): boolean {
-    return this.renderHistory.includes("mount");
+    if (this.renderHistory.length === 0) {
+      return false; // Not render - valid state
+    }
+
+    if (this.renderHistory[0] !== "mount") {
+      throw new Error(
+        `Invariant violation: First render must be "mount", got "${this.renderHistory[0]}". ` +
+          `This indicates a bug in React Profiler or library integration.`,
+      );
+    }
+
+    return true;
   }
 
   /**

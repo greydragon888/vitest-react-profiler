@@ -1,6 +1,10 @@
-import React, { Profiler, useRef } from "react";
+import { Profiler, useRef } from "react";
 
-import type { ComponentType, ProfilerOnRenderCallback } from "react";
+import type {
+  ReactElement,
+  ComponentType,
+  ProfilerOnRenderCallback,
+} from "react";
 
 interface ProfiledComponentProps<P> {
   Component: ComponentType<P>;
@@ -22,7 +26,7 @@ let globalInstanceCounter = 0;
  */
 export function ProfiledComponentWrapper<P extends object>(
   props: Readonly<ProfiledComponentProps<P>>,
-): React.ReactElement {
+): ReactElement {
   const { Component, componentProps, componentName, onRender } = props;
 
   // Stable ID for this component instance

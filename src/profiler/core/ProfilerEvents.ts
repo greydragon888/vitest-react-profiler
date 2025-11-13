@@ -1,3 +1,5 @@
+import { MAX_LISTENERS } from "./constants";
+
 import type { PhaseType } from "@/types";
 
 /**
@@ -26,6 +28,7 @@ export type RenderListener = (info: RenderEventInfo) => void;
  * - Managing render event subscribers
  * - Emitting render events to all subscribers
  * - Providing cleanup mechanisms
+ * - Detecting memory leaks (too many listeners)
  *
  * Implementation notes:
  * - Uses Set for O(1) add/remove operations
@@ -40,6 +43,7 @@ export class ProfilerEvents {
    *
    * @param listener - Callback to invoke on each render
    * @returns Unsubscribe function (safe for multiple calls)
+   * @throws {Error} If listener count exceeds MAX_LISTENERS (likely memory leak)
    *
    * @example
    * ```typescript
@@ -53,6 +57,23 @@ export class ProfilerEvents {
    */
   subscribe(listener: RenderListener): () => void {
     this.listeners.add(listener);
+
+    // Memory leak detection: detect forgotten unsubscribe()
+    if (this.listeners.size > MAX_LISTENERS) {
+      throw new Error(
+        `🔥 Memory leak detected!\n\n` +
+          `Component has ${this.listeners.size} event listeners.\n` +
+          `This likely indicates a bug:\n` +
+          `  • Forgot to call unsubscribe() in useEffect cleanup\n` +
+          `  • Listeners added in render function instead of useEffect\n` +
+          `  • Component remounting repeatedly without cleanup\n\n` +
+          `💡 Always return unsubscribe from useEffect:\n` +
+          `useEffect(() => {\n` +
+          `  const unsubscribe = component.onRender(...);\n` +
+          `  return unsubscribe;\n` +
+          `}, []);`,
+      );
+    }
 
     // Return unsubscribe function
     // Safe to call multiple times (Set.delete is idempotent)

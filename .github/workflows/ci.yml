@@ -123,6 +123,37 @@ jobs:
             coverage/
           retention-days: 7
 
+  memory-test:
+    name: Memory Leak Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run memory leak tests
+        run: npm run test:memory
+        env:
+          NODE_OPTIONS: "--expose-gc"
+
+      - name: Upload memory test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-leak-report
+          path: |
+            coverage/memory-*.json
+            tests/memory/**/*.test.tsx
+          retention-days: 7
+
   mutation-test:
     name: Mutation Testing
     runs-on: ubuntu-latest

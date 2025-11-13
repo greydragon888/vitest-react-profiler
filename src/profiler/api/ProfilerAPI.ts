@@ -238,7 +238,13 @@ export class ProfilerAPI {
         }
 
         if (!cachedData) {
-          reject(new Error("Component has no profiler data"));
+          reject(
+            new Error(
+              `Component has no profiler data. ` +
+                `Did you forget to wrap it with withProfiler()? ` +
+                `Component: ${(component.displayName ?? component.name) || "Unknown"}`,
+            ),
+          );
 
           return;
         }
