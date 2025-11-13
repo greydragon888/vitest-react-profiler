@@ -8,7 +8,6 @@ import path from "node:path";
  * - Unit/Integration tests (vitest.config.unit.mts)
  * - Property-based tests (vitest.config.properties.mts)
  * - Benchmarks (vitest.config.bench.mts)
- * - Memory leak tests (vitest.config.memory.mts)
  * - Mutation testing (vitest.stryker.config.mts)
  *
  * Specialized configs extend this using mergeConfig() and override specific settings.

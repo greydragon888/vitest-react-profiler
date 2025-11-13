@@ -168,21 +168,10 @@ We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md).
 npm test                    # Unit/integration tests
 npm run test:properties     # Property-based tests
 npm run test:mutation       # Mutation testing
-npm run test:memory         # Memory leak detection (requires --expose-gc)
 
 # Build
 npm run build
 ```
-
-### Memory Leak Testing
-
-Automated memory leak detection tests verify garbage collection of:
-
-- Component instances after unmount
-- Event listeners after unsubscribe
-- Large render history arrays
-
-All memory tests run automatically in CI to prevent regressions.
 
 ---
 

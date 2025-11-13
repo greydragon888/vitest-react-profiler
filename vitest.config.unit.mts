@@ -71,7 +71,6 @@ export default mergeConfig(
        * Exclude memory-intensive property and memory tests from default run.
        * Run them separately with:
        *   - npm run test:properties (property-based tests)
-       *   - npm run test:memory (memory leak tests)
        */
       include: ["tests/**/*.test.{ts,tsx}", "tests/**/*.spec.{ts,tsx}"],
       exclude: [
@@ -81,7 +80,6 @@ export default mergeConfig(
         ".git",
         ".cache",
         "tests/property/**/*.properties.{ts,tsx}",
-        "tests/memory/**/*.test.{ts,tsx}",
       ],
 
       /**
