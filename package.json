@@ -125,5 +125,8 @@
   },
   "workspaces": [
     "examples/*"
-  ]
+  ],
+  "overrides": {
+    "glob": "^11.1.0"
+  }
 }
