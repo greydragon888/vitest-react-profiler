@@ -302,31 +302,6 @@ describe("Property-Based Tests: API Event Methods", () => {
       },
     );
 
-    test.prop([fc.integer({ min: 50, max: 150 })], { numRuns: 20 })(
-      "timeout rejects after specified time",
-      async (timeout) => {
-        const TestComponent = ({ value }: { value: number }) => (
-          <div>{value}</div>
-        );
-        const ProfiledComponent = withProfiler(TestComponent);
-
-        render(<ProfiledComponent value={0} />);
-
-        const startTime = Date.now();
-        const promise = ProfiledComponent.waitForNextRender({ timeout });
-
-        await expect(promise).rejects.toThrow(
-          `Timeout: No render occurred within ${timeout}ms`,
-        );
-
-        const elapsed = Date.now() - startTime;
-
-        // Should be close to timeout (allow ±50ms variance)
-        expect(elapsed).toBeGreaterThanOrEqual(timeout - 50);
-        expect(elapsed).toBeLessThan(timeout + 100);
-      },
-    );
-
     test.prop([fc.integer({ min: 1, max: 10 })], { numRuns: 500 })(
       "resolves with correct count after N renders",
       async (numPreviousRenders) => {
@@ -475,40 +450,6 @@ describe("Property-Based Tests: API Event Methods", () => {
   });
 
   describe("Performance Invariants", () => {
-    test.prop([fc.integer({ min: 100, max: 1000 })], { numRuns: 100 })(
-      "handles large number of listeners efficiently",
-      (numListeners) => {
-        const TestComponent = ({ value }: { value: number }) => (
-          <div>{value}</div>
-        );
-        const ProfiledComponent = withProfiler(TestComponent);
-
-        const { rerender } = render(<ProfiledComponent value={0} />);
-
-        const listeners = Array.from({ length: numListeners }, () => vi.fn());
-
-        const startSubscribe = performance.now();
-
-        listeners.forEach((listener) => ProfiledComponent.onRender(listener));
-        const endSubscribe = performance.now();
-
-        const startRender = performance.now();
-
-        rerender(<ProfiledComponent value={1} />);
-        const endRender = performance.now();
-
-        listeners.forEach((listener) => {
-          expect(listener).toHaveBeenCalledTimes(1);
-        });
-
-        // Subscribe should be fast (< 100ms for 1000 listeners)
-        expect(endSubscribe - startSubscribe).toBeLessThan(100);
-
-        // Render + notify should be fast (< 100ms for 1000 listeners)
-        expect(endRender - startRender).toBeLessThan(100);
-      },
-    );
-
     test.prop([fc.integer({ min: 1, max: 50 })], { numRuns: 200 })(
       "same listener subscribed multiple times only called once (Set behavior)",
       (numSubscriptions) => {

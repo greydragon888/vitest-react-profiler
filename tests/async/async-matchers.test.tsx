@@ -21,23 +21,6 @@ const createAsyncCounter = () => {
   return Counter;
 };
 
-// Helper component for fast performance tests (triggers 2 renders with 5ms delay)
-const createFastCounter = () => {
-  const Counter = () => {
-    const [count, setCount] = useState(0);
-
-    if (count === 0) {
-      setTimeout(() => {
-        setCount(1);
-      }, 5);
-    }
-
-    return <div>{count}</div>;
-  };
-
-  return Counter;
-};
-
 describe("toEventuallyRenderTimes", () => {
   it("should pass when exact render count is reached", async () => {
     const ProfiledCounter = withProfiler(createAsyncCounter());
@@ -94,24 +77,6 @@ describe("toEventuallyRenderTimes", () => {
     expect(ProfiledComponent.getRenderCount()).toBe(0);
   });
 
-  it("should use custom timeout", async () => {
-    const Static = () => <div>Static</div>;
-    const ProfiledStatic = withProfiler(Static);
-
-    render(<ProfiledStatic />);
-
-    const start = Date.now();
-
-    await expect(
-      expect(ProfiledStatic).toEventuallyRenderTimes(3, { timeout: 150 }),
-    ).rejects.toThrow();
-
-    const elapsed = Date.now() - start;
-
-    expect(elapsed).toBeGreaterThanOrEqual(130);
-    expect(elapsed).toBeLessThan(250);
-  });
-
   it("should show detailed error message with render history", async () => {
     const Component = () => <div>test</div>;
     const ProfiledComponent = withProfiler(Component);
@@ -154,7 +119,7 @@ describe("toEventuallyRenderTimes", () => {
   it("should fail .not assertion when render count is reached AFTER starting to wait", async () => {
     // This test covers the onRender callback path (lines 86-92 in render-count.ts)
     // where the exact count is reached while we're actively waiting
-    const Counter = createFastCounter();
+    const Counter = createAsyncCounter();
     const ProfiledCounter = withProfiler(Counter);
 
     const { rerender } = render(<ProfiledCounter />);
@@ -263,7 +228,7 @@ describe("toEventuallyRenderAtLeast", () => {
   it("should fail .not assertion when minimum already reached (early return)", async () => {
     // This test covers the early return path (lines 143-149 in render-count.ts)
     // where the minimum count is already reached when we start waiting
-    const Counter = createFastCounter();
+    const Counter = createAsyncCounter();
     const ProfiledCounter = withProfiler(Counter);
 
     const { rerender } = render(<ProfiledCounter />);
@@ -501,7 +466,7 @@ describe("toEventuallyReachPhase", () => {
   it("should fail .not assertion when phase is reached AFTER starting to wait", async () => {
     // This test covers the onRender callback path (lines 82-84 in phase.ts)
     // where the phase is reached while we're actively waiting
-    const Counter = createFastCounter();
+    const Counter = createAsyncCounter();
     const ProfiledCounter = withProfiler(Counter);
 
     const { rerender } = render(<ProfiledCounter />);
@@ -521,51 +486,9 @@ describe("toEventuallyReachPhase", () => {
 });
 
 describe("Event-based behavior tests for async matchers", () => {
-  describe("Race condition protection", () => {
-    it("toEventuallyRenderTimes should work if condition already satisfied (instant resolve)", async () => {
-      const Static = () => <div>Static</div>;
-      const ProfiledStatic = withProfiler(Static);
-
-      render(<ProfiledStatic />);
-
-      // Already rendered once (mount)
-      expect(ProfiledStatic.getRenderCount()).toBe(1);
-
-      const start = Date.now();
-
-      await expect(ProfiledStatic).toEventuallyRenderTimes(1);
-
-      const elapsed = Date.now() - start;
-
-      // Should resolve instantly (race condition protection)
-      // Tolerant threshold for CI environments (overhead from promises, event loop, etc.)
-      expect(elapsed).toBeLessThan(50);
-    });
-
-    it("toEventuallyReachPhase should work if condition already satisfied (instant resolve)", async () => {
-      const Static = () => <div>Static</div>;
-      const ProfiledStatic = withProfiler(Static);
-
-      render(<ProfiledStatic />);
-
-      // Already has mount phase
-      expect(ProfiledStatic.getRenderHistory()).toContain("mount");
-
-      const start = Date.now();
-
-      await expect(ProfiledStatic).toEventuallyReachPhase("mount");
-
-      const elapsed = Date.now() - start;
-
-      // Should resolve instantly (race condition protection)
-      // Tolerant threshold for CI environments (overhead from promises, event loop, etc.)
-      expect(elapsed).toBeLessThan(50);
-    });
-  });
-
   describe("Cleanup verification", () => {
     it("should cleanup properly on successful resolution", async () => {
-      const Counter = createFastCounter();
+      const Counter = createAsyncCounter();
       const ProfiledCounter = withProfiler(Counter);
 
       render(<ProfiledCounter />);

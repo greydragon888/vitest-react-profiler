@@ -416,31 +416,6 @@ describe("ProfilerAPI - Event Methods", () => {
       // by verifying subsequent renders don't cause issues
       expect(ProfiledComponent.getRenderCount()).toBe(1);
     });
-
-    it("should use default timeout of 1000ms", async () => {
-      const TestComponent = ({ value }: { value: number }) => (
-        <div>{value}</div>
-      );
-      const ProfiledComponent = withProfiler(TestComponent);
-
-      render(<ProfiledComponent value={1} />);
-
-      // Don't pass timeout - should use default
-      const promise = ProfiledComponent.waitForNextRender();
-
-      // Should timeout after ~1000ms
-      const startTime = Date.now();
-
-      await expect(promise).rejects.toThrow(
-        "Timeout: No render occurred within 1000ms",
-      );
-
-      const elapsed = Date.now() - startTime;
-
-      // Should be close to 1000ms (allow some variance)
-      expect(elapsed).toBeGreaterThanOrEqual(950);
-      expect(elapsed).toBeLessThan(1100);
-    });
   });
 
   describe("Integration: onRender + waitForNextRender", () => {

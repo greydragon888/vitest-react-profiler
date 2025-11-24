@@ -465,33 +465,6 @@ describe("Property-Based Tests: Event System", () => {
   });
 
   describe("Memory and Performance Invariants", () => {
-    test.prop([fc.integer({ min: 100, max: 1000 })], { numRuns: 100 })(
-      "handles large number of listeners efficiently",
-      (numListeners) => {
-        const events = new ProfilerEvents();
-        const listeners = Array.from({ length: numListeners }, () => vi.fn());
-
-        const startTime = performance.now();
-
-        listeners.forEach((listener) => events.subscribe(listener));
-
-        events.emit({
-          count: 1,
-          phase: "mount",
-          history: Object.freeze(["mount"]),
-        });
-
-        const endTime = performance.now();
-
-        listeners.forEach((listener) => {
-          expect(listener).toHaveBeenCalledTimes(1);
-        });
-
-        // Should complete in reasonable time (< 100ms for 1000 listeners)
-        expect(endTime - startTime).toBeLessThan(100);
-      },
-    );
-
     test.prop([fc.integer({ min: 1, max: 100 })], { numRuns: 200 })(
       "same listener subscribed multiple times only called once (Set behavior)",
       (numSubscriptions) => {

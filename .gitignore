@@ -93,6 +93,7 @@ wiki
 stryker-reports/
 .stryker-tmp/
 .vitest-stryker/
+.vitest-stress/
 packages/*/reports/
 packages/**/.vitest-stryker
 stryker.temp.config.mjs

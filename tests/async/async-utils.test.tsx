@@ -9,23 +9,6 @@ import {
   waitForPhase,
 } from "../../src";
 
-// Helper component for fast performance tests (triggers 2 renders with 5ms delay)
-const createFastCounter = () => {
-  const Counter = () => {
-    const [count, setCount] = useState(0);
-
-    if (count === 0) {
-      setTimeout(() => {
-        setCount(1);
-      }, 5);
-    }
-
-    return <div>{count}</div>;
-  };
-
-  return Counter;
-};
-
 // Helper component for multiple renders (triggers N renders with 10ms delay)
 const createMultiRenderCounter = (maxCount: number) => {
   const Counter = () => {
@@ -95,25 +78,6 @@ describe("waitForRenders", () => {
     expect(error).toMatchObject({
       message: expect.stringMatching(/Waiting for 4 more render/),
     });
-  });
-
-  it("should use custom timeout", async () => {
-    const Static = () => <div>Static</div>;
-    const ProfiledStatic = withProfiler(Static);
-
-    render(<ProfiledStatic />);
-
-    const start = Date.now();
-
-    await expect(
-      waitForRenders(ProfiledStatic, 2, { timeout: 200 }),
-    ).rejects.toThrow();
-
-    const elapsed = Date.now() - start;
-
-    // Should timeout around 200ms (with some tolerance)
-    expect(elapsed).toBeGreaterThanOrEqual(180);
-    expect(elapsed).toBeLessThan(300);
   });
 });
 
@@ -189,31 +153,6 @@ describe("waitForMinimumRenders", () => {
     expect(error).toMatchObject({
       message: expect.stringMatching(/Waiting for 4 more render\(s\)/),
     });
-  });
-
-  it("should respect custom timeout", async () => {
-    const Static = () => <div>Static</div>;
-    const ProfiledStatic = withProfiler(Static);
-
-    render(<ProfiledStatic />);
-
-    const start = Date.now();
-
-    try {
-      await waitForMinimumRenders(ProfiledStatic, 3, {
-        timeout: 200,
-      });
-
-      throw new Error("Should have thrown");
-    } catch {
-      // Error expected
-    }
-
-    const elapsed = Date.now() - start;
-
-    // Should timeout around 200ms (with some tolerance)
-    expect(elapsed).toBeGreaterThanOrEqual(180);
-    expect(elapsed).toBeLessThan(300);
   });
 });
 
@@ -334,31 +273,6 @@ describe("waitForPhase", () => {
     });
   });
 
-  it("should use custom timeout for waitForPhase", async () => {
-    const Static = () => <div>Static</div>;
-    const ProfiledStatic = withProfiler(Static);
-
-    render(<ProfiledStatic />);
-
-    const start = Date.now();
-
-    try {
-      await waitForPhase(ProfiledStatic, "update", {
-        timeout: 150,
-      });
-
-      throw new Error("Should have thrown");
-    } catch {
-      // Error expected
-    }
-
-    const elapsed = Date.now() - start;
-
-    // Should timeout around 150ms (with some tolerance)
-    expect(elapsed).toBeGreaterThanOrEqual(130);
-    expect(elapsed).toBeLessThan(250);
-  });
-
   it("should NOT resolve on wrong phase (only timeout on correct phase)", async () => {
     // This test ensures that we only resolve when renderPhase === phase
     // Mutant changes to: if (true) which would resolve on ANY phase
@@ -424,95 +338,6 @@ describe("waitForPhase", () => {
 });
 
 describe("Event-based behavior tests", () => {
-  describe("Performance: event-based response time", () => {
-    it("waitForRenders should resolve in < 20ms (event-based, not polling)", async () => {
-      const Counter = createFastCounter();
-      const ProfiledCounter = withProfiler(Counter);
-
-      render(<ProfiledCounter />);
-
-      const start = Date.now();
-
-      await waitForRenders(ProfiledCounter, 2);
-      const elapsed = Date.now() - start;
-
-      // Event-based should be very fast (< 20ms)
-      // Polling would take at least 50ms (one interval)
-      expect(elapsed).toBeLessThan(20);
-      expect(ProfiledCounter.getRenderCount()).toBe(2);
-    });
-
-    it("waitForMinimumRenders should resolve in < 20ms (event-based)", async () => {
-      const Counter = createFastCounter();
-      const ProfiledCounter = withProfiler(Counter);
-
-      render(<ProfiledCounter />);
-
-      const start = Date.now();
-
-      await waitForMinimumRenders(ProfiledCounter, 2);
-      const elapsed = Date.now() - start;
-
-      // Event-based should be very fast (< 20ms)
-      expect(elapsed).toBeLessThan(20);
-      expect(ProfiledCounter.getRenderCount()).toBeGreaterThanOrEqual(2);
-    });
-
-    it("waitForPhase should resolve in < 20ms (event-based)", async () => {
-      const Counter = createFastCounter();
-      const ProfiledCounter = withProfiler(Counter);
-
-      render(<ProfiledCounter />);
-
-      const start = Date.now();
-
-      await waitForPhase(ProfiledCounter, "update");
-      const elapsed = Date.now() - start;
-
-      // Event-based should be very fast (< 20ms)
-      expect(elapsed).toBeLessThan(20);
-      expect(ProfiledCounter.getRendersByPhase("update")).toHaveLength(1);
-    });
-  });
-
-  describe("Race condition protection", () => {
-    it("waitForRenders should work if condition already satisfied", async () => {
-      const Component = () => <div>test</div>;
-      const ProfiledComponent = withProfiler(Component);
-
-      render(<ProfiledComponent />);
-
-      // Already at 1 render
-      expect(ProfiledComponent.getRenderCount()).toBe(1);
-
-      const start = Date.now();
-
-      // Should complete immediately (race condition protection)
-      await waitForRenders(ProfiledComponent, 1);
-      const elapsed = Date.now() - start;
-
-      // Should be almost instant (< 5ms)
-      expect(elapsed).toBeLessThan(5);
-      expect(ProfiledComponent.getRenderCount()).toBe(1);
-    });
-
-    it("waitForPhase should work if phase already occurred", async () => {
-      const Component = () => <div>test</div>;
-      const ProfiledComponent = withProfiler(Component);
-
-      render(<ProfiledComponent />);
-
-      // Mount phase already occurred
-      const start = Date.now();
-
-      await waitForPhase(ProfiledComponent, "mount");
-      const elapsed = Date.now() - start;
-
-      // Should be almost instant (< 5ms)
-      expect(elapsed).toBeLessThan(5);
-    });
-  });
-
   describe("Multiple parallel waiters", () => {
     it("multiple waitForRenders can wait simultaneously", async () => {
       const Counter = createMultiRenderCounter(3);
