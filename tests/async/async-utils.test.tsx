@@ -54,6 +54,42 @@ describe("waitForRenders", () => {
     expect(ProfiledCounter.getRenderCount()).toBe(3);
   });
 
+  it("should resolve immediately if count already reached", async () => {
+    const Counter = () => {
+      const [count, setCount] = useState(0);
+
+      // Trigger 2 updates synchronously
+      if (count < 2) {
+        setTimeout(() => {
+          setCount(count + 1);
+        }, 1);
+      }
+
+      return <div>{count}</div>;
+    };
+
+    const ProfiledCounter = withProfiler(Counter);
+
+    render(<ProfiledCounter />);
+
+    // Wait for 3 renders to complete
+    await waitForRenders(ProfiledCounter, 3);
+
+    expect(ProfiledCounter.getRenderCount()).toBe(3);
+
+    // Now call waitForRenders again with count already satisfied
+    // This should resolve immediately without waiting
+    await waitForRenders(ProfiledCounter, 3);
+
+    // Count should still be 3 (no additional renders)
+    expect(ProfiledCounter.getRenderCount()).toBe(3);
+
+    // Also test with count less than current
+    await waitForRenders(ProfiledCounter, 2);
+
+    expect(ProfiledCounter.getRenderCount()).toBe(3);
+  });
+
   it("should timeout if render count not reached", async () => {
     const Static = () => <div>Static</div>;
     const ProfiledStatic = withProfiler(Static);
