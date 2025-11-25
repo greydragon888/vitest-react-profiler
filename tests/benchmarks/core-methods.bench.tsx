@@ -1,7 +1,7 @@
-import { render } from "@testing-library/react";
-import { bench, describe } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, bench, describe } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearRegistry, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -24,16 +24,25 @@ import type { FC } from "react";
 const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 
 describe("Core Methods - Performance", () => {
+  afterEach(() => {
+    cleanup();
+    clearRegistry();
+  });
+
   describe("getRenderCount()", () => {
     bench("10 renders - single call", () => {
       const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 10; i++) {
         rerender(<ProfiledComponent value={i} />);
       }
 
-      void ProfiledComponent.getRenderCount();
+      ProfiledComponent.getRenderCount();
+
+      // Cleanup to prevent infinite loop
+      unmount();
+      clearRegistry();
     });
 
     bench("10 renders - 100 calls", () => {

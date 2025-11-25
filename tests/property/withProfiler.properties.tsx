@@ -1,10 +1,73 @@
 /**
- * Property-Based Tests for withProfiler
+ * @file Property-Based Tests: withProfiler (HOC Mathematical Invariants)
  *
- * These tests verify mathematical invariants and behavioral properties
- * across a wide range of randomly generated inputs using fast-check.
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Render Count Coherence
+ * - `getRenderCount() === getRenderHistory().length` (ALWAYS)
+ * - `getRenderCount()` increases by exactly 1 on each render
+ * - `getRenderCount() >= 0` (never negative)
+ * - Multiple reads don't change count
+ * - **Why important:** Primary metric for assertions, must be absolutely reliable
+ *
+ * ### INVARIANT 2: Phase Distribution Laws
+ * - Phase sum: `mount + update + nested-update === getRenderCount()`
+ * - First render is ALWAYS "mount" (React guarantee)
+ * - Mount can only occur once per lifecycle
+ * - `getUpdateCount() + getNestedUpdateCount() === getRenderCount() - 1`
+ * - **Why important:** React lifecycle validation, filtering correctness
+ *
+ * ### INVARIANT 3: Component Isolation
+ * - Different components have independent counters
+ * - `C1.getRenderCount() !== C2.getRenderCount()` (if different render counts)
+ * - Operations on C1 don't affect C2
+ * - N components → N independent ProfilerData instances
+ * - **Why important:** Data isolation, preventing cross-contamination
+ *
+ * ### INVARIANT 4: History Immutability
+ * - `getRenderHistory()` returns frozen copy (`readonly`)
+ * - Mutation attempt → `TypeError` in strict mode
+ * - Each `getRenderHistory()` call → new copy (not cached)
+ * - History doesn't change after reading
+ * - **Why important:** Prevents accidental data mutation by users
+ *
+ * ### INVARIANT 5: Last Render Consistency
+ * - `getLastRender() === getRenderHistory().at(-1)` (ALWAYS)
+ * - Before first render: `getLastRender() === undefined`
+ * - After N renders: `getLastRender()` === last phase
+ * - Multiple reads return the same value
+ * - **Why important:** Optimized access to last render without array copying
+ *
+ * ### INVARIANT 6: Phase Filter Correctness
+ * - `getRendersByPhase("mount")` returns only "mount"
+ * - `getRendersByPhase("update")` returns only "update"
+ * - Results are frozen (`readonly`)
+ * - Sum of all phase lengths === `getRenderCount()`
+ * - **Why important:** Matcher correctness (toHaveRendered, toHaveMounted, etc.)
+ *
+ * ### INVARIANT 7: hasMounted() Logic
+ * - Before first render: `hasMounted() === false`
+ * - After first render: `hasMounted() === true` (forever)
+ * - `hasMounted() === true` ↔ `getRenderCount() >= 1`
+ * - Throws if first render is not "mount" (invariant violation)
+ * - **Why important:** React lifecycle validation, early bug detection
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for render count coherence (high priority)
+ * - **500 runs** for phase distribution (medium priority)
+ * - **0-100 renders** for realistic scenarios
+ * - **Generators:** `fc.nat()` for render counts, helpers for components
+ *
+ * ## Technical Details:
+ *
+ * - **HOC pattern:** `withProfiler()` returns wrapper component
+ * - **Static methods:** API methods attached to component function
+ * - **WeakMap storage:** Data stored in ProfilerStorage (isolation)
+ * - **React.Profiler:** Uses built-in React.Profiler for tracking
  *
  * @see https://fast-check.dev/
+ * @see src/profiler/components/withProfiler.tsx - implementation
  */
 
 import { fc, test } from "@fast-check/vitest";

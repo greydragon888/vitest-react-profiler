@@ -1,3 +1,4 @@
+/* eslint-disable vitest/no-conditional-expect */
 import { describe, it, expect, vi } from "vitest";
 
 import { ProfilerData } from "../../src/profiler/core/ProfilerData";
@@ -95,20 +96,7 @@ describe("ProfilerData", () => {
       expect(Object.isFrozen(history)).toBe(true);
     });
 
-    it("should return same reference on multiple calls (caching)", () => {
-      const data = new ProfilerData();
-
-      data.addRender("mount");
-
-      const history1 = data.getHistory();
-      const history2 = data.getHistory();
-      const history3 = data.getHistory();
-
-      expect(history1).toBe(history2);
-      expect(history2).toBe(history3);
-    });
-
-    it("should return new reference after addRender (cache invalidation)", () => {
+    it("should return new reference after addRender", () => {
       const data = new ProfilerData();
 
       data.addRender("mount");
@@ -352,6 +340,23 @@ describe("ProfilerData", () => {
 
       expect(data.hasMounted()).toBe(true);
     });
+
+    it("should throw error when first render is not mount (invariant violation)", () => {
+      const data = new ProfilerData();
+
+      // Simulate bug: first render is "update" instead of "mount"
+      data.addRender("update");
+
+      expect(() => data.hasMounted()).toThrow(Error);
+      expect(() => data.hasMounted()).toThrow(/Invariant violation/);
+      expect(() => data.hasMounted()).toThrow(/First render must be "mount"/);
+      expect(() => data.hasMounted()).toThrow(/got "update"/);
+
+      // Verify exact error explanation (kills StringLiteral mutation)
+      expect(() => data.hasMounted()).toThrow(
+        /This indicates a bug in React Profiler or library integration\./,
+      );
+    });
   });
 
   describe("clear", () => {
@@ -443,7 +448,7 @@ describe("ProfilerData", () => {
       expect(data.getRendersByPhase("nested-update")).toHaveLength(1);
     });
 
-    it("should maintain cache performance across multiple operations", () => {
+    it("should maintain phase cache performance across multiple operations", () => {
       const data = new ProfilerData();
 
       // Add renders
@@ -451,12 +456,7 @@ describe("ProfilerData", () => {
         data.addRender(i === 0 ? "mount" : "update");
       }
 
-      // Multiple reads should use cache
-      const history1 = data.getHistory();
-      const history2 = data.getHistory();
-
-      expect(history1).toBe(history2);
-
+      // Multiple reads of phase cache should use cache
       const mount1 = data.getRendersByPhase("mount");
       const mount2 = data.getRendersByPhase("mount");
 
@@ -589,6 +589,221 @@ describe("ProfilerData", () => {
       data.addRender("update");
 
       expect(listener).toHaveBeenCalledTimes(1); // Not called again
+    });
+  });
+
+  describe("Circuit Breaker (Infinite Loop Detection)", () => {
+    it("should allow renders up to 10,000", () => {
+      const data = new ProfilerData();
+
+      // Should not throw for 10,000 renders
+      expect(() => {
+        for (let i = 0; i < 10_000; i++) {
+          data.addRender(i === 0 ? "mount" : "update");
+        }
+      }).not.toThrow();
+
+      expect(data.getRenderCount()).toBe(10_000);
+    });
+
+    it("should throw error on 10,001st render", () => {
+      const data = new ProfilerData();
+
+      // Add 10,000 renders (OK)
+      for (let i = 0; i < 10_000; i++) {
+        data.addRender(i === 0 ? "mount" : "update");
+      }
+
+      // 10,001st render should throw
+      expect(() => {
+        data.addRender("update");
+      }).toThrow(/Infinite render loop detected/);
+    });
+
+    it("should include render count in error message", () => {
+      const data = new ProfilerData();
+
+      for (let i = 0; i < 10_000; i++) {
+        data.addRender(i === 0 ? "mount" : "update");
+      }
+
+      expect(() => {
+        data.addRender("update");
+      }).toThrow(/Component rendered 10000 times/);
+    });
+
+    it("should include last 10 phases in error message", () => {
+      const data = new ProfilerData();
+
+      // Add mount + 9,999 updates
+      data.addRender("mount");
+
+      for (let i = 1; i < 10_000; i++) {
+        data.addRender("update");
+      }
+
+      // Try to add 10,001st (should show last 10 phases = all "update")
+      try {
+        data.addRender("update");
+
+        throw new Error("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+
+        const message = (error as Error).message;
+
+        expect(message).toContain("Last 10 phases");
+        expect(message).toContain('"update"');
+
+        // Verify comma-separated format (last 9 from history + the new one)
+        expect(message).toContain(
+          '"update", "update", "update", "update", "update", "update", "update", "update", "update", "update"',
+        );
+      }
+    });
+
+    it("should show LAST 9 phases, not first 9 (slice(-9) validation)", () => {
+      const data = new ProfilerData();
+
+      // Strategy: Create history with different phases at start vs end
+      // Start: mount, update, update, ...
+      // End: nested-update (last 9)
+
+      data.addRender("mount"); // #1
+
+      // Add 9,990 "update" phases (#2 to #9,991)
+      for (let i = 1; i < 9991; i++) {
+        data.addRender("update");
+      }
+
+      // Add 9 "nested-update" phases (#9,992 to #10,000)
+      for (let i = 0; i < 9; i++) {
+        data.addRender("nested-update");
+      }
+
+      // Try to add 10,001st - should show LAST 9 "nested-update" + new "update"
+      try {
+        data.addRender("update");
+
+        throw new Error("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+
+        const message = (error as Error).message;
+
+        // Should contain the LAST 9 phases (all "nested-update")
+        expect(message).toContain('"nested-update"');
+
+        // Should NOT contain "mount" (proves it's not showing first 9)
+        expect(message).not.toContain('"mount"');
+
+        // CRITICAL: Verify EXACTLY 10 phases, not more (kills slice(+9) mutation)
+        // Pattern: "Last 10 phases: [" + exactly 10 comma-separated phases + "]"
+        const last10Pattern =
+          /Last 10 phases: \[("nested-update", ){9}"update"\]/;
+
+        expect(message).toMatch(last10Pattern);
+
+        // Double-check: should NOT have extra phases before the pattern
+        // If slice(+9) is used, there will be thousands of "update" before "nested-update"
+        const extractLast10 = /Last 10 phases: \[(.*?)\]/.exec(message)?.[1];
+
+        expect(extractLast10).toBeDefined();
+
+        // Count phases (split by ", " and count)
+        const phases = extractLast10!.split(", ");
+
+        expect(phases).toHaveLength(10); // EXACTLY 10, not 9991!
+      }
+    });
+
+    it("should include debugging tips in error message", () => {
+      const data = new ProfilerData();
+
+      for (let i = 0; i < 10_000; i++) {
+        data.addRender(i === 0 ? "mount" : "update");
+      }
+
+      try {
+        data.addRender("update");
+
+        throw new Error("Should have thrown");
+      } catch (error) {
+        const message = (error as Error).message;
+
+        // Verify exact render count in "Attempted to add"
+        expect(message).toContain("Attempted to add render #10001");
+
+        // Verify bug explanation header
+        expect(message).toContain("This likely indicates a bug:");
+
+        // Verify all debugging tips (exact strings)
+        expect(message).toContain(
+          "  • useEffect with missing/wrong dependencies",
+        );
+        expect(message).toContain("  • setState called during render");
+        expect(message).toContain("  • Circular state updates");
+
+        // Verify tip emoji
+        expect(message).toContain("💡");
+      }
+    });
+
+    it("should show pattern in last 10 phases for mixed renders", () => {
+      const data = new ProfilerData();
+
+      // Add 9,995 updates
+      for (let i = 0; i < 9995; i++) {
+        data.addRender(i === 0 ? "mount" : "update");
+      }
+
+      // Add 5 nested-updates (will be in last 10)
+      for (let i = 0; i < 5; i++) {
+        data.addRender("nested-update");
+      }
+
+      try {
+        data.addRender("update");
+
+        throw new Error("Should have thrown");
+      } catch (error) {
+        const message = (error as Error).message;
+
+        // Should show mix of "update" and "nested-update" in last 10
+        expect(message).toContain('"update"');
+        expect(message).toContain('"nested-update"');
+      }
+    });
+
+    it("should not affect normal operations after circuit breaker triggers", () => {
+      const data = new ProfilerData();
+
+      // Fill to limit
+      for (let i = 0; i < 10_000; i++) {
+        data.addRender(i === 0 ? "mount" : "update");
+      }
+
+      // Trigger circuit breaker
+      expect(() => {
+        data.addRender("update");
+      }).toThrow();
+
+      // Can still read data
+      expect(data.getRenderCount()).toBe(10_000);
+      expect(data.hasMounted()).toBe(true);
+      expect(data.getHistory()).toHaveLength(10_000);
+
+      // Can clear and restart
+      data.clear();
+
+      expect(data.getRenderCount()).toBe(0);
+
+      // Can add renders again after clear
+      expect(() => {
+        data.addRender("mount");
+      }).not.toThrow();
+
+      expect(data.getRenderCount()).toBe(1);
     });
   });
 });

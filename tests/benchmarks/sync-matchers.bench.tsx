@@ -1,7 +1,7 @@
-import { render } from "@testing-library/react";
-import { bench, describe } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, bench, describe } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearRegistry, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -32,6 +32,11 @@ import type { FC } from "react";
 const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 
 describe("Sync Matchers - Performance", () => {
+  afterEach(() => {
+    cleanup();
+    clearRegistry();
+  });
+
   describe("toHaveRendered()", () => {
     bench("0 renders - fail scenario", () => {
       const ProfiledComponent = withProfiler(TestComponent);

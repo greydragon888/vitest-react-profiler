@@ -13,9 +13,21 @@ npm run lint
 echo "🔷 Type checking..."
 npm run typecheck
 
+# Check for unused code
+echo "🧹 Checking for unused code..."
+npm run lint:unused
+
+# Validate package.json exports
+echo "📦 Validating package configuration..."
+npm run lint:package
+
 # Run tests with coverage
 echo "🧪 Running tests with coverage..."
 npm run test:coverage
+
+# Run stress tests
+echo "💪 Running stress tests..."
+npm run test:stress
 
 # Build the project to ensure it compiles
 echo "📦 Building project..."

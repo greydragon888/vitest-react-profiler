@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import type { FC } from "react";
 
 interface HeavyComputationProps {
   iterations: number;
@@ -16,7 +17,7 @@ const heavyCalculation = (n: number): number => {
   return result;
 };
 
-export const HeavyComputation: React.FC<HeavyComputationProps> = ({
+export const HeavyComputation: FC<HeavyComputationProps> = ({
   iterations,
   enableOptimization = true,
 }) => {

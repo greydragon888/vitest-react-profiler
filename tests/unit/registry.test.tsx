@@ -15,7 +15,7 @@ import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { withProfiler } from "@/profiler/components/withProfiler";
-import { registry } from "@/registry";
+import { clearRegistry, registry } from "@/registry";
 
 describe("ComponentRegistry", () => {
   beforeEach(() => {
@@ -210,6 +210,109 @@ describe("ComponentRegistry", () => {
       expect(clearCount1).toBe(0);
       // ✅ component2.clear() was called (still registered)
       expect(clearCount2).toBe(1);
+    });
+  });
+
+  describe("clearRegistry() for stress tests", () => {
+    it("should clear render data and remove all component references", () => {
+      const TestComponent = () => React.createElement("div", null, "Test");
+      const ProfiledComponent = withProfiler(TestComponent);
+
+      // Render multiple times
+      const { rerender } = render(<ProfiledComponent />);
+
+      rerender(<ProfiledComponent />);
+      rerender(<ProfiledComponent />);
+
+      // Component has 3 renders
+      expect(ProfiledComponent.getRenderCount()).toBe(3);
+
+      // clearRegistry() clears data AND removes references
+      clearRegistry();
+
+      // ✅ Render data is cleared
+      expect(ProfiledComponent.getRenderCount()).toBe(0);
+      expect(ProfiledComponent.getRenderHistory()).toStrictEqual([]);
+    });
+
+    it("should prevent memory accumulation in stress tests", () => {
+      // Simulate stress test that creates many components
+      const components: ReturnType<typeof withProfiler>[] = [];
+
+      for (let i = 0; i < 100; i++) {
+        const Component = withProfiler(() =>
+          React.createElement("div", null, `Component ${i}`),
+        );
+
+        render(<Component />);
+        components.push(Component);
+      }
+
+      // All components have 1 render
+      expect(components[0]?.getRenderCount()).toBe(1);
+      expect(components[99]?.getRenderCount()).toBe(1);
+
+      // clearRegistry() removes all references for GC
+      clearRegistry();
+
+      // ✅ All render data cleared
+      expect(components[0]?.getRenderCount()).toBe(0);
+      expect(components[99]?.getRenderCount()).toBe(0);
+    });
+
+    it("should be used in afterAll() for stress tests", () => {
+      // Simulate pattern from stress tests
+      const TestComponent = withProfiler(() =>
+        React.createElement("div", null, "Stress Test"),
+      );
+
+      // Simulate many test iterations
+      for (let i = 0; i < 1000; i++) {
+        render(<TestComponent />);
+        registry.clearAll(); // Between each test
+      }
+
+      // After all tests, fully cleanup
+      clearRegistry();
+
+      // ✅ All references cleared for garbage collection
+      expect(TestComponent.getRenderCount()).toBe(0);
+    });
+
+    it("difference from clearAll: removes strong references", () => {
+      let clearCount = 0;
+
+      const component = {
+        clear: () => {
+          clearCount++;
+        },
+      };
+
+      // Register component
+      registry.register(component);
+
+      // clearAll() clears data but keeps reference
+      registry.clearAll();
+
+      expect(clearCount).toBe(1);
+
+      // Calling clearAll() again still calls clear()
+      registry.clearAll();
+
+      expect(clearCount).toBe(2); // Called again!
+
+      // Reset clearCount
+      clearCount = 0;
+
+      // clearRegistry() removes references
+      clearRegistry();
+
+      expect(clearCount).toBe(1); // Called once
+
+      // After clearRegistry(), clearAll() does nothing (no references)
+      registry.clearAll();
+
+      expect(clearCount).toBe(1); // NOT called again!
     });
   });
 });

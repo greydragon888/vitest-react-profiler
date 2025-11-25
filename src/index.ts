@@ -38,6 +38,9 @@ export type {
   RenderProfiledResult,
 } from "./utils/renderProfiled";
 
+// Testing utilities
+export { clearRegistry } from "./registry";
+
 // Types
 export type {
   PhaseType,

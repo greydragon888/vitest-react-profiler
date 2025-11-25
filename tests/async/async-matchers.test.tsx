@@ -6,7 +6,7 @@ import { withProfiler } from "../../src";
 
 // Helper component that triggers 3 renders (mount + 2 updates)
 const createAsyncCounter = () => {
-  const Counter = () => {
+  return () => {
     const [count, setCount] = useState(0);
 
     if (count < 2) {
@@ -17,8 +17,6 @@ const createAsyncCounter = () => {
 
     return <div>{count}</div>;
   };
-
-  return Counter;
 };
 
 describe("toEventuallyRenderTimes", () => {
@@ -64,6 +62,33 @@ describe("toEventuallyRenderTimes", () => {
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(1.5),
     ).rejects.toThrow(/must be a non-negative integer/);
+  });
+
+  it("should fail with invalid timeout", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderTimes(3, { timeout: 0 }),
+    ).rejects.toThrow(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderTimes(3, { timeout: -100 }),
+    ).rejects.toThrow(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderTimes(3, {
+        timeout: Number.NaN,
+      }),
+    ).rejects.toThrow(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderTimes(3, {
+        timeout: Infinity,
+      }),
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should accept 0 as valid expected count", async () => {
@@ -198,6 +223,21 @@ describe("toEventuallyRenderAtLeast", () => {
     await expect(
       expect(ProfiledComponent).toEventuallyRenderAtLeast(-1),
     ).rejects.toThrow(/must be a non-negative integer/);
+  });
+
+  it("should fail with invalid timeout", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: -50 }),
+    ).rejects.toThrow(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: 0 }),
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should accept 0 as valid minimum count", async () => {
@@ -379,6 +419,31 @@ describe("toEventuallyReachPhase", () => {
     ).rejects.toThrow(/Phase must be one of: mount, update, nested-update/);
   });
 
+  it("should fail with invalid timeout", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyReachPhase("update", {
+        timeout: 0,
+      }),
+    ).rejects.toThrow(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyReachPhase("update", {
+        timeout: -50,
+      }),
+    ).rejects.toThrow(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyReachPhase("update", {
+        timeout: Infinity,
+      }),
+    ).rejects.toThrow(/positive number/);
+  });
+
   it("should show helpful error message with current phases", async () => {
     const Static = () => <div>Static</div>;
     const ProfiledStatic = withProfiler(Static);
@@ -444,10 +509,17 @@ describe("toEventuallyReachPhase", () => {
       message: expect.stringMatching(/Current phases: \[[\w, ]+\]/),
     });
 
-    // Verify phases are separated by ", " not just ""
+    // Verify phases are separated by ", " not just "" (kills join("") mutation)
     expect(error).toMatchObject({
       message: expect.stringContaining(", "),
     });
+
+    // Verify exact comma-separated format: "mount, update" not "mountupdate"
+    const errorMessage = (error as Error).message;
+
+    expect(errorMessage).toMatch(
+      /Current phases: \[mount, update(?:, update)*\]/,
+    );
   });
 
   it("should fail .not assertion when phase IS reached", async () => {

@@ -1,14 +1,67 @@
 /**
- * Property-Based Tests for profileHook
+ * @file Property-Based Tests: profileHook (Custom Hook Testing Utility)
  *
- * These tests verify that profileHook handles various prop types correctly:
- * - Primitive prop types (string, number, boolean, null, undefined)
- * - Complex prop types (objects, arrays, functions, symbols)
- * - Prop changes during rerender
- * - Hook stability invariants
- * - Type safety across different prop shapes
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Props Type Safety
+ * - Accepts primitive types: string, number, boolean, null, undefined
+ * - Accepts complex types: objects, arrays, functions, Symbols
+ * - TypeScript inference works correctly for all types
+ * - `result.current` has correct type (matches hook return type)
+ * - **Why important:** Ensures type-safe hook testing for any prop shapes
+ *
+ * ### INVARIANT 2: Render Count Consistency
+ * - First `profileHook()` call → `getRenderCount() === 1`
+ * - Each `rerender()` → `getRenderCount()` increases by 1
+ * - `getRenderCount()` is always non-negative
+ * - Matches `getRenderHistory().length`
+ * - **Why important:** Correct hook re-render tracking
+ *
+ * ### INVARIANT 3: Hook Stability
+ * - `result.current` updates after each rerender
+ * - Hook dependencies are handled correctly (React rules)
+ * - `result.current` is referentially stable if hook returns stable value
+ * - No extra re-renders (only when props/state change)
+ * - **Why important:** React Hook Rules compliance, predictable behavior
+ *
+ * ### INVARIANT 4: Props Change Detection
+ * - Changing props via `rerender()` triggers hook re-execution
+ * - `result.current` reflects new props
+ * - Hook can react to prop changes (useEffect dependencies)
+ * - Shallow comparison: `{ a: 1 } !== { a: 1 }` (referential inequality)
+ * - **Why important:** Realistic hook behavior, correct dependency tracking
+ *
+ * ### INVARIANT 5: Component Isolation
+ * - Different `profileHook()` calls → independent ProfiledHook components
+ * - `ProfiledHook1.getRenderCount() !== ProfiledHook2.getRenderCount()`
+ * - Operations on one hook don't affect another
+ * - WeakMap storage ensures isolation
+ * - **Why important:** Test isolation, preventing cross-contamination
+ *
+ * ### INVARIANT 6: RTL Integration
+ * - `result` is compatible with RTL patterns (`result.current`)
+ * - `rerender()` works as expected (re-executes hook)
+ * - `ProfiledHook` has all API methods (getRenderCount, etc.)
+ * - Cleanup works correctly (afterEach)
+ * - **Why important:** Seamless integration with existing tests
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for primitive props (high load)
+ * - **500 runs** for complex props (medium load)
+ * - **Generators:** `fc.oneof()` for union types, `fc.record()` for objects
+ * - **Type testing:** `expectTypeOf()` for compile-time guarantees
+ *
+ * ## Technical Details:
+ *
+ * - **Wrapper component:** `profileHook()` creates wrapper component for hook
+ * - **renderHook alternative:** Compatible with `@testing-library/react-hooks`
+ * - **useState tracking:** Tracks state updates within hook
+ * - **useEffect tracking:** Tracks side effects (via re-renders)
  *
  * @see https://fast-check.dev/
+ * @see src/hooks/profileHook.tsx - implementation
+ * @see https://react.dev/reference/rules - React Hook Rules
  */
 
 import { fc, test } from "@fast-check/vitest";

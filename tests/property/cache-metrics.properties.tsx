@@ -1,12 +1,67 @@
 /**
- * Property-Based Tests for CacheMetrics
+ * @file Property-Based Tests: CacheMetrics Invariants
  *
- * These tests verify that CacheMetrics behaves correctly:
- * - Hit rate always between 0 and 100
- * - Metrics are monotonically increasing
- * - Reset properly clears all metrics
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Hit Rate Bounds
+ * - Hit rate ALWAYS in range [0, 100] (inclusive)
+ * - For any number of hits and misses: `0 <= getHitRate() <= 100`
+ * - 100% hits → `hitRate === 100`
+ * - 100% misses → `hitRate === 0`
+ * - Mixed hits/misses → `0 < hitRate < 100`
+ * - **Why important:** Prevents incorrect metrics (NaN, Infinity, negative)
+ *
+ * ### INVARIANT 2: Metrics Monotonicity
+ * - `recordHit()` increases hits by 1, misses stay unchanged
+ * - `recordMiss()` increases misses by 1, hits stay unchanged
+ * - Metrics never decrease (monotonically grow)
+ * - Multiple calls accumulate correctly
+ * - **Why important:** Ensures correct cache event counting
+ *
+ * ### INVARIANT 3: Reset Behavior
+ * - `reset()` clears hits and misses for ALL cache types
+ * - After `reset()`: `getHitRate() === 0` (no data)
+ * - After `reset()` + any operations → metrics start from zero
+ * - `reset()` doesn't break subsequent operations
+ * - **Why important:** Correct isolation between tests
+ *
+ * ### INVARIANT 4: Cache Type Isolation
+ * - Operations on `phaseCache` don't affect `closureCache` metrics
+ * - Operations on `closureCache` don't affect `phaseCache` metrics
+ * - Each `CacheType` has independent counters
+ * - `getHitRate("phaseCache") !== getHitRate("closureCache")` (can differ)
+ * - **Why important:** Accurate performance diagnostics for different caching layers
+ *
+ * ### INVARIANT 5: Report Formatting
+ * - `report()` returns string with hit rate for each cache type
+ * - Format: "cacheType: hits/total hits (rate%)"
+ * - Always includes both types: phaseCache and closureCache
+ * - Hit rate rounded to 2 decimal places
+ * - **Why important:** Human-readable cache performance diagnostics
+ *
+ * ### INVARIANT 6: Edge Cases
+ * - Division by zero is safe: `0 hits + 0 misses → hitRate === 0`
+ * - Large numbers (1M+ hits/misses) don't cause overflow
+ * - Negative hits/misses impossible (type protection)
+ * - Tree-shaking: In production metrics don't work (`INTERNAL_TESTS === "false"`)
+ * - **Why important:** Robustness in edge cases, bundle size optimization
+ *
+ * ## Testing Strategy:
+ *
+ * - **500 runs** for each property test
+ * - **0-100 hits/misses** (realistic range)
+ * - **Generators:** `fc.constantFrom()` for CacheType (type-safe)
+ * - **Generators:** `fc.nat()` for hits/misses (non-negative numbers)
+ *
+ * ## Technical Details:
+ *
+ * - **Singleton pattern:** `cacheMetrics` — global singleton
+ * - **Tree-shaking:** Metrics work only when `INTERNAL_TESTS !== "false"`
+ * - **No-op in production:** All methods become no-op for bundle minimization
+ * - **v8 ignore comments:** Protection from false positive coverage
  *
  * @see https://fast-check.dev/
+ * @see src/profiler/core/CacheMetrics.ts - implementation
  */
 
 import { fc, test } from "@fast-check/vitest";
@@ -20,11 +75,7 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
   describe("Hit Rate Properties", () => {
     test.prop(
       [
-        fc.constantFrom<CacheType>(
-          "frozenHistory",
-          "phaseCache",
-          "closureCache",
-        ),
+        fc.constantFrom<CacheType>("phaseCache", "closureCache"),
         fc.nat({ max: 100 }),
         fc.nat({ max: 100 }),
       ],
@@ -47,11 +98,7 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
 
     test.prop(
       [
-        fc.constantFrom<CacheType>(
-          "frozenHistory",
-          "phaseCache",
-          "closureCache",
-        ),
+        fc.constantFrom<CacheType>("phaseCache", "closureCache"),
         fc.integer({ min: 1, max: 50 }),
       ],
       { numRuns: 500 },
@@ -69,11 +116,7 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
 
     test.prop(
       [
-        fc.constantFrom<CacheType>(
-          "frozenHistory",
-          "phaseCache",
-          "closureCache",
-        ),
+        fc.constantFrom<CacheType>("phaseCache", "closureCache"),
         fc.integer({ min: 1, max: 50 }),
       ],
       { numRuns: 500 },
@@ -93,11 +136,7 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
   describe("Metrics Monotonicity", () => {
     test.prop(
       [
-        fc.constantFrom<CacheType>(
-          "frozenHistory",
-          "phaseCache",
-          "closureCache",
-        ),
+        fc.constantFrom<CacheType>("phaseCache", "closureCache"),
         fc.array(fc.constantFrom("hit", "miss"), {
           minLength: 1,
           maxLength: 50,
@@ -141,11 +180,11 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
 
         // Record some metrics
         for (let i = 0; i < hits; i++) {
-          cacheMetrics.recordHit("frozenHistory");
+          cacheMetrics.recordHit("phaseCache");
         }
 
         for (let i = 0; i < misses; i++) {
-          cacheMetrics.recordMiss("phaseCache");
+          cacheMetrics.recordMiss("closureCache");
         }
 
         // Reset
@@ -155,8 +194,6 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
         const metrics = cacheMetrics.getMetrics();
 
         return (
-          metrics.frozenHistory.hits === 0 &&
-          metrics.frozenHistory.misses === 0 &&
           metrics.phaseCache.hits === 0 &&
           metrics.phaseCache.misses === 0 &&
           metrics.closureCache.hits === 0 &&
@@ -175,9 +212,7 @@ describe("Property-Based Tests: CacheMetrics Invariants", () => {
         const report = cacheMetrics.report();
 
         return (
-          report.includes("frozenHistory:") &&
-          report.includes("phaseCache:") &&
-          report.includes("closureCache:")
+          report.includes("phaseCache:") && report.includes("closureCache:")
         );
       },
     );

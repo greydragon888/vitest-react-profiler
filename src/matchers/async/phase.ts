@@ -47,6 +47,14 @@ export async function toEventuallyReachPhase(
 
   const { timeout = 1000 } = options ?? {};
 
+  if (!Number.isFinite(timeout) || timeout <= 0) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected timeout to be a positive number, received ${timeout}`,
+    };
+  }
+
   return new Promise((resolve) => {
     // Race condition protection: check if already satisfied
     if (received.getRenderHistory().includes(phase)) {

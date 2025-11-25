@@ -1,14 +1,81 @@
 /**
- * Property-Based Tests for Custom Matchers
+ * @file Property-Based Tests: Custom Vitest Matchers
  *
- * These tests verify that custom Vitest matchers behave correctly:
- * - Parameter validation (integers, positive numbers, valid types)
- * - isProfiledComponent validation across all input types
- * - Logical invariants (pass conditions)
- * - Async timeout invariants
- * - Error message consistency
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Parameter Validation
+ * - `toHaveRenderedTimes(n)` accepts only non-negative integers
+ * - Negative numbers → ValidationError
+ * - Floats → ValidationError
+ * - NaN / Infinity → ValidationError
+ * - Valid values: 0, 1, 2, ..., N
+ * - **Why important:** Prevents incorrect assertions, fail-fast
+ *
+ * ### INVARIANT 2: isProfiledComponent Correctness
+ * - Profiled component → `expect(C).toBeProfiled()` passes
+ * - Non-profiled component → `expect(C).toBeProfiled()` fails
+ * - Null / undefined → fails with clear message
+ * - Primitives (string, number) → fails
+ * - **Why important:** Early error detection, clear error messages
+ *
+ * ### INVARIANT 3: Matcher Logic Invariants
+ * - `toHaveRenderedTimes(n)` passes ↔ `getRenderCount() === n`
+ * - `toHaveMounted()` passes ↔ `hasMounted() === true`
+ * - `toHaveRendered(n, phase)` passes ↔ `getRendersByPhase(phase).length === n`
+ * - Negated matchers work correctly: `not.toHaveRenderedTimes(n)`
+ * - **Why important:** Logical consistency, predictable behavior
+ *
+ * ### INVARIANT 4: Async Timeout Invariants
+ * - `toEventuallyRender(n, { timeout })` resolves if render happens before timeout
+ * - `toEventuallyRender(n, { timeout })` rejects if timeout expires
+ * - Default timeout: 5000ms
+ * - Custom timeout works correctly
+ * - **Why important:** Async testing robustness, preventing hanging promises
+ *
+ * ### INVARIANT 5: Error Message Consistency
+ * - Validation errors contain "must be" / "expected"
+ * - Assertion errors show received vs expected
+ * - Error messages include component name
+ * - Clear hints for fixing (e.g., "Did you forget withProfiler?")
+ * - **Why important:** Developer experience, fast debugging
+ *
+ * ### INVARIANT 6: Negation Support
+ * - All matchers support `.not` prefix
+ * - `expect(C).not.toHaveRenderedTimes(n)` works correctly
+ * - Error messages adapt to negated context
+ * - Double negation is equivalent to assertion
+ * - **Why important:** Flexibility in assertions, full Vitest API support
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for parameter validation (high load)
+ * - **500 runs** for matcher logic (medium load)
+ * - **Generators:** `fc.integer()` for validation, `fc.oneof()` for type testing
+ * - **Error testing:** Checking error messages via try/catch
+ *
+ * ## Technical Details:
+ *
+ * - **Vitest matcher protocol:** Implements `MatcherResult` interface
+ * - **Custom matchers:** Registered via `expect.extend()`
+ * - **Type augmentation:** TypeScript ambient declarations for autocomplete
+ * - **Chai-compatible:** Works with Chai assertions if needed
+ *
+ * ## Available Matchers:
+ *
+ * **Sync Matchers:**
+ * - `toBeProfiled()` - Checks if component is profiled
+ * - `toHaveRenderedTimes(n)` - Exact render count
+ * - `toHaveMounted()` - Component mounted
+ * - `toHaveRendered(n, phase)` - Specific phase count
+ *
+ * **Async Matchers:**
+ * - `toEventuallyRender(n)` - Waits for render count
+ * - `toEventuallyHaveMounted()` - Waits for mount
  *
  * @see https://fast-check.dev/
+ * @see src/matchers/sync.ts - sync matcher implementations
+ * @see src/matchers/async.ts - async matcher implementations
+ * @see https://vitest.dev/guide/extending-matchers
  */
 
 import { fc, test } from "@fast-check/vitest";

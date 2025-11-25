@@ -18,7 +18,7 @@
 import { render, cleanup } from "@testing-library/react";
 import { bench, describe, afterEach } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearRegistry, withProfiler } from "../../src";
 import {
   waitForRenders,
   waitForPhase,
@@ -32,6 +32,7 @@ const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 describe("Event System - Performance Benchmarks", () => {
   afterEach(() => {
     cleanup();
+    clearRegistry();
   });
 
   describe("1. Success scenarios - async operations (< 20ms target)", () => {

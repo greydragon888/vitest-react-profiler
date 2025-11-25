@@ -6,7 +6,6 @@ import type { PhaseType, ProfiledComponent } from "../types";
  * Simplified API for hook profiling with built-in assertions
  *
  * @param hook - The hook function to profile
- * @param initialProps - Initial props to pass to the hook (required for hooks with parameters)
  * @returns Profiler object with assertion helpers and metrics
  *
  * @example

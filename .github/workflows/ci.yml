@@ -123,6 +123,37 @@ jobs:
             coverage/
           retention-days: 7
 
+  stress-test:
+    name: Stress Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run stress tests
+        run: npm run test:stress
+        env:
+          NODE_OPTIONS: "--expose-gc"
+
+      - name: Upload stress test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-results
+          path: |
+            test-results/
+            .vitest-stress/
+          retention-days: 7
+
   mutation-test:
     name: Mutation Testing
     runs-on: ubuntu-latest

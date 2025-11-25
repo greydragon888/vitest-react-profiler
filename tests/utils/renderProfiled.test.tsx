@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { renderProfiled } from "../../src";
 
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 
 describe("renderProfiled", () => {
   describe("basic rendering", () => {
@@ -147,7 +147,7 @@ describe("renderProfiled", () => {
     it("should pass renderOptions to RTL render", () => {
       const TestComponent: FC = () => <div>Test</div>;
 
-      const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => (
+      const Wrapper: FC<{ children: ReactNode }> = ({ children }) => (
         <div data-testid="wrapper">{children}</div>
       );
 

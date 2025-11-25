@@ -61,6 +61,28 @@ class ComponentRegistry {
   }
 
   /**
+   * Completely reset registry - clear all references
+   *
+   * This method should be called in afterAll() hooks for stress tests
+   * that create many components to prevent memory accumulation.
+   *
+   * Difference from clearAll():
+   * - clearAll(): Clears render data, keeps components registered
+   * - reset(): Clears render data AND removes all component references
+   *
+   * @internal
+   */
+  reset(): void {
+    // First clear all component data
+    for (const c of this.activeComponents) {
+      c.clear();
+    }
+
+    // Then remove all strong references to allow GC
+    this.activeComponents.clear();
+  }
+
+  /**
    * Get count of active registered components
    * For debugging purposes only
    *
@@ -78,3 +100,25 @@ class ComponentRegistry {
  * @internal
  */
 export const registry = new ComponentRegistry();
+
+/**
+ * Clear all component references from registry
+ *
+ * Use this in afterAll() hooks for stress tests that create many components
+ * to prevent memory accumulation within a single test file.
+ *
+ * @example
+ * ```typescript
+ * import { afterAll } from "vitest";
+ * import { clearRegistry } from "vitest-react-profiler";
+ *
+ * afterAll(() => {
+ *   clearRegistry();
+ * });
+ * ```
+ *
+ * @public
+ */
+export const clearRegistry = (): void => {
+  registry.reset();
+};

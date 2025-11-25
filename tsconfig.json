@@ -32,12 +32,7 @@
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
 
-    "types": [
-      "vitest/globals",
-      "@testing-library/jest-dom",
-      "vite/client",
-      "node"
-    ],
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
 
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false,

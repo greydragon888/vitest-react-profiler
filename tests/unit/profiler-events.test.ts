@@ -1,8 +1,9 @@
+/* eslint-disable vitest/no-conditional-expect */
 import { describe, expect, it, vi, expectTypeOf } from "vitest";
 
 import { ProfilerEvents } from "@/profiler/core/ProfilerEvents";
 
-import type { RenderEventInfo } from "@/profiler/core/ProfilerEvents";
+import type { RenderEventInfo } from "@/types.ts";
 
 describe("ProfilerEvents", () => {
   describe("subscribe()", () => {
@@ -15,7 +16,6 @@ describe("ProfilerEvents", () => {
       expect(events.hasListeners()).toBe(true);
     });
 
-    // eslint-disable-next-line vitest/expect-expect
     it("should return unsubscribe function", () => {
       const events = new ProfilerEvents();
       const listener = vi.fn();
@@ -340,6 +340,129 @@ describe("ProfilerEvents", () => {
       listeners.forEach((listener) => {
         expect(listener).toHaveBeenCalledTimes(1);
       });
+    });
+  });
+
+  describe("Memory Leak Detection", () => {
+    it("should allow up to 100 listeners", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 100 }, () => vi.fn());
+
+      expect(() => {
+        listeners.forEach((listener) => events.subscribe(listener));
+      }).not.toThrow();
+
+      expect(events.hasListeners()).toBe(true);
+    });
+
+    it("should throw error on 101st listener", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 101 }, () => vi.fn());
+
+      expect(() => {
+        listeners.forEach((listener) => events.subscribe(listener));
+      }).toThrow(/Memory leak detected/);
+    });
+
+    it("should include listener count in error message", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 101 }, () => vi.fn());
+
+      expect(() => {
+        listeners.forEach((listener) => events.subscribe(listener));
+      }).toThrow(/Component has 101 event listeners/);
+    });
+
+    it("should include debugging tips in error message", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 101 }, () => vi.fn());
+
+      try {
+        listeners.forEach((listener) => events.subscribe(listener));
+
+        throw new Error("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+
+        const message = (error as Error).message;
+
+        // Verify bug explanation header (kills StringLiteral mutation)
+        expect(message).toContain("This likely indicates a bug:");
+
+        // Verify all debugging tips (exact strings - kills StringLiteral mutations)
+        expect(message).toContain(
+          "  • Forgot to call unsubscribe() in useEffect cleanup",
+        );
+        expect(message).toContain(
+          "  • Listeners added in render function instead of useEffect",
+        );
+        expect(message).toContain(
+          "  • Component remounting repeatedly without cleanup",
+        );
+
+        // Verify tip emoji (kills StringLiteral mutation)
+        expect(message).toContain("💡");
+        expect(message).toContain("Always return unsubscribe from useEffect:");
+      }
+    });
+
+    it("should include code example in error message", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 101 }, () => vi.fn());
+
+      try {
+        listeners.forEach((listener) => events.subscribe(listener));
+
+        throw new Error("Should have thrown");
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+
+        const message = (error as Error).message;
+
+        // Verify all lines of code example (exact strings - kills StringLiteral mutations)
+        expect(message).toContain("useEffect(() => {");
+        expect(message).toContain(
+          "  const unsubscribe = component.onRender(...);",
+        );
+        expect(message).toContain("  return unsubscribe;");
+        expect(message).toContain("}, []);");
+      }
+    });
+
+    it("should reset count after unsubscribe", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 100 }, () => vi.fn());
+
+      // Subscribe 100 listeners
+      const unsubscribes = listeners.map((listener) =>
+        events.subscribe(listener),
+      );
+
+      // Unsubscribe one
+      unsubscribes[0]!();
+
+      // Now we can subscribe one more (total = 100)
+      expect(() => {
+        events.subscribe(vi.fn());
+      }).not.toThrow();
+    });
+
+    it("should reset count after clear", () => {
+      const events = new ProfilerEvents();
+      const listeners = Array.from({ length: 100 }, () => vi.fn());
+
+      // Subscribe 100 listeners
+      listeners.forEach((listener) => events.subscribe(listener));
+
+      // Clear all
+      events.clear();
+
+      // Now we can subscribe 100 more
+      const newListeners = Array.from({ length: 100 }, () => vi.fn());
+
+      expect(() => {
+        newListeners.forEach((listener) => events.subscribe(listener));
+      }).not.toThrow();
     });
   });
 

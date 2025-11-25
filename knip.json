@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/auto-setup.ts",
+    "tests/**/*.test.{ts,tsx}",
+    "tests/**/*.bench.{ts,tsx}",
+    "tests/**/*.properties.tsx"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": [
+    "examples/**",
+    "dist/**",
+    "coverage/**",
+    "reports/**",
+    "**/*.config.{ts,mts,mjs,js}",
+    "**/*.d.ts"
+  ],
+  "ignoreDependencies": ["husky", "terser", "fast-check"],
+  "ignoreBinaries": ["open"],
+  "ignoreExportsUsedInFile": true
+}

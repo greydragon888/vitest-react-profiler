@@ -1,14 +1,66 @@
 /**
- * Property-Based Tests for API Event Methods
+ * @file Property-Based Tests: API Event Methods (onRender, waitForNextRender)
  *
- * These tests verify that onRender() and waitForNextRender() behave correctly:
- * - onRender listeners receive exact number of events
- * - Unsubscribe stops future notifications
- * - waitForNextRender resolves on next render
- * - Event data consistency across multiple renders
- * - Timeout behavior is predictable
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: onRender() Call Count
+ * - Listener called exactly N times for N renders after `subscribe()`
+ * - Renders BEFORE `onRender()` don't call listener (forward-only)
+ * - Each render → 1 listener call (1:1 correspondence)
+ * - Multiple listeners all receive N calls
+ * - **Why important:** Guarantees correct render event tracking
+ *
+ * ### INVARIANT 2: Unsubscribe Effect
+ * - `unsubscribe()` returns cleanup function
+ * - After `unsubscribe()` listener is NOT called for new renders
+ * - Calling cleanup function is idempotent (can be called multiple times)
+ * - Other listeners are not affected by one unsubscribing
+ * - **Why important:** Prevents memory leaks, correct cleanup
+ *
+ * ### INVARIANT 3: waitForNextRender() Resolution
+ * - Promise resolves exactly on next render after call
+ * - Resolves with correct `RenderEventInfo` (count, phase, history)
+ * - Timeout works correctly (reject if no render)
+ * - Multiple `waitForNextRender()` calls are independent
+ * - **Why important:** async testing utilities, reliability in async scenarios
+ *
+ * ### INVARIANT 4: Event Data Consistency
+ * - `RenderEventInfo.count` increases monotonically
+ * - `RenderEventInfo.phase` is correct ("mount" for first, then "update"/"nested-update")
+ * - `RenderEventInfo.history.length === count` (ALWAYS)
+ * - Data immutable (`history` frozen)
+ * - **Why important:** Assertion correctness, test predictability
+ *
+ * ### INVARIANT 5: Multiple Listeners Independence
+ * - N listeners → all N called for each render
+ * - Call order: FIFO (first subscribed → first called)
+ * - One unsubscribing doesn't affect others
+ * - Error in one listener doesn't block others (fail-fast)
+ * - **Why important:** Listener isolation, predictable behavior
+ *
+ * ### INVARIANT 6: Timeout Behavior
+ * - `waitForNextRender({ timeout })` rejects if no render within timeout ms
+ * - Default timeout: 5000ms
+ * - Custom timeout works correctly
+ * - Timeout doesn't affect subsequent `waitForNextRender()` calls
+ * - **Why important:** Prevents hanging promises, fail-fast in tests
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for onRender call count (high load)
+ * - **500 runs** for waitForNextRender resolution (async stress)
+ * - **1-50 renders** for realistic scenarios
+ * - **1-20 listeners** simultaneously (multi-subscriber scenario)
+ *
+ * ## Technical Details:
+ *
+ * - **Forward-only:** `onRender()` doesn't emit past renders (only new ones)
+ * - **Async-safe:** `waitForNextRender()` works with concurrent renders
+ * - **Cleanup function:** Returned function removes listener from registry
+ * - **React 18+ batching:** Automatic batching is handled
  *
  * @see https://fast-check.dev/
+ * @see src/profiler/api/ProfilerAPI.ts - implementation
  */
 
 import { fc, test } from "@fast-check/vitest";

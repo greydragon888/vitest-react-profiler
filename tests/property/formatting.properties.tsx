@@ -1,12 +1,82 @@
 /**
- * Property-Based Tests for Formatting Utilities
+ * @file Property-Based Tests: Formatting Utilities (formatRenderHistory, formatRenderSummary)
  *
- * These tests verify that string formatting functions handle edge cases:
- * - Consistent line lengths and alignment
- * - No NaN or Infinity in output
- * - Unicode and emoji handling
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Output Structure Consistency
+ * - All render lines follow uniform format: `  #N [phase phase]`
+ * - Consistent indentation (2 spaces)
+ * - Line numbering starts at #1 and increases monotonically
+ * - No skipped numbers or duplicates
+ * - **Why important:** Human-readable output, easy visual parsing
+ *
+ * ### INVARIANT 2: No Invalid Numbers
+ * - Never contains "NaN" in output
+ * - Never contains "Infinity" or "-Infinity"
+ * - All numbers are valid (percentages, counts, etc.)
+ * - Division by zero handled correctly
+ * - **Why important:** Robustness, correct metrics
+ *
+ * ### INVARIANT 3: maxItems Limiter
+ * - `formatRenderHistory(history, maxItems)` shows ≤ maxItems lines
+ * - If history is longer → shows ellipsis "... and N more"
+ * - maxItems works correctly for any N (1-10000)
+ * - Default maxItems: shows all (no limit)
+ * - **Why important:** Controls output length, doesn't overload console
+ *
+ * ### INVARIANT 4: Unicode & Emoji Safety
+ * - Correctly handles Unicode in component names
+ * - Emoji in output doesn't break formatting
+ * - Multi-byte characters counted correctly
+ * - No mojibake (incorrect encoding)
+ * - **Why important:** Internationalization, modern component names
+ *
+ * ### INVARIANT 5: Summary Statistics Accuracy
+ * - `formatRenderSummary()` shows correct counts for all phases
+ * - Sum of phases === total render count
+ * - Percentages add up to 100% (with rounding)
+ * - Phase breakdown: mount + update + nested-update
+ * - **Why important:** Correct metrics for analysis
+ *
+ * ### INVARIANT 6: Empty & Edge Cases
+ * - Empty history → clear message "No renders"
+ * - Single render → formatted correctly (no plural bugs)
+ * - 10,000+ renders → doesn't break formatting
+ * - All same phase → percentages 100% for one phase
+ * - **Why important:** Robustness in edge cases
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for structure consistency (high load)
+ * - **500 runs** for maxItems limiter (medium load)
+ * - **1-100 renders** for realistic scenarios
+ * - **Generators:** `fc.constantFrom()` for PhaseType
+ *
+ * ## Technical Details:
+ *
+ * - **ANSI colors:** Uses chalk for colored output (optional)
+ * - **String padding:** Alignment via padStart/padEnd
+ * - **Pluralization:** Correct singular/plural forms
+ * - **Locale-aware:** Numbers formatted with locale consideration (commas, dots)
+ *
+ * ## Output Examples:
+ *
+ * ```
+ * Render History (5 renders):
+ *   #1 [mount phase]
+ *   #2 [update phase]
+ *   #3 [update phase]
+ *   #4 [nested-update phase]
+ *   #5 [update phase]
+ *
+ * Summary:
+ *   mount: 1 (20%)
+ *   update: 3 (60%)
+ *   nested-update: 1 (20%)
+ * ```
  *
  * @see https://fast-check.dev/
+ * @see src/utils/formatRenderHistory.ts - implementation
  */
 
 import { fc, test } from "@fast-check/vitest";
@@ -276,11 +346,8 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
         if (updates > 0 && !summary.includes("update")) {
           return false;
         }
-        if (nested > 0 && !summary.includes("nested")) {
-          return false;
-        }
 
-        return true;
+        return !(nested > 0 && !summary.includes("nested"));
       },
     );
   });

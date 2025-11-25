@@ -5,48 +5,6 @@ import { ProfilerCache } from "../../src/profiler/core/ProfilerCache";
 import type { PhaseType } from "../../src/types";
 
 describe("ProfilerCache", () => {
-  describe("getFrozenHistory", () => {
-    it("should return cached value on subsequent calls", () => {
-      const cache = new ProfilerCache();
-      const mockHistory: readonly PhaseType[] = ["mount", "update"];
-      const compute = vi.fn(() => mockHistory);
-
-      const result1 = cache.getFrozenHistory(compute);
-      const result2 = cache.getFrozenHistory(compute);
-
-      // Result is pooled frozen array (may differ from input reference)
-      expect(result1).toStrictEqual(["mount", "update"]);
-      expect(Object.isFrozen(result1)).toBe(true);
-      expect(result1).toBe(result2); // Same reference on cache hit
-      expect(compute).toHaveBeenCalledTimes(1); // Computed only once
-    });
-
-    it("should compute only on first call", () => {
-      const cache = new ProfilerCache();
-      const compute = vi.fn(() => ["mount"] as const);
-
-      cache.getFrozenHistory(compute);
-      cache.getFrozenHistory(compute);
-      cache.getFrozenHistory(compute);
-
-      expect(compute).toHaveBeenCalledTimes(1);
-    });
-
-    it("should recompute after invalidate", () => {
-      const cache = new ProfilerCache();
-      const compute = vi.fn(() => ["mount"] as const);
-
-      cache.getFrozenHistory(compute);
-
-      expect(compute).toHaveBeenCalledTimes(1);
-
-      cache.invalidate("mount");
-      cache.getFrozenHistory(compute);
-
-      expect(compute).toHaveBeenCalledTimes(2);
-    });
-  });
-
   describe("getPhaseCache", () => {
     it("should work for mount phase", () => {
       const cache = new ProfilerCache();
@@ -119,49 +77,39 @@ describe("ProfilerCache", () => {
   // getHasMounted removed in v1.7.0 - now uses immutable flag in ProfilerData
 
   describe("invalidate", () => {
-    it("should clear all caches", () => {
+    it("should clear phase cache for invalidated phase", () => {
       const cache = new ProfilerCache();
-      const historyCompute = vi.fn(() => ["mount"] as const);
       const phaseCompute = vi.fn(() => ["mount"] as const);
 
-      // Populate all caches
-      cache.getFrozenHistory(historyCompute);
+      // Populate phase cache
       cache.getPhaseCache("mount", phaseCompute);
 
-      expect(historyCompute).toHaveBeenCalledTimes(1);
       expect(phaseCompute).toHaveBeenCalledTimes(1);
 
       // Invalidate and verify recomputation
       cache.invalidate("mount");
 
-      cache.getFrozenHistory(historyCompute);
       cache.getPhaseCache("mount", phaseCompute);
 
-      expect(historyCompute).toHaveBeenCalledTimes(2);
       expect(phaseCompute).toHaveBeenCalledTimes(2);
     });
   });
 
   describe("clear", () => {
-    it("should fully reset state by calling invalidate", () => {
+    it("should fully reset state", () => {
       const cache = new ProfilerCache();
-      const historyCompute = vi.fn(() => ["mount"] as const);
       const phaseCompute = vi.fn(() => ["update"] as const);
 
-      // Populate all caches
-      cache.getFrozenHistory(historyCompute);
+      // Populate phase cache
       cache.getPhaseCache("update", phaseCompute);
 
-      expect(historyCompute).toHaveBeenCalledTimes(1);
       expect(phaseCompute).toHaveBeenCalledTimes(1);
 
       // Clear and verify recomputation
       cache.clear();
 
-      cache.getFrozenHistory(historyCompute);
       cache.getPhaseCache("update", phaseCompute);
 
-      expect(historyCompute).toHaveBeenCalledTimes(2);
       expect(phaseCompute).toHaveBeenCalledTimes(2);
     });
   });
@@ -175,7 +123,7 @@ describe("ProfilerCache", () => {
       expect(compute).not.toHaveBeenCalled();
 
       // Access cache
-      cache.getFrozenHistory(compute);
+      cache.getPhaseCache("mount", compute);
 
       expect(compute).toHaveBeenCalledTimes(1);
     });

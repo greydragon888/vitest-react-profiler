@@ -1,15 +1,66 @@
 /**
- * Property-Based Tests for Event System Invariants
+ * @file Property-Based Tests: ProfilerEvents (Event System)
  *
- * These tests verify that the ProfilerEvents system behaves correctly:
- * - Listeners receive exact number of events emitted
- * - Unsubscribe stops future notifications
- * - Event data is correctly passed to all listeners
- * - Order of listener calls matches subscription order
- * - Clear removes all listeners
- * - hasListeners() reflects actual state
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Emit-Subscribe Correspondence
+ * - Listener called exactly N times for N `emit()` calls
+ * - Each `emit()` synchronously calls all registered listeners
+ * - `subscribe()` → `emit()` → listener called with correct `RenderEventInfo`
+ * - No missed events, no duplication
+ * - **Why important:** Guarantees reliability of event-driven architecture
+ *
+ * ### INVARIANT 2: Unsubscribe Isolation
+ * - After `unsubscribe()` listener is NOT called for subsequent `emit()`
+ * - `unsubscribe()` affects only specific listener
+ * - Other listeners continue receiving events after someone unsubscribes
+ * - Repeated `unsubscribe()` is safe (no-op)
+ * - **Why important:** Prevents memory leaks, correct cleanup logic
+ *
+ * ### INVARIANT 3: Event Data Integrity
+ * - `RenderEventInfo` contains correct `count`, `phase`, `history`
+ * - `history` is frozen (`readonly PhaseType[]`) and cannot be changed
+ * - Each listener receives the same history snapshot
+ * - Changes in listener don't affect other listeners (immutability)
+ * - **Why important:** Prevents shared state mutation, guarantees isolation
+ *
+ * ### INVARIANT 4: Listener Order Consistency
+ * - Listeners called in registration order (FIFO)
+ * - First `subscribe()` → first call on `emit()`
+ * - Order preserved even with multiple `subscribe()` / `unsubscribe()`
+ * - Deterministic behavior for debugging
+ * - **Why important:** Predictable behavior for testing and debugging
+ *
+ * ### INVARIANT 5: Clear Completeness
+ * - `clear()` removes ALL listeners
+ * - After `clear()`: `hasListeners() === false`
+ * - After `clear()` + `emit()` → nobody called
+ * - `clear()` doesn't break subsequent `subscribe()` operations
+ * - **Why important:** Correct cleanup between tests, preventing test pollution
+ *
+ * ### INVARIANT 6: hasListeners() Accuracy
+ * - `hasListeners() === true` ↔ at least 1 listener exists
+ * - `hasListeners() === false` ↔ no listeners
+ * - `subscribe()` → `hasListeners() === true`
+ * - `clear()` or all `unsubscribe()` → `hasListeners() === false`
+ * - **Why important:** Optimization (don't emit if nobody listening)
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for emit/subscribe correspondence (high load)
+ * - **500 runs** for unsubscribe isolation (medium load)
+ * - **1-100 emits** for stress testing
+ * - **Generators:** Custom `renderEventInfoArbitrary` for realistic events
+ *
+ * ## Technical Details:
+ *
+ * - **Lazy initialization:** `ProfilerEvents` created only if there are subscribers
+ * - **Weak references:** NOT used (listeners must be explicitly unsubscribed)
+ * - **Sync execution:** All listeners called synchronously in `emit()`
+ * - **No error handling:** Errors in listeners are NOT caught (fail-fast)
  *
  * @see https://fast-check.dev/
+ * @see src/profiler/core/ProfilerEvents.ts - implementation
  */
 
 import { fc, test } from "@fast-check/vitest";
@@ -17,8 +68,7 @@ import { describe, expect, vi } from "vitest";
 
 import { ProfilerEvents } from "@/profiler/core/ProfilerEvents";
 
-import type { RenderEventInfo } from "@/profiler/core/ProfilerEvents";
-import type { PhaseType } from "@/types";
+import type { PhaseType, RenderEventInfo } from "@/types";
 
 // Arbitraries (generators)
 const phaseArbitrary = fc.constantFrom<PhaseType>(

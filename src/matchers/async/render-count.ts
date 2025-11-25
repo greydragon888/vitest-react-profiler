@@ -47,6 +47,14 @@ export async function toEventuallyRenderTimes(
 
   const { timeout = 1000 } = options ?? {};
 
+  if (!Number.isFinite(timeout) || timeout <= 0) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected timeout to be a positive number, received ${timeout}`,
+    };
+  }
+
   return new Promise((resolve) => {
     // Race condition protection: check if already satisfied
     if (received.getRenderCount() === expected) {
@@ -133,6 +141,14 @@ export async function toEventuallyRenderAtLeast(
   }
 
   const { timeout = 1000 } = options ?? {};
+
+  if (!Number.isFinite(timeout) || timeout <= 0) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected timeout to be a positive number, received ${timeout}`,
+    };
+  }
 
   return new Promise((resolve) => {
     // Race condition protection: check if already satisfied

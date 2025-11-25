@@ -18,12 +18,25 @@ import type { FC } from "react";
 
 describe("Stress Tests - High Volume Renders", () => {
   it("should handle 1000+ renders without memory issues", () => {
+    // Skip if GC not available
+    if (typeof gc !== "function") {
+      console.warn(
+        "⚠️ Skipping memory test: run with NODE_OPTIONS='--expose-gc'",
+      );
+
+      return;
+    }
+
     const Component: FC<{ value: number }> = ({ value }) => (
       <div>Value: {value}</div>
     );
     const ProfiledComponent = withProfiler(Component);
 
-    const { rerender } = render(<ProfiledComponent value={0} />);
+    // Baseline memory
+    gc();
+    const memBefore = process.memoryUsage().heapUsed;
+
+    const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
     // Stress test: 1000 real React renders
     for (let i = 1; i < 1000; i++) {
@@ -33,12 +46,6 @@ describe("Stress Tests - High Volume Renders", () => {
     // Assert correctness: all renders tracked
     expect(ProfiledComponent.getRenderCount()).toBe(1000);
     expect(ProfiledComponent.getRenderHistory()).toHaveLength(1000);
-
-    // Assert memory management: cache should still work
-    const history1 = ProfiledComponent.getRenderHistory();
-    const history2 = ProfiledComponent.getRenderHistory();
-
-    expect(history1).toBe(history2); // Same reference = cache works
 
     // Assert data integrity: first and last renders
     const firstRender = ProfiledComponent.getRenderAt(0);
@@ -53,6 +60,15 @@ describe("Stress Tests - High Volume Renders", () => {
     // Assert phase counts
     expect(ProfiledComponent.getRendersByPhase("mount")).toHaveLength(1);
     expect(ProfiledComponent.getRendersByPhase("update")).toHaveLength(999);
+
+    // Memory assertions
+    unmount();
+    gc();
+    const memAfter = process.memoryUsage().heapUsed;
+    const memGrowthMB = (memAfter - memBefore) / 1024 / 1024;
+
+    // < 10 MB for 1000 renders is reasonable
+    expect(memGrowthMB).toBeLessThan(10);
   });
 
   it("should maintain frozen arrays with 1000+ renders", () => {
@@ -88,12 +104,25 @@ describe("Stress Tests - High Volume Renders", () => {
   });
 
   it("should handle 2000+ renders and still work correctly", () => {
+    // Skip if GC not available
+    if (typeof gc !== "function") {
+      console.warn(
+        "⚠️ Skipping memory test: run with NODE_OPTIONS='--expose-gc'",
+      );
+
+      return;
+    }
+
     const Component: FC<{ count: number }> = ({ count }) => (
       <div>Count: {count}</div>
     );
     const ProfiledComponent = withProfiler(Component);
 
-    const { rerender } = render(<ProfiledComponent count={0} />);
+    // Baseline memory
+    gc();
+    const memBefore = process.memoryUsage().heapUsed;
+
+    const { rerender, unmount } = render(<ProfiledComponent count={0} />);
 
     // Even more stress: 2000 renders
     for (let i = 1; i < 2000; i++) {
@@ -113,6 +142,15 @@ describe("Stress Tests - High Volume Renders", () => {
     const newHistory = ProfiledComponent.getRenderHistory();
 
     expect(newHistory).toHaveLength(2001);
+
+    // Memory assertions
+    unmount();
+    gc();
+    const memAfter = process.memoryUsage().heapUsed;
+    const memGrowthMB = (memAfter - memBefore) / 1024 / 1024;
+
+    // < 15 MB for 2000 renders is reasonable
+    expect(memGrowthMB).toBeLessThan(15);
   });
 
   it("should handle rapid consecutive renders efficiently", () => {
@@ -133,18 +171,10 @@ describe("Stress Tests - High Volume Renders", () => {
       expect(history).toHaveLength(500);
     }
 
-    // All reads should return same cached reference
-    const refs = [];
+    // Verify history is frozen
+    const history = ProfiledComponent.getRenderHistory();
 
-    for (let i = 0; i < 50; i++) {
-      refs.push(ProfiledComponent.getRenderHistory());
-    }
-
-    const firstRef = refs[0];
-
-    for (const ref of refs) {
-      expect(ref).toBe(firstRef);
-    }
+    expect(Object.isFrozen(history)).toBe(true);
   });
 });
 
@@ -173,14 +203,12 @@ describe("Stress Tests - Multiple Components", () => {
     const firstComponent = components[0];
     const lastComponent = components[99];
 
-    const history1a = firstComponent?.getRenderHistory();
-    const history1b = firstComponent?.getRenderHistory();
-    const history2a = lastComponent?.getRenderHistory();
-    const history2b = lastComponent?.getRenderHistory();
+    const history1 = firstComponent?.getRenderHistory();
+    const history2 = lastComponent?.getRenderHistory();
 
-    // Each component caches its own history (repeated calls return same ref)
-    expect(history1a).toBe(history1b);
-    expect(history2a).toBe(history2b);
+    // Verify histories are correct
+    expect(history1).toHaveLength(1);
+    expect(history2).toHaveLength(1);
   });
 
   it("should handle 100 components with multiple renders each", () => {
@@ -331,14 +359,6 @@ describe("Stress Tests - Multiple Components", () => {
       expect(C.getRenderCount()).toBe(21); // 1 mount + 20 updates
       expect(C.getRenderHistory()).toHaveLength(21);
     });
-
-    // Assert: cache works correctly for all
-    components.forEach((C) => {
-      const h1 = C.getRenderHistory();
-      const h2 = C.getRenderHistory();
-
-      expect(h1).toBe(h2);
-    });
   });
 });
 
@@ -400,7 +420,6 @@ describe("Stress Tests - Mixed Scenarios", () => {
 
     // Interleave renders with method calls
     // Stress test with periodic checks - expects inside conditionals are intentional
-    /* eslint-disable vitest/no-conditional-expect */
     for (let i = 1; i <= 500; i++) {
       rerender(<ProfiledComponent n={i} />);
 
@@ -415,15 +434,77 @@ describe("Stress Tests - Mixed Scenarios", () => {
         expect(history).toHaveLength(i + 1);
       }
     }
-    /* eslint-enable vitest/no-conditional-expect */
 
     // Final verification
     expect(ProfiledComponent.getRenderCount()).toBe(501);
+  });
 
-    // Cache should still work after all operations
-    const h1 = ProfiledComponent.getRenderHistory();
-    const h2 = ProfiledComponent.getRenderHistory();
+  it("should handle near-maximum renders (9500) approaching MAX_SAFE_RENDERS limit", () => {
+    // Skip if GC not available
+    if (typeof gc !== "function") {
+      console.warn(
+        "⚠️ Skipping memory test: run with NODE_OPTIONS='--expose-gc'",
+      );
 
-    expect(h1).toBe(h2);
+      return;
+    }
+
+    // MAX_SAFE_RENDERS = 10,000
+    // This test verifies behavior near the safety limit
+    const Component: FC<{ iteration: number }> = ({ iteration }) => (
+      <div>Iteration: {iteration}</div>
+    );
+    const ProfiledComponent = withProfiler(Component);
+
+    // Baseline memory
+    gc();
+    const memBefore = process.memoryUsage().heapUsed;
+
+    const { rerender, unmount } = render(<ProfiledComponent iteration={0} />);
+
+    // Render 9,499 more times (total: 9,500 renders)
+    // This is 95% of the MAX_SAFE_RENDERS limit
+    for (let i = 1; i < 9500; i++) {
+      rerender(<ProfiledComponent iteration={i} />);
+    }
+
+    // Assert: all 9,500 renders tracked
+    expect(ProfiledComponent.getRenderCount()).toBe(9500);
+    expect(ProfiledComponent.getRenderHistory()).toHaveLength(9500);
+
+    // Assert: first and last renders are correct
+    expect(ProfiledComponent.getRenderAt(0)).toBe("mount");
+    expect(ProfiledComponent.getRenderAt(9499)).toBe("update");
+
+    // Assert: frozen arrays still work
+    const history = ProfiledComponent.getRenderHistory();
+
+    expect(Object.isFrozen(history)).toBe(true);
+
+    // Assert: phase counts are correct
+    expect(ProfiledComponent.getRendersByPhase("mount")).toHaveLength(1);
+    expect(ProfiledComponent.getRendersByPhase("update")).toHaveLength(9499);
+
+    // Assert: getLastRender() works
+    expect(ProfiledComponent.getLastRender()).toBe("update");
+
+    // Assert: hasMounted() works
+    expect(ProfiledComponent.hasMounted()).toBe(true);
+
+    // Additional render should still work (total: 9,501)
+    rerender(<ProfiledComponent iteration={9500} />);
+
+    expect(ProfiledComponent.getRenderCount()).toBe(9501);
+
+    // We're still under MAX_SAFE_RENDERS (10,000), so no error expected
+
+    // Memory assertions
+    unmount();
+    gc();
+    const memAfter = process.memoryUsage().heapUsed;
+    const memGrowthMB = (memAfter - memBefore) / 1024 / 1024;
+
+    // < 50 MB for 9500 renders is reasonable (10KB per render average)
+    expect(memGrowthMB).toBeLessThan(50);
   });
 });

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import type { FC } from "react";
+
 interface User {
   name: string;
   email: string;
@@ -11,10 +13,7 @@ interface UserProfileProps {
   onUpdate?: () => void;
 }
 
-export const UserProfile: React.FC<UserProfileProps> = ({
-  userId,
-  onUpdate,
-}) => {
+export const UserProfile: FC<UserProfileProps> = ({ userId, onUpdate }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);

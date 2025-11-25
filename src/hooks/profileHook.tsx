@@ -8,7 +8,6 @@ import type { ProfiledComponent } from "../types";
  * Profile a React Hook to detect extra renders
  *
  * @param hook - The hook function to profile
- * @param initialProps - Initial props to pass to the hook (required for hooks with parameters)
  * @returns Object with hook result and profiled component
  *
  * @example

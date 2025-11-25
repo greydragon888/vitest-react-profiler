@@ -3,15 +3,15 @@ import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import {
-  withProfiler,
-  waitForRenders,
   waitForMinimumRenders,
   waitForPhase,
+  waitForRenders,
+  withProfiler,
 } from "../../src";
 
 // Helper component for multiple renders (triggers N renders with 10ms delay)
 const createMultiRenderCounter = (maxCount: number) => {
-  const Counter = () => {
+  return () => {
     const [count, setCount] = useState(0);
 
     if (count < maxCount) {
@@ -22,8 +22,6 @@ const createMultiRenderCounter = (maxCount: number) => {
 
     return <div>{count}</div>;
   };
-
-  return Counter;
 };
 
 describe("waitForRenders", () => {
@@ -153,6 +151,19 @@ describe("waitForMinimumRenders", () => {
     await waitForMinimumRenders(ProfiledComponent, 1);
 
     expect(ProfiledComponent.getRenderCount()).toBe(1);
+  });
+
+  it("should resolve when renderCount equals minCount exactly", async () => {
+    const Counter = createMultiRenderCounter(5);
+    const ProfiledCounter = withProfiler(Counter);
+
+    render(<ProfiledCounter />);
+
+    // Wait exactly until we have 5 renders
+    await waitForMinimumRenders(ProfiledCounter, 5);
+
+    // Should resolve when renderCount === minCount (not just >)
+    expect(ProfiledCounter.getRenderCount()).toBe(5);
   });
 
   it("should timeout if minimum not reached", async () => {
@@ -303,10 +314,17 @@ describe("waitForPhase", () => {
     expect(error).toMatchObject({
       message: expect.stringMatching(/Current phases: \[[\w, ]+\]/),
     });
-    // Verify phases are separated by ", " not just ""
+    // Verify phases are separated by ", " not just "" (kills join("") mutation)
     expect(error).toMatchObject({
       message: expect.stringContaining(", "),
     });
+
+    // Verify exact comma-separated format: "mount, update" not "mountupdate"
+    const errorMessage = (error as Error).message;
+
+    expect(errorMessage).toMatch(
+      /Current phases: \[mount, update(?:, update)*\]/,
+    );
   });
 
   it("should NOT resolve on wrong phase (only timeout on correct phase)", async () => {
@@ -370,6 +388,174 @@ describe("waitForPhase", () => {
 
     expect(history).toContain("update");
     expect(history.length).toBeGreaterThanOrEqual(2); // mount + update
+  });
+});
+
+describe("Parameter Validation", () => {
+  const Counter = () => <div>Counter</div>;
+  const ProfiledCounter = withProfiler(Counter);
+
+  describe("waitForRenders validation", () => {
+    it("should accept zero count and resolve immediately", async () => {
+      render(<ProfiledCounter />);
+
+      // count = 0 is valid (already satisfied condition)
+      await expect(waitForRenders(ProfiledCounter, 0)).resolves.toBeUndefined();
+    });
+
+    it("should throw TypeError for negative count", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrow(
+        TypeError,
+      );
+      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrow(
+        /non-negative integer/,
+      );
+    });
+
+    it("should throw TypeError for NaN count", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(waitForRenders(ProfiledCounter, Number.NaN)).rejects.toThrow(
+        TypeError,
+      );
+      await expect(waitForRenders(ProfiledCounter, Number.NaN)).rejects.toThrow(
+        /non-negative integer/,
+      );
+    });
+
+    it("should throw TypeError for float count", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(waitForRenders(ProfiledCounter, 3.14)).rejects.toThrow(
+        TypeError,
+      );
+    });
+
+    it("should throw TypeError for Infinity count", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(waitForRenders(ProfiledCounter, Infinity)).rejects.toThrow(
+        TypeError,
+      );
+    });
+
+    it("should throw TypeError for zero timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForRenders(ProfiledCounter, 3, { timeout: 0 }),
+      ).rejects.toThrow(TypeError);
+      await expect(
+        waitForRenders(ProfiledCounter, 3, { timeout: 0 }),
+      ).rejects.toThrow(/positive number/);
+    });
+
+    it("should throw TypeError for negative timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForRenders(ProfiledCounter, 3, { timeout: -100 }),
+      ).rejects.toThrow(TypeError);
+    });
+
+    it("should throw TypeError for NaN timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForRenders(ProfiledCounter, 3, { timeout: Number.NaN }),
+      ).rejects.toThrow(TypeError);
+    });
+
+    it("should throw TypeError for Infinity timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForRenders(ProfiledCounter, 3, { timeout: Infinity }),
+      ).rejects.toThrow(TypeError);
+    });
+  });
+
+  describe("waitForMinimumRenders validation", () => {
+    it("should accept zero minCount and resolve immediately", async () => {
+      render(<ProfiledCounter />);
+
+      // minCount = 0 is valid (already satisfied condition)
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, 0),
+      ).resolves.toBeUndefined();
+    });
+
+    it("should throw TypeError for negative minCount", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(waitForMinimumRenders(ProfiledCounter, -5)).rejects.toThrow(
+        TypeError,
+      );
+      await expect(waitForMinimumRenders(ProfiledCounter, -5)).rejects.toThrow(
+        /non-negative integer/,
+      );
+    });
+
+    it("should throw TypeError for NaN minCount", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, Number.NaN),
+      ).rejects.toThrow(TypeError);
+    });
+
+    it("should throw TypeError for zero timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, 3, { timeout: 0 }),
+      ).rejects.toThrow(TypeError);
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, 3, { timeout: 0 }),
+      ).rejects.toThrow(/positive number/);
+    });
+
+    it("should throw TypeError for negative timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, 3, { timeout: -100 }),
+      ).rejects.toThrow(TypeError);
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, 3, { timeout: -100 }),
+      ).rejects.toThrow(/positive number/);
+    });
+  });
+
+  describe("waitForPhase validation", () => {
+    it("should throw TypeError for zero timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForPhase(ProfiledCounter, "update", { timeout: 0 }),
+      ).rejects.toThrow(TypeError);
+      await expect(
+        waitForPhase(ProfiledCounter, "update", { timeout: 0 }),
+      ).rejects.toThrow(/positive number/);
+    });
+
+    it("should throw TypeError for negative timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForPhase(ProfiledCounter, "update", { timeout: -50 }),
+      ).rejects.toThrow(TypeError);
+    });
+
+    it("should throw TypeError for Infinity timeout", async () => {
+      render(<ProfiledCounter />);
+
+      await expect(
+        waitForPhase(ProfiledCounter, "update", { timeout: Infinity }),
+      ).rejects.toThrow(TypeError);
+    });
   });
 });
 

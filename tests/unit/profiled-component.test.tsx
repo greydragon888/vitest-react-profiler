@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, expectTypeOf } from "vitest";
 
+import { ProfilerAPI } from "@/profiler/api/ProfilerAPI.ts";
 import { createOnRenderCallback } from "@/profiler/components/createOnRenderCallback.ts";
 import { ProfiledComponentWrapper } from "@/profiler/components/ProfiledComponent.tsx";
 import { ProfilerStorage } from "@/profiler/core/ProfilerStorage.ts";
@@ -198,7 +199,6 @@ describe("ProfiledComponent", () => {
   });
 
   describe("createOnRenderCallback", () => {
-    // eslint-disable-next-line vitest/expect-expect -- expectTypeOf is a valid assertion
     it("should create a callback function", () => {
       const Component = createTestComponent("TestComponent");
       const callback = createOnRenderCallback(Component, storage);
@@ -419,6 +419,47 @@ describe("ProfiledComponent", () => {
       expect(data1?.getRenderCount()).toBeGreaterThan(0);
       expect(data2?.getRenderCount()).toBeGreaterThan(0);
       expect(data1).not.toBe(data2);
+    });
+  });
+
+  describe("Error Messages", () => {
+    it("waitForNextRender should show helpful error when component not profiled", async () => {
+      const Component = () => <div>Test</div>;
+
+      Component.displayName = "TestComponent";
+
+      // Create API without profiled component (simulate bug)
+      const api = new ProfilerAPI(storage);
+      const waitForNextRender = api.createWaitForNextRender(Component);
+
+      await expect(waitForNextRender()).rejects.toThrow(
+        /Component has no profiler data/,
+      );
+      await expect(waitForNextRender()).rejects.toThrow(
+        /Did you forget to wrap it with withProfiler\(\)?/,
+      );
+      await expect(waitForNextRender()).rejects.toThrow(/TestComponent/);
+    });
+
+    it("waitForNextRender should show component name in error", async () => {
+      const UnnamedComponent = () => <div>Test</div>;
+
+      const api = new ProfilerAPI(storage);
+      const waitForNextRender = api.createWaitForNextRender(UnnamedComponent);
+
+      await expect(waitForNextRender()).rejects.toThrow(
+        /Component: UnnamedComponent/,
+      );
+    });
+
+    it("waitForNextRender should show 'Unknown' when no component name", async () => {
+      // Anonymous function component
+      const api = new ProfilerAPI(storage);
+      const waitForNextRender = api.createWaitForNextRender(() => (
+        <div>Test</div>
+      ));
+
+      await expect(waitForNextRender()).rejects.toThrow(/Component: Unknown/);
     });
   });
 });

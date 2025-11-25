@@ -1,14 +1,79 @@
 /**
- * Property-Based Tests for renderProfiled
+ * @file Property-Based Tests: renderProfiled (Component Testing Utility)
  *
- * These tests verify that renderProfiled correctly handles:
- * - Props merging during rerender
- * - Render counting invariants
- * - Component isolation
- * - RTL integration
- * - Various prop types (primitives, objects, arrays)
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Props Merging Correctness
+ * - `rerender(partialProps)` merges with original props
+ * - New props overwrite old ones (shallow merge)
+ * - Missing props are preserved from original props
+ * - `rerender({ a: 2 })` + original `{ a: 1, b: 3 }` → result `{ a: 2, b: 3 }`
+ * - **Why important:** Testing convenience, realistic React behavior
+ *
+ * ### INVARIANT 2: Render Count Invariants
+ * - First `renderProfiled()` → `component.getRenderCount() === 1`
+ * - Each `rerender()` → counter increases by 1
+ * - `getRenderCount()` is always non-negative
+ * - Matches `getRenderHistory().length`
+ * - **Why important:** Correct component render tracking
+ *
+ * ### INVARIANT 3: Component Isolation
+ * - Different `renderProfiled()` calls → independent components
+ * - `component1.getRenderCount() !== component2.getRenderCount()`
+ * - Operations on one component don't affect another
+ * - WeakMap storage ensures isolation
+ * - **Why important:** Test isolation, preventing test pollution
+ *
+ * ### INVARIANT 4: RTL Integration
+ * - Returns RTL `RenderResult` (`container`, `baseElement`, `debug`, etc.)
+ * - `rerender()` works identically to RTL `rerender()`
+ * - `unmount()` is available and works correctly
+ * - `component` has all API methods (getRenderCount, etc.)
+ * - **Why important:** Drop-in replacement for `render()` from RTL
+ *
+ * ### INVARIANT 5: Props Type Safety
+ * - TypeScript inference for props works correctly
+ * - `rerender()` accepts `Partial<Props>` (type-safe)
+ * - Compile-time errors if props are incompatible
+ * - Supports generics: `renderProfiled<Props>(Component, props)`
+ * - **Why important:** Type safety in tests, early error detection
+ *
+ * ### INVARIANT 6: Lifecycle Correctness
+ * - First render is always "mount" phase
+ * - Subsequent renders are "update" or "nested-update"
+ * - `unmount()` triggers cleanup (React lifecycle)
+ * - After `unmount()` component no longer renders
+ * - **Why important:** React lifecycle compliance, correct cleanup
+ *
+ * ## Testing Strategy:
+ *
+ * - **500 runs** for props merging (medium load)
+ * - **1000 runs** for render count invariants (high load)
+ * - **Generators:** `fc.integer()` for numeric props, `fc.record()` for objects
+ * - **Various prop types:** Primitives, objects, arrays
+ *
+ * ## Technical Details:
+ *
+ * - **Wrapper function:** `renderProfiled()` wraps `render()` from RTL
+ * - **Automatic profiling:** Component automatically wrapped with `withProfiler()`
+ * - **Props spreading:** Uses spread operator for merging
+ * - **Cleanup:** Auto-cleanup via RTL `cleanup()` in `afterEach`
+ *
+ * ## Use Cases:
+ *
+ * ```typescript
+ * // Basic usage
+ * const { component, rerender } = renderProfiled(MyComponent, { value: 1 });
+ * expect(component).toHaveRenderedTimes(1);
+ *
+ * // Partial props rerender
+ * rerender({ value: 2 }); // other props preserved
+ * expect(component).toHaveRenderedTimes(2);
+ * ```
  *
  * @see https://fast-check.dev/
+ * @see src/utils/renderProfiled.tsx - implementation
+ * @see https://testing-library.com/docs/react-testing-library/api#render
  */
 
 import { fc, test } from "@fast-check/vitest";

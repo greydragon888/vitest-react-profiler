@@ -1,4 +1,5 @@
 import { memo, useState, useCallback } from "react";
+import type { FormEvent } from "react";
 
 interface FormFieldProps {
   label: string;
@@ -63,7 +64,7 @@ export const MemoizedForm = memo<{ onSubmit?: (data: FormData) => void }>(
     );
 
     const handleSubmit = useCallback(
-      (e: React.FormEvent) => {
+      (e: FormEvent) => {
         e.preventDefault();
         const newErrors: Partial<FormData> = {};
 
@@ -145,7 +146,7 @@ export const UnmemoizedForm = ({
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const newErrors: Partial<FormData> = {};
 

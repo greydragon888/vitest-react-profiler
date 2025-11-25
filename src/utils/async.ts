@@ -9,8 +9,8 @@ import type { PhaseType, ProfiledComponent, WaitOptions } from "../types";
  * No polling overhead - resolves immediately when condition is met.
  *
  * @param component - The profiled component to wait for
- * @param count - Expected number of renders
- * @param options - Wait options (timeout)
+ * @param count - Expected number of renders (must be non-negative integer)
+ * @param options - Wait options (timeout must be positive number)
  *
  * @since v1.6.0 - Rewritten to use event-based approach (no polling)
  *
@@ -24,6 +24,7 @@ import type { PhaseType, ProfiledComponent, WaitOptions } from "../types";
  * expect(ProfiledButton).toHaveRenderedTimes(3);
  * ```
  *
+ * @throws {TypeError} If count is not a non-negative integer or timeout is invalid
  * @throws {Error} If the expected render count is not reached within timeout
  */
 export async function waitForRenders<P>(
@@ -31,7 +32,21 @@ export async function waitForRenders<P>(
   count: number,
   options?: WaitOptions,
 ): Promise<void> {
+  // Validate count parameter
+  if (!Number.isInteger(count) || count < 0) {
+    throw new TypeError(
+      `Expected count to be a non-negative integer, received ${count}`,
+    );
+  }
+
   const { timeout = 1000 } = options ?? {};
+
+  // Validate timeout parameter
+  if (!Number.isFinite(timeout) || timeout <= 0) {
+    throw new TypeError(
+      `Expected timeout to be a positive number, received ${timeout}`,
+    );
+  }
 
   return new Promise((resolve, reject) => {
     // Race condition protection: check if already satisfied
@@ -70,8 +85,8 @@ export async function waitForRenders<P>(
  * No polling overhead - resolves immediately when condition is met.
  *
  * @param component - The profiled component to wait for
- * @param minCount - Minimum number of renders
- * @param options - Wait options
+ * @param minCount - Minimum number of renders (must be non-negative integer)
+ * @param options - Wait options (timeout must be positive number)
  *
  * @since v1.6.0 - Rewritten to use event-based approach (no polling)
  *
@@ -85,6 +100,7 @@ export async function waitForRenders<P>(
  * expect(ProfiledButton.getRenderCount()).toBeGreaterThanOrEqual(2);
  * ```
  *
+ * @throws {TypeError} If minCount is not a non-negative integer or timeout is invalid
  * @throws {Error} If the minimum render count is not reached within timeout
  */
 export async function waitForMinimumRenders<P>(
@@ -92,7 +108,21 @@ export async function waitForMinimumRenders<P>(
   minCount: number,
   options?: WaitOptions,
 ): Promise<void> {
+  // Validate minCount parameter
+  if (!Number.isInteger(minCount) || minCount < 0) {
+    throw new TypeError(
+      `Expected minCount to be a non-negative integer, received ${minCount}`,
+    );
+  }
+
   const { timeout = 1000 } = options ?? {};
+
+  // Validate timeout parameter
+  if (!Number.isFinite(timeout) || timeout <= 0) {
+    throw new TypeError(
+      `Expected timeout to be a positive number, received ${timeout}`,
+    );
+  }
 
   return new Promise((resolve, reject) => {
     // Race condition protection: check if already satisfied
@@ -132,7 +162,7 @@ export async function waitForMinimumRenders<P>(
  *
  * @param component - The profiled component to wait for
  * @param phase - The render phase to wait for ('mount', 'update', or 'nested-update')
- * @param options - Wait options
+ * @param options - Wait options (timeout must be positive number)
  *
  * @since v1.6.0 - Rewritten to use event-based approach (no polling)
  *
@@ -148,6 +178,7 @@ export async function waitForMinimumRenders<P>(
  * expect(ProfiledButton.getRendersByPhase('update')).toHaveLength(1);
  * ```
  *
+ * @throws {TypeError} If timeout is invalid
  * @throws {Error} If the phase is not reached within timeout
  */
 export async function waitForPhase<P>(
@@ -156,6 +187,13 @@ export async function waitForPhase<P>(
   options?: WaitOptions,
 ): Promise<void> {
   const { timeout = 1000 } = options ?? {};
+
+  // Validate timeout parameter
+  if (!Number.isFinite(timeout) || timeout <= 0) {
+    throw new TypeError(
+      `Expected timeout to be a positive number, received ${timeout}`,
+    );
+  }
 
   return new Promise((resolve, reject) => {
     // Race condition protection: check if already satisfied

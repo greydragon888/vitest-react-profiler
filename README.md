@@ -50,7 +50,9 @@
 - 🎯 **Phase Detection** - Distinguish between mount, update, and nested update phases
 - ⏱️ **Async Testing** - Subscribe to renders with `onRender()` and wait with `waitForNextRender()`
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
+- ⚛️ **React 18+ Concurrent Ready** - Full support for `useTransition` and `useDeferredValue`
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
+- 🛡️ **Built-in Safety Mechanisms** - Automatic detection of infinite render loops and memory leaks
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
 - 🧬 **Battle-Tested Quality** - 99%+ mutation score, property-based testing, SonarCloud verified
 - 🔬 **Mathematically Verified** - 227 property tests with 130,000+ randomized checks per run
@@ -143,15 +145,47 @@ it('should render only once on mount', () => {
 
 ---
 
+## ⚛️ React 18+ Concurrent Features
+
+**Full support for React 18+ Concurrent rendering features** - no special configuration needed!
+
+The library automatically tracks renders from:
+
+### `useTransition` / `startTransition`
+
+Test components using transitions for non-urgent updates
+
+### `useDeferredValue`
+
+Test components using deferred values for performance optimization
+
+### How It Works
+
+The library uses React's built-in `<Profiler>` API, which **automatically handles Concurrent mode**:
+
+- ✅ Transitions are tracked as regular renders
+- ✅ Deferred values trigger additional renders (as expected)
+- ✅ Interrupted renders are handled correctly by React
+- ✅ No special configuration or setup required
+
+**Note:** The library tracks renders, not React's internal scheduling.
+Concurrent Features work transparently - your tests verify component behavior, not React internals.
+
+📚 **[Read the complete guide →](../../wiki/React-18-Concurrent-Features)**
+
+---
+
 ## Documentation
 
 📖 **Full documentation is available in the [Wiki](../../wiki)**
 
 ### Quick Links
 
+- **[Architecture Documentation](ARCHITECTURE.md)** - 📐 Complete technical architecture (15 sections, ~14,000 lines)
 - **[Getting Started Guide](../../wiki/Getting-Started)** - Installation and configuration
 - **[API Reference](../../wiki/API-Reference)** - Complete API documentation
 - **[Hook Profiling](../../wiki/Hook-Profiling)** - Testing React hooks
+- **[React 18+ Concurrent Features](../../wiki/React-18-Concurrent-Features)** - useTransition & useDeferredValue
 - **[Examples](../../wiki/Examples)** - Real-world usage patterns
 - **[Best Practices](../../wiki/Best-Practices)** - Tips and recommendations
 - **[Troubleshooting](../../wiki/Troubleshooting)** - Common issues and solutions
@@ -160,7 +194,7 @@ it('should render only once on mount', () => {
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md).
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ```bash
 # Run tests

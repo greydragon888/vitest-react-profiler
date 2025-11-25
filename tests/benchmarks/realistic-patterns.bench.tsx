@@ -1,7 +1,7 @@
-import { render } from "@testing-library/react";
-import { bench, describe } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, bench, describe } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearRegistry, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -21,6 +21,11 @@ import type { FC } from "react";
 const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 
 describe("Realistic Test Patterns - Performance", () => {
+  afterEach(() => {
+    cleanup();
+    clearRegistry();
+  });
+
   describe("Pattern 1: Multiple Method Calls (Baseline Comparison)", () => {
     bench("50 renders → 3 method calls (baseline pattern)", () => {
       const ProfiledComponent = withProfiler(TestComponent);

@@ -7,16 +7,18 @@ echo "🔍 Running pre-commit checks..."
 
 # Run lint-staged for incremental linting and formatting
 echo "📝 Formatting and linting staged files..."
-npx lint-staged
+NODE_OPTIONS="--max-old-space-size=4096" npx lint-staged
 
 # Run type checking
 echo "🔷 Type checking..."
 npm run typecheck
 
+# Check for unused code
+echo "🧹 Checking for unused code..."
+npm run lint:unused
+
 # Run tests with coverage
 echo "🧪 Running tests with coverage..."
 npm run test:coverage
-
-npm run bundle:size
 
 echo "✅ Pre-commit checks passed!"

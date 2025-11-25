@@ -1,0 +1,14 @@
+{
+  "name": "concurrent-examples",
+  "version": "1.0.0",
+  "description": "React 18+ Concurrent Features examples for vitest-react-profiler",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest --run"
+  },
+  "author": "GreyDragon888",
+  "license": "MIT"
+}

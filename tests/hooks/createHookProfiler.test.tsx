@@ -29,6 +29,11 @@ describe("createHookProfiler", () => {
     expect(() => {
       profiler.expectRenderCount(1);
     }).toThrow(/Expected 1 render\(s\), but got 2/);
+
+    // Verify exact helpful hint (kills StringLiteral mutation)
+    expect(() => {
+      profiler.expectRenderCount(1);
+    }).toThrow(/This hook may be causing unnecessary re-renders\./);
   });
 
   it("should support rerender", () => {

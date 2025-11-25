@@ -35,8 +35,10 @@ updates:
           - "jsdom"
     reviewers:
       - "greydragon888"
+      - "claude"
     assignees:
       - "greydragon888"
+      - "claude"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
@@ -54,8 +56,10 @@ updates:
       time: "04:00"
     reviewers:
       - "greydragon888"
+      - "claude"
     assignees:
       - "greydragon888"
+      - "claude"
     commit-message:
       prefix: "ci"
       include: "scope"

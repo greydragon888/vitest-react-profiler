@@ -1,12 +1,79 @@
 /**
- * Property-Based Tests for Async Utilities
+ * @file Property-Based Tests: Async Utilities (waitForRenders, waitForPhase, etc.)
  *
- * These tests verify that async operations behave correctly:
- * - Always complete within timeout + tolerance
- * - No race conditions with concurrent waiters
- * - Proper error handling for edge cases
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Timeout Guarantees
+ * - Promise resolves if render happens BEFORE timeout
+ * - Promise rejects if timeout expires WITHOUT render
+ * - Actual time ≈ expected time (with tolerance margin)
+ * - Default timeout: 5000ms (configurable)
+ * - **Why important:** Prevents hanging promises, fail-fast in tests
+ *
+ * ### INVARIANT 2: Concurrent Waiting Safety
+ * - Multiple `waitForRenders()` can wait simultaneously
+ * - No race conditions between waiters
+ * - All waiters resolve with same final count
+ * - Promise.all() works correctly with multiple waiters
+ * - **Why important:** Supports concurrent testing, no data races
+ *
+ * ### INVARIANT 3: Promise Resolution Correctness
+ * - `waitForRenders(n)` resolves when `getRenderCount() >= n`
+ * - `waitForPhase(phase)` resolves when `getLastRender() === phase`
+ * - `waitForMinimumRenders(n)` resolves when minimum is reached
+ * - Promise doesn't resolve prematurely (no premature resolution)
+ * - **Why important:** Correct async assertions, test reliability
+ *
+ * ### INVARIANT 4: Error Handling
+ * - Timeout error contains useful message (expected vs actual)
+ * - Component name included in error message
+ * - Error type: `TimeoutError` (catchable)
+ * - Cleanup happens even on error (no listener leaks)
+ * - **Why important:** Developer experience, debugging failed tests
+ *
+ * ### INVARIANT 5: Polling Efficiency
+ * - Polling interval is adaptive (doesn't waste CPU)
+ * - Listener-based (event-driven) instead of active polling
+ * - Resolves immediately if condition already met
+ * - Cleanup listener after resolution/rejection
+ * - **Why important:** Performance, no CPU waste
+ *
+ * ### INVARIANT 6: Edge Cases
+ * - `waitForRenders(0)` resolves immediately (already satisfied)
+ * - `waitForRenders(n)` where n is already reached → immediate resolution
+ * - Timeout 0 → immediate rejection (useful for testing)
+ * - Component unmount during waiting → graceful handling
+ * - **Why important:** Robustness, no surprising behavior
+ *
+ * ## Testing Strategy:
+ *
+ * - **20 runs** for concurrent waiting (slow async tests)
+ * - **Timeout: 60s** for stress scenarios
+ * - **2-10 concurrent waiters** (realistic concurrency)
+ * - **Cleanup:** clearTimeout for all pending timers
+ *
+ * ## Technical Details:
+ *
+ * - **Event-driven:** Uses `onRender()` for notification
+ * - **Promise-based API:** Compatible with async/await
+ * - **AbortController:** Can be added for cancellation (future)
+ * - **No polling:** Listener-based, doesn't waste CPU
+ *
+ * ## Available Functions:
+ *
+ * ```typescript
+ * // Wait until render count reaches N
+ * await waitForRenders(Component, 5, { timeout: 3000 });
+ *
+ * // Wait until last render is specified phase
+ * await waitForPhase(Component, "mount", { timeout: 2000 });
+ *
+ * // Wait for minimum N renders (more = ok)
+ * await waitForMinimumRenders(Component, 3, { timeout: 1000 });
+ * ```
  *
  * @see https://fast-check.dev/
+ * @see src/utils/async.ts - implementation
  */
 
 import { fc, test } from "@fast-check/vitest";

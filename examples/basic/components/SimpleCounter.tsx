@@ -1,12 +1,12 @@
 import { useState } from "react";
 
+import type { FC } from "react";
+
 interface SimpleCounterProps {
   initialCount?: number;
 }
 
-export const SimpleCounter: React.FC<SimpleCounterProps> = ({
-  initialCount = 0,
-}) => {
+export const SimpleCounter: FC<SimpleCounterProps> = ({ initialCount = 0 }) => {
   const [count, setCount] = useState(initialCount);
 
   return (

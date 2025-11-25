@@ -4,7 +4,6 @@
  * @since v1.6.0
  *
  * Tracks cache hits/misses for:
- * - frozenHistory: ProfilerCache.getFrozenHistory()
  * - phaseCache: ProfilerCache.getPhaseCache()
  * - closureCache: ProfilerAPI closure-based methods
  *
@@ -18,7 +17,7 @@
  * ```
  */
 
-export type CacheType = "frozenHistory" | "phaseCache" | "closureCache";
+export type CacheType = "phaseCache" | "closureCache";
 
 interface CacheStats {
   hits: number;
@@ -30,7 +29,6 @@ interface CacheStats {
  */
 class CacheMetrics {
   private readonly metrics: Record<CacheType, CacheStats> = {
-    frozenHistory: { hits: 0, misses: 0 },
     phaseCache: { hits: 0, misses: 0 },
     closureCache: { hits: 0, misses: 0 },
   };
@@ -43,7 +41,7 @@ class CacheMetrics {
    */
   recordHit(cacheType: CacheType): void {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS) {
+    if (import.meta.env.INTERNAL_TESTS === "true") {
       this.metrics[cacheType].hits++;
     }
   }
@@ -56,7 +54,7 @@ class CacheMetrics {
    */
   recordMiss(cacheType: CacheType): void {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS) {
+    if (import.meta.env.INTERNAL_TESTS === "true") {
       this.metrics[cacheType].misses++;
     }
   }
@@ -71,7 +69,7 @@ class CacheMetrics {
    */
   getHitRate(cacheType: CacheType): number {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS) {
+    if (import.meta.env.INTERNAL_TESTS === "true") {
       const { hits, misses } = this.metrics[cacheType];
       const total = hits + misses;
 
@@ -87,7 +85,6 @@ class CacheMetrics {
    *
    * @example
    * ```
-   * frozenHistory: 450/500 hits (90.00%)
    * phaseCache: 320/400 hits (80.00%)
    * closureCache: 180/200 hits (90.00%)
    * ```
@@ -98,7 +95,7 @@ class CacheMetrics {
   report(): string {
     /* v8 ignore next 2 -- @preserve */
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS) {
+    if (import.meta.env.INTERNAL_TESTS === "true") {
       return Object.entries(this.metrics)
         .map(([type, { hits, misses }]) => {
           const total = hits + misses;
@@ -122,7 +119,7 @@ class CacheMetrics {
    */
   reset(): void {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS) {
+    if (import.meta.env.INTERNAL_TESTS === "true") {
       for (const cache of Object.values(this.metrics)) {
         cache.hits = 0;
         cache.misses = 0;
@@ -138,14 +135,13 @@ class CacheMetrics {
    */
   getMetrics(): Readonly<Record<CacheType, Readonly<CacheStats>>> {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS) {
+    if (import.meta.env.INTERNAL_TESTS === "true") {
       return this.metrics;
     }
 
-    /* v8 ignore next 7 -- @preserve */
+    /* v8 ignore next 5 -- @preserve */
     // Return empty metrics for production
     return {
-      frozenHistory: { hits: 0, misses: 0 },
       phaseCache: { hits: 0, misses: 0 },
       closureCache: { hits: 0, misses: 0 },
     };

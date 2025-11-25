@@ -2,7 +2,6 @@
   "name": "hooks-examples",
   "version": "1.0.0",
   "description": "Hook profiling examples for vitest-react-profiler",
-  "main": "index.js",
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",

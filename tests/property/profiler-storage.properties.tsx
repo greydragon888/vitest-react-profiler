@@ -1,13 +1,66 @@
 /**
- * Property-Based Tests for ProfilerStorage (WeakMap Isolation)
+ * @file Property-Based Tests: ProfilerStorage (WeakMap Isolation)
  *
- * These tests verify WeakMap-based storage invariants:
- * - Component isolation: different components have independent data
- * - Data persistence: data survives multiple accesses
- * - GetOrCreate semantics: creates on first access, reuses thereafter
- * - Identity consistency: same component always gets same data instance
+ * ## Tested Invariants:
+ *
+ * ### INVARIANT 1: Component Isolation
+ * - Each component has its own independent `ProfilerData` instance
+ * - Operations on one component don't affect other components
+ * - `storage.getOrCreate(C1) !== storage.getOrCreate(C2)` (different objects)
+ * - N components → exactly N unique `ProfilerData` instances
+ * - **Why important:** Prevents cross-component data pollution, ensures isolation
+ *
+ * ### INVARIANT 2: Data Persistence
+ * - `ProfilerData` survives across multiple `getOrCreate()` calls
+ * - Render history persists between accesses
+ * - `storage.getOrCreate(C).getRenderCount()` doesn't reset on repeated calls
+ * - WeakMap preserves data while component is alive (referentially)
+ * - **Why important:** Ensures render history accumulation, prevents data loss
+ *
+ * ### INVARIANT 3: GetOrCreate Semantics
+ * - First `getOrCreate(C)` call → creates new `ProfilerData`
+ * - Subsequent `getOrCreate(C)` calls → return same instance (referential equality)
+ * - `storage.getOrCreate(C) === storage.getOrCreate(C)` (ALWAYS)
+ * - No multiple creations for single component
+ * - **Why important:** Memory optimization, prevents data duplication
+ *
+ * ### INVARIANT 4: Identity Consistency
+ * - Same component (by reference) → same `ProfilerData`
+ * - Different components (by reference) → different `ProfilerData` instances
+ * - WeakMap uses referential equality for keys
+ * - Even if `C1.name === C2.name`, but `C1 !== C2` → different instances
+ * - **Why important:** Correct component identification by reference, not by name
+ *
+ * ### INVARIANT 5: Clear Behavior
+ * - `storage.clear()` removes all `ProfilerData` for all components
+ * - After `clear()` + `getOrCreate()` → new `ProfilerData` (fresh)
+ * - `clear()` doesn't break WeakMap (components stay alive)
+ * - Safe to use storage after `clear()`
+ * - **Why important:** Correct cleanup between tests, prevents test pollution
+ *
+ * ### INVARIANT 6: ClearAll Behavior
+ * - `storage.clearAll()` clears data but keeps component registry
+ * - After `clearAll()` components remain registered
+ * - `getRenderCount() === 0` for all components after `clearAll()`
+ * - Render history reset, but components not removed from WeakMap
+ * - **Why important:** Allows data reset without losing component registration
+ *
+ * ## Testing Strategy:
+ *
+ * - **1000 runs** for component isolation (high load)
+ * - **500 runs** for getOrCreate semantics (medium load)
+ * - **2-20 components** simultaneously (realistic scenario)
+ * - **Generators:** Mock components with unique names
+ *
+ * ## Technical Details:
+ *
+ * - **WeakMap:** Garbage collection friendly (components auto-removed)
+ * - **Referential equality:** Keys compared by `===`, not by value
+ * - **Memory safety:** No memory leaks even with large number of components
  *
  * @see https://fast-check.dev/
+ * @see src/profiler/core/ProfilerStorage.ts - implementation
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap
  */
 
 import { fc, test } from "@fast-check/vitest";
@@ -528,7 +581,7 @@ describe("Property-Based Tests: ProfilerStorage (WeakMap)", () => {
       { numRuns: 100 },
     )(
       "interleaved access patterns maintain isolation",
-      // eslint-disable-next-line sonarjs/cognitive-complexity
+
       (numComponents, numOperations) => {
         const storage = new ProfilerStorage();
         const components = Array.from({ length: numComponents }, (_, i) =>

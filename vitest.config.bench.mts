@@ -1,94 +1,104 @@
-// vitest.config.bench.mts
-import { defineConfig } from "vitest/config";
-import path from "node:path";
+import { defineConfig, mergeConfig } from "vitest/config";
+import { commonConfig } from "./vitest.config.common.mjs";
 
-export default defineConfig({
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@test-utils": path.resolve(__dirname, "./src/test-utils"),
-      "@components": path.resolve(__dirname, "./src/components"),
+/**
+ * Vitest configuration for benchmarking
+ *
+ * Benchmarks measure performance with process isolation for stable results.
+ *
+ * Extends common config with overrides:
+ * - Coverage disabled
+ * - Process isolation (forks pool)
+ * - Minimal features enabled (globals: false)
+ * - Separate setup file for RTL cleanup
+ * - Extended timeout (10 minutes)
+ * - Single worker for stability
+ *
+ * @see https://vitest.dev/config/
+ */
+export default mergeConfig(
+  commonConfig,
+  defineConfig({
+    cacheDir: "./.vitest-bench", // Separate cache for benchmarks
+
+    // Minimal define (benchmarks don't need __TEST__ or __DEV__)
+    define: {
+      "import.meta.env.BENCHMARK_TESTS": "true", // Enable benchmark metrics
     },
-  },
 
-  cacheDir: "./.vitest-bench", // Separate cache for benchmarks
-  test: {
-    // Settings for benchmark stability (Vitest 4+)
-    pool: "forks", // Process isolation
-    isolate: true, // Full isolation
-    execArgv: [
-      // Node.js flags
-      "--expose-gc", // Access to GC
-      "--max-old-space-size=4096", // More memory per process
-      // "--predictable", // Predictability (optional, slower)
-    ],
+    // Build optimization for benchmarks
+    optimizeDeps: {
+      force: true, // Force optimization
+    },
 
-    // Disable unnecessary features for benchmarks
-    globals: false,
-    environment: "jsdom", // Need jsdom for React components
-    clearMocks: false,
-    mockReset: false,
-    restoreMocks: false,
-    unstubEnvs: false,
-    unstubGlobals: false,
+    // Disable logging for clean results
+    logLevel: "error",
 
-    // Timeouts for long benchmarks
-    testTimeout: 600000, // 10 minutes per test
-    hookTimeout: 60000, // 1 minute for hooks
+    test: {
+      // Settings for benchmark stability (Vitest 4+)
+      pool: "forks", // Process isolation (OVERRIDE common config's threads)
+      isolate: true, // Full isolation
 
-    // Only benchmarks
-    includeSource: [],
-    include: [], // Clear regular tests
-
-    // Setup files for benchmarks (includes RTL cleanup)
-    setupFiles: ["./tests/setup.bench.ts"],
-
-    // Benchmark settings
-    benchmark: {
-      // Reporters
-      reporters: ["default"],
-
-      // Output results
-      outputJson: "./.bench/results.json",
-
-      // Benchmark paths
-      include: [
-        "./tests/benchmarks/**/*.bench.ts",
-        "./tests/benchmarks/**/*.bench.tsx",
+      execArgv: [
+        // Node.js flags
+        "--expose-gc", // Access to GC
+        "--max-old-space-size=4096", // More memory per process
+        // "--predictable", // Predictability (optional, slower)
       ],
-      exclude: ["node_modules", "dist", "**/*.test.ts"],
 
-      // Result verbosity
-      includeSamples: false,
+      // Disable unnecessary features for benchmarks (OVERRIDE common config)
+      globals: false,
+      clearMocks: false,
+      mockReset: false,
+      restoreMocks: false,
+      unstubEnvs: false,
+      unstubGlobals: false,
+
+      // Setup files for benchmarks (OVERRIDE common config)
+      setupFiles: ["./tests/setup.bench.ts"], // Includes RTL cleanup
+
+      // Timeouts for long benchmarks
+      testTimeout: 600000, // 10 minutes per test
+      hookTimeout: 60000, // 1 minute for hooks
+
+      // Only benchmarks
+      includeSource: [],
+      include: [], // Clear regular tests
+
+      // Benchmark settings
+      benchmark: {
+        // Reporters
+        reporters: ["default"],
+
+        // Output results
+        outputJson: "./.bench/results.json",
+
+        // Benchmark paths
+        include: [
+          "./tests/benchmarks/**/*.bench.ts",
+          "./tests/benchmarks/**/*.bench.tsx",
+        ],
+        exclude: ["node_modules", "dist", "**/*.test.ts"],
+
+        // Result verbosity
+        includeSamples: false,
+      },
+
+      // Disable coverage for benchmarks
+      coverage: {
+        enabled: false,
+      },
+
+      // Output settings
+      reporters: ["basic"], // Minimal output
+      outputFile: "./.bench/output.txt",
+
+      // Disable watch for benchmarks
+      watch: false,
+
+      // Parallelism
+      maxConcurrency: 1, // One test at a time for stability
+      maxWorkers: 1, // One worker
     },
-
-    // Disable coverage for benchmarks
-    coverage: {
-      enabled: false,
-    },
-
-    // Output settings
-    reporters: ["basic"], // Minimal output
-    outputFile: "./.bench/output.txt",
-
-    // Disable watch for benchmarks
-    watch: false,
-
-    // Parallelism
-    maxConcurrency: 1, // One test at a time for stability
-    maxWorkers: 1, // One worker
-  },
-
-  // Define global constants for benchmarks
-  define: {
-    "import.meta.env.INTERNAL_TESTS": "true", // Enable internal metrics for benchmarks
-  },
-
-  // Build optimization for benchmarks
-  optimizeDeps: {
-    force: true, // Force optimization
-  },
-
-  // Disable logging for clean results
-  logLevel: "error",
-});
+  }),
+);

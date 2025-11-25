@@ -22,7 +22,6 @@ describe("withProfiler", () => {
   });
 
   describe("Component Creation", () => {
-    // eslint-disable-next-line vitest/expect-expect
     it("should create a profiled component with all required methods", () => {
       const Profiled = withProfiler(SimpleComponent);
 

@@ -18,7 +18,13 @@ declare global {
      *
      * @internal
      */
-    readonly INTERNAL_TESTS: boolean;
+    readonly INTERNAL_TESTS: "true" | "false";
+    /**
+     * Flag
+     *
+     * @internal
+     */
+    readonly BENCHMARK_TESTS: "true" | "false";
   }
 
   interface ImportMeta {

@@ -66,6 +66,7 @@ Thumbs.db
 .turbo
 .bench
 .vitest-bench
+.vitest-stress
 .vercel
 .changeset/
 !.changeset/config.json

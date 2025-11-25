@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { describe, expect, it } from "vitest";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createHookProfiler } from "@/hooks";
 
 /**
@@ -75,8 +75,8 @@ describe("Hook Composition Performance", () => {
 
       function useBadChain(id: number) {
         const a = useHookA(id);
-        const b = useHookB(a);
-        return b;
+
+        return useHookB(a);
       }
 
       const profiler = createHookProfiler(({ id }) => useBadChain(id), {
@@ -103,8 +103,8 @@ describe("Hook Composition Performance", () => {
 
       function useGoodChain(id: number) {
         const a = useHookA(id);
-        const b = useHookB(a);
-        return b;
+
+        return useHookB(a);
       }
 
       const profiler = createHookProfiler(({ id }) => useGoodChain(id), {

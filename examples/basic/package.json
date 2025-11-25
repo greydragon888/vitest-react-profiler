@@ -2,7 +2,6 @@
   "name": "basic-examples",
   "version": "1.0.0",
   "description": "Basic examples of vitest-react-profiler usage",
-  "main": "index.js",
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",

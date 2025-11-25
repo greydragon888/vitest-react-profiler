@@ -12,6 +12,9 @@ import noOnlyTests from "eslint-plugin-no-only-tests";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 // @ts-expect-error - no type definitions available for this package
 import promisePlugin from "eslint-plugin-promise";
+import regexpPlugin from "eslint-plugin-regexp";
+// @ts-expect-error - no type definitions available for this package
+import securityPlugin from "eslint-plugin-security";
 import sonarjsPlugin from "eslint-plugin-sonarjs";
 import unicorn from "eslint-plugin-unicorn";
 import tsEslint from "typescript-eslint";
@@ -428,7 +431,47 @@ export default tsEslint.config(
   },
 
   // ============================================
-  // 12. VITEST CONFIGURATION (Test Files and Fixtures)
+  // 12. SECURITY & REGEXP CONFIGURATION
+  // ============================================
+  {
+    files: ["**/*.ts?(x)"],
+    plugins: {
+      security: securityPlugin,
+      regexp: regexpPlugin,
+    },
+    rules: {
+      // Security plugin rules
+      ...securityPlugin.configs.recommended.rules,
+      // Disable object-injection - TypeScript provides type safety for enum/array access
+      "security/detect-object-injection": "off",
+      "security/detect-non-literal-regexp": "warn",
+      "security/detect-unsafe-regex": "error",
+      "security/detect-buffer-noassert": "error",
+      "security/detect-child-process": "warn",
+      "security/detect-disable-mustache-escape": "error",
+      "security/detect-eval-with-expression": "error",
+      "security/detect-new-buffer": "error",
+      "security/detect-no-csrf-before-method-override": "error",
+      "security/detect-possible-timing-attacks": "warn",
+      "security/detect-pseudoRandomBytes": "error",
+
+      // Regexp plugin rules
+      ...regexpPlugin.configs.recommended.rules,
+      "regexp/no-super-linear-backtracking": "error",
+      "regexp/no-misleading-unicode-character": "error",
+      "regexp/no-dupe-disjunctions": "error",
+      "regexp/no-useless-assertions": "warn",
+      "regexp/no-useless-flag": "error",
+      "regexp/optimal-quantifier-concatenation": "warn",
+      "regexp/prefer-d": "warn",
+      "regexp/prefer-plus-quantifier": "warn",
+      "regexp/prefer-question-quantifier": "warn",
+      "regexp/prefer-star-quantifier": "warn",
+    },
+  },
+
+  // ============================================
+  // 13. VITEST CONFIGURATION (Test Files and Fixtures)
   // ============================================
   {
     files: ["**/tests/**/*.test.ts?(x)"],
@@ -443,6 +486,8 @@ export default tsEslint.config(
     },
     rules: {
       "unicorn/no-array-sort": "off",
+      // Disable non-literal regexp check for tests (intentional dynamic patterns)
+      "security/detect-non-literal-regexp": "off",
       ...vitestPlugin.configs.all.rules,
       "vitest/require-to-throw-message": "off",
       "vitest/prefer-lowercase-title": "off",
@@ -456,6 +501,12 @@ export default tsEslint.config(
       "vitest/padding-around-expect-groups": "warn",
       "vitest/consistent-test-filename": "warn",
       "vitest/prefer-strict-equal": "error",
+      "vitest/expect-expect": [
+        "error",
+        {
+          assertFunctionNames: ["expect", "expectTypeOf", "expectType"],
+        },
+      ],
       // Disable some TypeScript rules for tests
       "@typescript-eslint/consistent-type-assertions": "off",
       "@typescript-eslint/prefer-promise-reject-errors": "off",
@@ -488,6 +539,7 @@ export default tsEslint.config(
     files: ["**/tests/**/*.properties.ts?(x)"],
     rules: {
       "unicorn/no-array-sort": "off",
+      "sonarjs/cognitive-complexity": "off",
       // Disable some TypeScript rules for tests
       "@typescript-eslint/consistent-type-assertions": "off",
       "@typescript-eslint/prefer-promise-reject-errors": "off",
@@ -550,7 +602,52 @@ export default tsEslint.config(
   },
 
   // ============================================
-  // 13. CONFIG FILES (allow Node.js modules and defaults)
+  // 14. STRESS TESTS (V8 internals, GC profiling, memory testing)
+  // ============================================
+  {
+    files: ["**/tests/**/*.stress.ts?(x)"],
+    rules: {
+      // Allow unsafe TypeScript patterns for V8/Node.js internals
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/prefer-promise-reject-errors": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-invalid-void-type": "off",
+      "@typescript-eslint/no-shadow": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-unsafe-function-type": "off",
+      // Allow SonarJS patterns for stress testing
+      "sonarjs/no-unused-collection": "off",
+      "sonarjs/no-unused-vars": "off",
+      "sonarjs/no-dead-store": "off",
+      "sonarjs/cognitive-complexity": "off",
+      "sonarjs/no-commented-code": "off",
+      "sonarjs/no-duplicate-string": "off",
+      "sonarjs/function-return-type": "off",
+      "sonarjs/different-types-comparison": "off",
+      "sonarjs/void-use": "off",
+      // Allow Unicorn patterns for stress testing
+      "unicorn/no-array-reduce": "off",
+      "unicorn/consistent-function-scoping": "off",
+      "unicorn/no-array-sort": "off",
+      // Allow other patterns
+      "import/no-default-export": "off",
+      "import/no-unresolved": "off",
+      "prefer-const": "off",
+      "prefer-rest-params": "off",
+    },
+  },
+
+  // ============================================
+  // 15. CONFIG FILES (allow Node.js modules and defaults)
   // ============================================
   {
     files: ["**/*.config.{js,ts,mjs,mts}", "**/vitest.setup.ts"],

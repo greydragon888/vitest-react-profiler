@@ -1,5 +1,5 @@
 // Component for testing context performance
-import { memo, useEffect, useState } from "react";
+import { memo, useRef } from "react";
 import type { FC } from "react";
 
 interface ContextConsumerProps {
@@ -7,15 +7,13 @@ interface ContextConsumerProps {
 }
 
 export const ContextConsumer: FC<ContextConsumerProps> = memo(({ id }) => {
-  const [localRenders, setLocalRenders] = useState(0);
-
-  useEffect(() => {
-    setLocalRenders((prev) => prev + 1);
-  });
+  // Track renders using a ref (doesn't cause re-renders)
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
 
   return (
     <div style={{ padding: "5px", margin: "2px", border: "1px solid #ddd" }}>
-      Consumer {id} - Renders: {localRenders}
+      Consumer {id} - Renders: {renderCountRef.current}
     </div>
   );
 });

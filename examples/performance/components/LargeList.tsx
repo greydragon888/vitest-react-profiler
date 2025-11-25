@@ -1,6 +1,6 @@
 // Large list rendering component
 import { useMemo, useState } from "react";
-import type { FC } from "react";
+import type { FC, UIEvent } from "react";
 
 interface LargeListProps {
   itemCount: number;
@@ -62,7 +62,7 @@ export const LargeList: FC<LargeListProps> = ({
     enableVirtualization,
   ]);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
     if (enableVirtualization) {
       setScrollTop(e.currentTarget.scrollTop);
     }

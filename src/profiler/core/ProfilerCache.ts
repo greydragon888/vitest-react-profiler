@@ -1,18 +1,17 @@
 import { cacheMetrics } from "./CacheMetrics";
 
+import type { ProfilerCacheInterface } from "./interfaces";
 import type { PhaseType } from "@/types";
 
 /**
  * Manages all types of caching for profiler data
  *
- * Supports 2 types of cache:
- * 1. frozenHistory - immutable copy of entire history (array of phases)
- * 2. phaseCache - filtered renders by phase (mount/update/nested-update)
+ * Supports phaseCache - filtered renders by phase (mount/update/nested-update)
  *
  * @since v1.6.0 - Added cache metrics tracking
+ * @since v1.7.0 - Implements ProfilerCacheInterface for Dependency Injection
  */
-export class ProfilerCache {
-  private frozenHistory?: readonly PhaseType[] | undefined;
+export class ProfilerCache implements ProfilerCacheInterface {
   private phaseCache?:
     | {
         mount?: readonly PhaseType[];
@@ -20,28 +19,6 @@ export class ProfilerCache {
         "nested-update"?: readonly PhaseType[];
       }
     | undefined;
-
-  /**
-   * Get or compute frozen history
-   *
-   * @param compute - Computation function, called only if cache is invalid
-   *
-   * @since v1.6.0 - Added cache metrics tracking
-   */
-  getFrozenHistory(compute: () => readonly PhaseType[]): readonly PhaseType[] {
-    if (this.frozenHistory !== undefined) {
-      cacheMetrics.recordHit("frozenHistory");
-
-      return this.frozenHistory;
-    }
-
-    cacheMetrics.recordMiss("frozenHistory");
-    const history = compute();
-
-    this.frozenHistory = Object.freeze(history);
-
-    return this.frozenHistory;
-  }
 
   /**
    * Get or compute renders by phase
@@ -81,9 +58,6 @@ export class ProfilerCache {
    * @since v1.6.0 - Optimized: selective invalidation by phase
    */
   invalidate(phase: PhaseType): void {
-    // Always invalidate frozenHistory (array changed)
-    this.frozenHistory = undefined;
-
     // Smart invalidation: only invalidate cache for the current phase
     // Other phase caches remain valid (e.g., adding "update" doesn't affect "mount" cache)
     if (this.phaseCache) {
@@ -95,7 +69,6 @@ export class ProfilerCache {
    * Full clear (called on clear)
    */
   clear(): void {
-    this.frozenHistory = undefined;
     this.phaseCache = undefined;
   }
 }

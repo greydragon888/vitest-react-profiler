@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",
@@ -39,9 +39,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "sideEffects": [
@@ -60,39 +65,48 @@
   ],
   "scripts": {
     "build": "tsup",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test": "vitest run --config vitest.config.unit.mts",
+    "test:coverage": "vitest run --coverage --config vitest.config.unit.mts",
     "test:mutation": "stryker run",
     "test:mutation:report": "open reports/mutation-report.html",
     "test:properties": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --config vitest.config.properties.mts",
     "test:bench": "vitest bench --config vitest.config.bench.mts",
     "test:bench:stable": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
+    "test:stress": "NODE_OPTIONS='--expose-gc' vitest run --config vitest.config.stress.mts",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx --fix",
+    "lint:types": "attw --pack .",
+    "lint:package": "publint",
+    "lint:unused": "knip",
+    "size": "size-limit",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:md:fix": "markdownlint \"**/*.md\" --ignore node_modules --fix",
     "bundle:analyze": "npm run build && npx @codecov/bundle-analyzer ./dist --bundle-name=vitest-react-profiler",
-    "bundle:size": "npm run build && echo '\n📊 Bundle Size Report:' && for file in dist/*; do name=$(basename \"$file\"); size=$(du -h \"$file\" | cut -f1); if [[ \"$name\" == \"index.js\" || \"$name\" == \"index.cjs\" ]]; then gzsize=$(gzip -c \"$file\" | wc -c | awk '{printf \"%.2fK\", $1/1024}'); echo \"  $name: $size (gzipped: $gzsize)\"; else echo \"  $name: $size\"; fi; done",
     "sonar": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN",
     "sonar:debug": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.log.level=DEBUG -Dsonar.verbose=true",
     "sonar:local": "npm run typecheck && npm run test:coverage && npm run sonar",
-    "prepare": "node -e \"try { require('husky') } catch (e) {}\""
+    "prepare": "node -e \"try { require('husky') } catch (e) {}\"",
+    "prepublishOnly": "npm run lint:types && npm run lint:package && npm run lint:unused && npm run typecheck && npm run test:coverage && npm run build"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
     "vitest": ">=1.0.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
     "@codecov/bundle-analyzer": "1.9.1",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
     "@eslint/js": "9.39.1",
     "@fast-check/vitest": "0.2.3",
+    "@size-limit/file": "11.2.0",
+    "@size-limit/preset-small-lib": "11.2.0",
     "@stryker-mutator/core": "9.3.0",
     "@stryker-mutator/typescript-checker": "9.3.0",
     "@stryker-mutator/vitest-runner": "9.3.0",
     "@stylistic/eslint-plugin": "5.6.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.0",
-    "@testing-library/user-event": "14.6.1",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
@@ -107,15 +121,21 @@
     "eslint-plugin-no-only-tests": "3.3.0",
     "eslint-plugin-prettier": "5.5.4",
     "eslint-plugin-promise": "7.2.1",
+    "eslint-plugin-regexp": "^2.10.0",
+    "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-sonarjs": "3.0.5",
     "eslint-plugin-unicorn": "62.0.0",
     "fast-check": "4.3.0",
     "husky": "9.1.7",
     "jsdom": "27.2.0",
+    "knip": "5.70.1",
     "lint-staged": "16.2.6",
+    "markdownlint-cli": "0.46.0",
     "prettier": "3.6.2",
+    "publint": "0.3.15",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "size-limit": "11.2.0",
     "sonarqube-scanner": "4.3.2",
     "terser": "5.44.0",
     "tsup": "8.5.1",
@@ -125,5 +145,29 @@
   },
   "workspaces": [
     "examples/*"
+  ],
+  "overrides": {
+    "glob": "^11.1.0"
+  },
+  "size-limit": [
+    {
+      "name": "ESM bundle (with tree-shaking)",
+      "path": "dist/index.js",
+      "limit": "40 KB",
+      "import": "{ withProfiler }",
+      "ignore": [
+        "react",
+        "react-dom"
+      ]
+    },
+    {
+      "name": "CJS bundle (full package)",
+      "path": "dist/index.cjs",
+      "limit": "45 KB",
+      "ignore": [
+        "react",
+        "react-dom"
+      ]
+    }
   ]
 }

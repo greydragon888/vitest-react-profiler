@@ -6,8 +6,9 @@ We release patches for security vulnerabilities. Currently supported versions:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0.0 | :x:                |
+| 1.7.x   | :white_check_mark: |
+| 1.6.x   | :white_check_mark: |
+| < 1.6.0 | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -19,7 +20,7 @@ The vitest-react-profiler team takes security issues seriously. We appreciate yo
 
 Instead, please report them via email to:
 
-- **Email**: greydragon888@gmail.com
+- **Email**: <greydragon888@gmail.com>
 - **Subject Line**: [SECURITY] vitest-react-profiler - [Brief Description]
 
 ### What to Include
@@ -61,7 +62,7 @@ Since vitest-react-profiler is a testing utility, it should **NEVER** be used in
 ```json
 {
   "devDependencies": {
-    "vitest-react-profiler": "^1.0.0"
+    "vitest-react-profiler": "^1.7.0"
   }
 }
 ```
@@ -109,7 +110,7 @@ npm outdated
 
 ## Security Features
 
-### What we do:
+### What we do
 
 - Regular dependency updates
 - Security-focused code reviews
@@ -119,7 +120,7 @@ npm outdated
 - No network requests
 - No file system access beyond test requirements
 
-### What we don't do:
+### What we don't do
 
 - Collect telemetry or usage data
 - Make external API calls

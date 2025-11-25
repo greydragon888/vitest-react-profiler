@@ -2,7 +2,6 @@
   "name": "performance-examples",
   "version": "1.0.0",
   "description": "Performance testing examples for vitest-react-profiler",
-  "main": "index.js",
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -11,5 +10,8 @@
     "test:run": "vitest --run"
   },
   "author": "GreyDragon888",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@testing-library/user-event": "^14.6.1"
+  }
 }

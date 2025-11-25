@@ -1,11 +1,12 @@
 import { useState } from "react";
+import type { FC } from "react";
 
 interface ConditionalComponentProps {
   showContent?: boolean;
   renderCount?: number;
 }
 
-export const ConditionalComponent: React.FC<ConditionalComponentProps> = ({
+export const ConditionalComponent: FC<ConditionalComponentProps> = ({
   showContent = true,
   renderCount = 3,
 }) => {

@@ -3,11 +3,30 @@ import { describe, it, expect, expectTypeOf } from "vitest";
 
 import { profileHook } from "@/hooks";
 
+import type { SetStateAction, Dispatch } from "react";
+
 describe("profileHook - Edge cases", () => {
   it("should handle hook without props", () => {
     const { ProfiledHook } = profileHook(() => useState(0));
 
     expect(ProfiledHook).toHaveRenderedTimes(1);
+  });
+
+  it("should set correct displayName with hook name", () => {
+    // Named function passed directly (not wrapped in arrow function)
+    function useCustomCounter() {
+      return useState(0);
+    }
+
+    const { ProfiledHook } = profileHook(useCustomCounter);
+
+    // Verify withProfiler sets displayName
+    expect(ProfiledHook.displayName).toBe("withProfiler(useCustomCounter)");
+
+    // Verify exact inner HookComponent displayName format "HookWrapper(hookName)" (kills StringLiteral mutation)
+    expect(ProfiledHook.OriginalComponent.displayName).toBe(
+      "HookWrapper(useCustomCounter)",
+    );
   });
 
   it("should handle multiple rerenders", () => {
@@ -111,10 +130,8 @@ describe("profileHook - Edge cases", () => {
     const { result } = profileHook(() => useState<string>("test"));
 
     // TypeScript should infer the correct type
-    const [state, setState]: [
-      string,
-      React.Dispatch<React.SetStateAction<string>>,
-    ] = result.current;
+    const [state, setState]: [string, Dispatch<SetStateAction<string>>] =
+      result.current;
 
     expect(state).toBe("test");
 

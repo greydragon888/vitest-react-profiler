@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.cache/
+*.log
+.DS_Store
+.changeset/
+CHANGELOG.md
+ARCHITECTURE.md
+CLAUDE.md

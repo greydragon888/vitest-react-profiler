@@ -1,12 +1,14 @@
 import { useState } from "react";
 
+import type { FC } from "react";
+
 interface Todo {
   id: number;
   text: string;
   completed: boolean;
 }
 
-export const TodoList: React.FC = () => {
+export const TodoList: FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [inputText, setInputText] = useState("");
 

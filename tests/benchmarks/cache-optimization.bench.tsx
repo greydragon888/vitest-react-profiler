@@ -1,7 +1,7 @@
-import { render } from "@testing-library/react";
-import { bench, describe } from "vitest";
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, bench, describe } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearRegistry, withProfiler } from "../../src";
 
 /**
  * Benchmark for getRendersByPhase() and hasMounted() caching
@@ -16,6 +16,11 @@ import { withProfiler } from "../../src";
 const TestComponent = () => <div>Test</div>;
 
 describe("getRendersByPhase() caching", () => {
+  afterEach(() => {
+    cleanup();
+    clearRegistry();
+  });
+
   bench("single call - 100 renders", () => {
     const ProfiledComponent = withProfiler(TestComponent);
     const { rerender } = render(<ProfiledComponent />);
@@ -91,6 +96,11 @@ describe("getRendersByPhase() caching", () => {
 });
 
 describe("hasMounted() caching", () => {
+  afterEach(() => {
+    cleanup();
+    clearRegistry();
+  });
+
   bench("single call - 100 renders", () => {
     const ProfiledComponent = withProfiler(TestComponent);
     const { rerender } = render(<ProfiledComponent />);
@@ -157,6 +167,11 @@ describe("hasMounted() caching", () => {
 });
 
 describe("Multiple phases caching", () => {
+  afterEach(() => {
+    cleanup();
+    clearRegistry();
+  });
+
   bench("all 3 phases called 10 times each - 100 renders", () => {
     const ProfiledComponent = withProfiler(TestComponent);
     const { rerender } = render(<ProfiledComponent />);
