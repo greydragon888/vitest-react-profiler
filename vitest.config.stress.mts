@@ -25,12 +25,6 @@ export default mergeConfig(
   defineConfig({
     cacheDir: "./.vitest-stress", // Separate cache for stress tests
 
-    // Stress tests use normal MAX_SAFE_RENDERS (10,000) to test real limits
-    // Only benchmarks need high limit via INTERNAL_TESTS flag
-    define: {
-      "import.meta.env.INTERNAL_TESTS": "false", // Disable to use real MAX_SAFE_RENDERS=10,000
-    },
-
     // Disable logging for clean memory measurements
     logLevel: "warn",
 
