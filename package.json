@@ -129,7 +129,7 @@
     "husky": "9.1.7",
     "jsdom": "27.2.0",
     "knip": "5.70.1",
-    "lint-staged": "16.2.6",
+    "lint-staged": "16.2.7",
     "markdownlint-cli": "0.46.0",
     "prettier": "3.6.2",
     "publint": "0.3.15",
@@ -137,10 +137,10 @@
     "react-dom": "19.2.0",
     "size-limit": "11.2.0",
     "sonarqube-scanner": "4.3.2",
-    "terser": "5.44.0",
+    "terser": "5.44.1",
     "tsup": "8.5.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.47.0",
+    "typescript-eslint": "8.48.0",
     "vitest": "4.0.13"
   },
   "workspaces": [
