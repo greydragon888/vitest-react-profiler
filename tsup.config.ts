@@ -72,6 +72,7 @@ export default defineConfig({
   // Build-time constants for tree-shaking
   define: {
     "import.meta.env.INTERNAL_TESTS": "false", // Disable internal metrics in production
+    "import.meta.env.BENCHMARK_TESTS": "false", // Disable internal metrics in production
   },
 
   // Output configuration
