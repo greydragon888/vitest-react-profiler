@@ -52,6 +52,7 @@ export default mergeConfig(
           "**/matchers/async/index.ts",
           // Internal debugging/metrics (not production code)
           "**/profiler/core/CacheMetrics.ts",
+          "**/profiler/core/constants.ts",
         ],
         thresholds: {
           statements: 95,

@@ -22,7 +22,7 @@
  * @internal
  */
 export const MAX_SAFE_RENDERS =
-  /* v8 ignore next -- @preserve */
+  // Stryker disable next-line all
   import.meta.env.BENCHMARK_TESTS === "true" ? 1_000_000 : 10_000;
 
 /**
