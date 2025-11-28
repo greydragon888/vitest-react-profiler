@@ -72,6 +72,7 @@
     "test:properties": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --config vitest.config.properties.mts",
     "test:bench": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
     "test:stress": "NODE_OPTIONS='--expose-gc' vitest run --config vitest.config.stress.mts",
+    "test:examples": "npm run test:run --workspaces --if-present",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx --fix",
     "lint:types": "attw --pack .",

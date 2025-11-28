@@ -1,6 +1,6 @@
 import { render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { withProfiler } from "../../src";
+import { withProfiler, clearProfilerData } from "../../src";
 import { AnimationStressTest } from "./components/AnimationStressTest";
 import { ReconciliationTest } from "./components/ReconciliationTest";
 import { ContextPerformanceTest } from "./components/ContextPerformanceTest";
@@ -86,6 +86,7 @@ describe("Performance Testing Suite", () => {
         );
 
         unmount();
+        clearProfilerData(); // Clear data between loop iterations
       }
     });
   });
@@ -360,13 +361,13 @@ describe("Performance Testing Suite", () => {
         // Trigger a few re-renders by updating props
         rerender(
           <ProfiledContext
-            consumerCount={count}
+            consumerCount={count + 1}
             updateFrequency={updateFrequency}
           />,
         );
         rerender(
           <ProfiledContext
-            consumerCount={count}
+            consumerCount={count + 2}
             updateFrequency={updateFrequency}
           />,
         );
@@ -376,6 +377,7 @@ describe("Performance Testing Suite", () => {
         results.push({ count, renders: finalRenders });
 
         unmount();
+        clearProfilerData(); // Clear data between loop iterations
       }
 
       // More consumers doesn't necessarily mean more parent renders
@@ -476,6 +478,7 @@ describe("Performance Testing Suite", () => {
         results.push({ frequency, renders });
 
         unmount();
+        clearProfilerData(); // Clear data between loop iterations
       }
 
       // All frequencies should produce some renders

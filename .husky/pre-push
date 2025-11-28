@@ -29,6 +29,10 @@ npm run test:coverage
 echo "💪 Running stress tests..."
 npm run test:stress
 
+# Run examples
+echo "📝 Running examples..."
+npm run test:examples
+
 # Build the project to ensure it compiles
 echo "📦 Building project..."
 npm run build

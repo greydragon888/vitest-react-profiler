@@ -9,6 +9,10 @@ export default defineConfig({
     },
   },
 
+  define: {
+    __DEV__: true,
+  },
+
   test: {
     environment: "jsdom",
     setupFiles: ["./setup.ts"],
