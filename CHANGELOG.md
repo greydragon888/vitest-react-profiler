@@ -33,6 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `gc()` setup, increased warmup (100ms→300ms) and measurement time (1s→2s)
   - Fixed 11 benchmarks across cache-optimization, event-system, realistic-patterns files
 
+- **Comprehensive test coverage for new matchers** - Enterprise-grade testing with 84 new tests
+  - **Property-based tests** (`tests/property/matchers.properties.tsx`)
+    - 17 invariant tests for `notToHaveRenderLoops` matcher
+
+  - **Stress tests** (`tests/stress/matcher-render-loops.stress.tsx`)
+    - 21 tests for `notToHaveRenderLoops` under extreme conditions
+
+  - **Performance benchmarks** (`tests/benchmarks/`)
+    - 28 benchmarks for `notToHaveRenderLoops` matcher
+    - 18 benchmarks for `toMeetRenderCountBudget` matcher
+
+  - **Performance baselines established** for regression detection in future versions
+
 ### Changed
 
 - **Default benchmark script now uses gc()** - `npm run test:bench` enables `--expose-gc` by default

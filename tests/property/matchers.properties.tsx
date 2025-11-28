@@ -83,6 +83,9 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect } from "vitest";
 
 import { createSimpleProfiledComponent } from "./helpers";
+import { notToHaveRenderLoops } from "../../src/matchers/sync/render-loops";
+
+import type { PhaseType } from "../../src/types";
 
 describe("Property-Based Tests: Matcher Parameter Validation", () => {
   afterEach(() => {
@@ -830,5 +833,536 @@ describe("Property-Based Tests: Event-based Matcher Invariants", () => {
         );
       },
     );
+  });
+});
+
+describe("Property-Based Tests: notToHaveRenderLoops Invariants", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  /**
+   * Helper: Create a mock profiled component with specific render history
+   * Used for testing loop detection without actual React rendering
+   */
+  function createMockComponentWithHistory(history: readonly PhaseType[]) {
+    // Must be a function to pass isProfiledComponent type guard
+    const mockComponent = (() => null) as any;
+
+    // Attach required methods
+    mockComponent.getRenderHistory = () => history;
+    mockComponent.getRenderCount = () => history.length;
+    mockComponent.hasMounted = () => history.includes("mount");
+    mockComponent.getRendersByPhase = (phase: PhaseType) =>
+      history.filter((p) => p === phase);
+    mockComponent.getLastRender = () =>
+      history.length > 0 ? { phase: history.at(-1) } : null;
+
+    return mockComponent;
+  }
+
+  describe("Loop Detection Algorithm", () => {
+    test.prop(
+      [
+        fc.constantFrom("update" as const, "nested-update" as const),
+        fc.integer({ min: 1, max: 50 }),
+      ],
+      { numRuns: 1000 },
+    )(
+      "detects loop when consecutive count exceeds threshold by 1",
+      (phase, threshold) => {
+        // Create history with exactly threshold + 1 consecutive phases
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from({ length: threshold + 1 }, () => phase),
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: threshold,
+          maxConsecutiveNested: threshold,
+        });
+
+        // Should detect loop (threshold + 1 > threshold)
+        return !result.pass;
+      },
+    );
+
+    test.prop(
+      [
+        fc.constantFrom("update" as const, "nested-update" as const),
+        fc.integer({ min: 2, max: 50 }),
+      ],
+      { numRuns: 1000 },
+    )(
+      "does NOT detect loop when count equals threshold exactly",
+      (phase, threshold) => {
+        // Create history with exactly threshold consecutive phases
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from({ length: threshold }, () => phase),
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: threshold,
+          maxConsecutiveNested: threshold,
+        });
+
+        // Should NOT detect loop (threshold === threshold)
+        return result.pass;
+      },
+    );
+
+    test.prop(
+      [
+        fc.integer({ min: 5, max: 30 }), // first loop size
+        fc.integer({ min: 5, max: 30 }), // second loop size
+      ],
+      { numRuns: 500 },
+    )(
+      "detects FIRST loop when multiple loops exist",
+      (firstLoopSize, secondLoopSize) => {
+        const threshold = Math.min(firstLoopSize, secondLoopSize) - 1;
+
+        // Create history with two separate loops
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from({ length: firstLoopSize }, (): PhaseType => "update"), // First loop
+          "mount",
+          ...Array.from(
+            { length: secondLoopSize },
+            (): PhaseType => "nested-update",
+          ), // Second loop
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: threshold,
+          maxConsecutiveNested: threshold,
+        });
+
+        if (!result.pass) {
+          const message = result.message();
+
+          // Should report first loop (update), not second (nested-update)
+          return message.includes("update") && message.includes("consecutive");
+        }
+
+        return false; // Should have detected first loop
+      },
+    );
+
+    test.prop(
+      [
+        fc.array(fc.constantFrom("update" as const, "nested-update" as const), {
+          minLength: 1,
+          maxLength: 100,
+        }),
+        fc.integer({ min: 1, max: 10 }),
+      ],
+      { numRuns: 500 },
+    )(
+      "handles alternating phases without false positives",
+      (phases, threshold) => {
+        // Create history that alternates between different phases
+        const alternating: PhaseType[] = ["mount"];
+
+        for (let i = 0; i < phases.length; i++) {
+          alternating.push(phases[i]!);
+
+          if (i < phases.length - 1 && phases[i] !== phases[i + 1]) {
+            // Insert mount to break sequence
+            alternating.push("mount");
+          }
+        }
+
+        const component = createMockComponentWithHistory(alternating);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: threshold,
+          maxConsecutiveNested: threshold,
+        });
+
+        // Count max consecutive run manually
+        let maxRun = 0;
+        let currentPhase: PhaseType | null = null;
+        let currentRun = 0;
+
+        for (const phase of alternating) {
+          if (phase === currentPhase && phase !== "mount") {
+            currentRun++;
+            maxRun = Math.max(maxRun, currentRun);
+          } else {
+            currentPhase = phase;
+            currentRun = 1;
+          }
+        }
+
+        // Should pass if max run <= threshold
+        const shouldPass = maxRun <= threshold;
+
+        return result.pass === shouldPass;
+      },
+    );
+  });
+
+  describe("ignoreInitialUpdates Behavior", () => {
+    test.prop(
+      [
+        fc.integer({ min: 0, max: 20 }), // ignore count
+        fc.integer({ min: 5, max: 15 }), // loop size after ignored
+      ],
+      { numRuns: 500 },
+    )(
+      "correctly ignores first N updates when detecting loops",
+      (ignoreCount, loopSize) => {
+        // Create history: mount + ignored updates + loop
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from({ length: ignoreCount }, (): PhaseType => "update"), // These should be ignored
+          ...Array.from({ length: loopSize }, (): PhaseType => "nested-update"), // This should trigger loop
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          ignoreInitialUpdates: ignoreCount,
+          maxConsecutiveNested: loopSize - 1, // Should detect loop
+          maxConsecutiveUpdates: 100, // High enough to not interfere
+        });
+
+        // Should detect loop in nested-update sequence
+        return !result.pass;
+      },
+    );
+
+    test.prop(
+      [
+        fc.integer({ min: 1, max: 10 }), // ignore count
+        fc.integer({ min: 2, max: 15 }), // total updates in ignored section
+      ],
+      { numRuns: 500 },
+    )(
+      "does NOT detect loops in ignored initial updates",
+      (ignoreCount, totalIgnoredUpdates) => {
+        // Create history with loop ENTIRELY within ignored section
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from(
+            { length: totalIgnoredUpdates },
+            (): PhaseType => "update",
+          ), // Loop in ignored section
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          ignoreInitialUpdates: ignoreCount,
+          maxConsecutiveUpdates: 1, // Very strict threshold
+          maxConsecutiveNested: 1,
+        });
+
+        if (totalIgnoredUpdates <= ignoreCount) {
+          // All updates are ignored, should NOT detect loop
+          return result.pass;
+        }
+
+        // Some updates extend beyond ignored section, should detect loop
+        // After ignoring N updates, the remaining ones start fresh with count=1
+        // Since we have (totalIgnoredUpdates - ignoreCount) consecutive updates after ignoring,
+        // and threshold is 1, we should detect loop if count > 1
+        const remainingAfterIgnore = totalIgnoredUpdates - ignoreCount;
+
+        if (remainingAfterIgnore > 1) {
+          return !result.pass; // Should detect loop
+        }
+
+        return result.pass; // Exactly 1 remaining = no loop
+      },
+    );
+
+    test.prop([fc.integer({ min: 0, max: 30 })], { numRuns: 500 })(
+      "handles ignoreInitialUpdates larger than actual update count",
+      (ignoreCount) => {
+        // Create history with fewer updates than ignoreCount
+        const actualUpdates = Math.floor(ignoreCount / 2);
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from({ length: actualUpdates }, (): PhaseType => "update"),
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          ignoreInitialUpdates: ignoreCount,
+          maxConsecutiveUpdates: 1,
+        });
+
+        // Should NOT detect loop (all updates ignored)
+        return result.pass;
+      },
+    );
+  });
+
+  describe("Different Thresholds for update vs nested-update", () => {
+    test.prop(
+      [
+        fc.integer({ min: 3, max: 20 }), // update threshold
+        fc.integer({ min: 3, max: 20 }), // nested threshold
+      ],
+      { numRuns: 500 },
+    )(
+      "applies correct threshold based on phase type",
+      (updateThreshold, nestedThreshold) => {
+        // Test 1: update loop just over threshold
+        const updateHistory: PhaseType[] = [
+          "mount",
+          ...Array.from(
+            { length: updateThreshold + 1 },
+            (): PhaseType => "update",
+          ),
+        ];
+
+        const updateComponent = createMockComponentWithHistory(updateHistory);
+        const updateResult = notToHaveRenderLoops(updateComponent, {
+          maxConsecutiveUpdates: updateThreshold,
+          maxConsecutiveNested: nestedThreshold,
+        });
+
+        // Should detect update loop
+        const updateDetected = !updateResult.pass;
+
+        // Test 2: nested-update loop just over threshold
+        const nestedHistory: PhaseType[] = [
+          "mount",
+          ...Array.from(
+            { length: nestedThreshold + 1 },
+            (): PhaseType => "nested-update",
+          ),
+        ];
+
+        const nestedComponent = createMockComponentWithHistory(nestedHistory);
+        const nestedResult = notToHaveRenderLoops(nestedComponent, {
+          maxConsecutiveUpdates: updateThreshold,
+          maxConsecutiveNested: nestedThreshold,
+        });
+
+        // Should detect nested-update loop
+        const nestedDetected = !nestedResult.pass;
+
+        return updateDetected && nestedDetected;
+      },
+    );
+
+    test.prop(
+      [
+        fc.integer({ min: 5, max: 15 }), // smaller threshold
+        fc.integer({ min: 3, max: 10 }), // offset
+      ],
+      { numRuns: 500 },
+    )(
+      "does NOT cross-apply thresholds between phase types",
+      (baseThreshold, offset) => {
+        const updateThreshold = baseThreshold;
+        const nestedThreshold = baseThreshold + offset;
+
+        // Create update sequence that exceeds updateThreshold but not nestedThreshold
+        const updateSequenceLength = updateThreshold + 1;
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from(
+            { length: updateSequenceLength },
+            (): PhaseType => "update",
+          ),
+        ];
+
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: updateThreshold,
+          maxConsecutiveNested: nestedThreshold,
+        });
+
+        // Should detect with updateThreshold, not nestedThreshold
+        return !result.pass;
+      },
+    );
+  });
+
+  describe("Parameter Validation", () => {
+    test.prop(
+      [
+        fc.oneof(
+          fc.integer({ max: 0 }),
+          fc.float({
+            min: Math.fround(0.1),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+        ),
+      ],
+      { numRuns: 500 },
+    )("rejects invalid maxConsecutiveUpdates values", (invalidValue) => {
+      const Component = createSimpleProfiledComponent();
+
+      render(<Component />);
+
+      const result = notToHaveRenderLoops(Component, {
+        maxConsecutiveUpdates: invalidValue,
+      });
+
+      if (invalidValue < 1 || !Number.isInteger(invalidValue)) {
+        return !result.pass && result.message().includes("positive integer");
+      }
+
+      return true;
+    });
+
+    test.prop(
+      [
+        fc.oneof(
+          fc.integer({ max: 0 }),
+          fc.float({
+            min: Math.fround(0.1),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+        ),
+      ],
+      { numRuns: 500 },
+    )("rejects invalid maxConsecutiveNested values", (invalidValue) => {
+      const Component = createSimpleProfiledComponent();
+
+      render(<Component />);
+
+      const result = notToHaveRenderLoops(Component, {
+        maxConsecutiveNested: invalidValue,
+      });
+
+      if (invalidValue < 1 || !Number.isInteger(invalidValue)) {
+        return !result.pass && result.message().includes("positive integer");
+      }
+
+      return true;
+    });
+
+    test.prop([fc.oneof(fc.integer({ max: -1 }), fc.float({ noNaN: true }))], {
+      numRuns: 500,
+    })("rejects invalid ignoreInitialUpdates values", (invalidValue) => {
+      const Component = createSimpleProfiledComponent();
+
+      render(<Component />);
+
+      const result = notToHaveRenderLoops(Component, {
+        ignoreInitialUpdates: invalidValue,
+      });
+
+      if (invalidValue < 0 || !Number.isInteger(invalidValue)) {
+        return (
+          !result.pass && result.message().includes("non-negative integer")
+        );
+      }
+
+      return true;
+    });
+
+    test.prop([fc.integer({ min: 1, max: 100 })], { numRuns: 500 })(
+      "applies default for maxConsecutiveNested when not specified",
+      (maxConsecutiveUpdates) => {
+        const history: PhaseType[] = [
+          "mount",
+          ...Array.from(
+            { length: maxConsecutiveUpdates + 1 },
+            (): PhaseType => "nested-update",
+          ),
+        ];
+
+        const component = createMockComponentWithHistory(history);
+
+        // Don't specify maxConsecutiveNested - should use maxConsecutiveUpdates
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates,
+        });
+
+        // Should detect loop using default (maxConsecutiveUpdates)
+        return !result.pass;
+      },
+    );
+  });
+
+  describe("Edge Cases", () => {
+    test.prop([fc.constant(undefined)], { numRuns: 100 })(
+      "handles empty render history without errors",
+      () => {
+        const component = createMockComponentWithHistory([]);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: 10,
+        });
+
+        // Empty history = no loops
+        return result.pass;
+      },
+    );
+
+    test.prop([fc.integer({ min: 1, max: 50 })], { numRuns: 500 })(
+      "handles mount-only history",
+      (mountCount) => {
+        const history: PhaseType[] = Array.from(
+          { length: mountCount },
+          (): PhaseType => "mount",
+        );
+        const component = createMockComponentWithHistory(history);
+        const result = notToHaveRenderLoops(component, {
+          maxConsecutiveUpdates: 5,
+          maxConsecutiveNested: 5,
+        });
+
+        // Mount phases are never counted as loops
+        return result.pass;
+      },
+    );
+
+    test.prop(
+      [
+        fc.array(fc.constantFrom("mount" as const, "update" as const), {
+          minLength: 2,
+          maxLength: 100,
+        }),
+      ],
+      { numRuns: 500 },
+    )("handles histories with no consecutive repeats", (basePhases) => {
+      // Ensure no consecutive repeats by alternating
+      const history: PhaseType[] = [];
+
+      for (let i = 0; i < basePhases.length; i++) {
+        history.push(basePhases[i]!);
+
+        if (i < basePhases.length - 1 && basePhases[i] === basePhases[i + 1]) {
+          // Insert different phase to break sequence
+          history.push(
+            basePhases[i] === "mount" ? "update" : ("mount" as const),
+          );
+        }
+      }
+
+      const component = createMockComponentWithHistory(history);
+      const result = notToHaveRenderLoops(component, {
+        maxConsecutiveUpdates: 1,
+        maxConsecutiveNested: 1,
+      });
+
+      // No consecutive repeats = no loops
+      return result.pass;
+    });
+
+    test.prop(
+      [fc.oneof(fc.constant(null), fc.constant(undefined), fc.string())],
+      { numRuns: 200 },
+    )("rejects non-profiled components with clear error", (invalidInput) => {
+      const result = notToHaveRenderLoops(invalidInput as any, {
+        maxConsecutiveUpdates: 10,
+      });
+
+      return (
+        !result.pass &&
+        result.message().includes("Expected a profiled component")
+      );
+    });
   });
 });

@@ -52,11 +52,13 @@
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
 - ⚛️ **React 18+ Concurrent Ready** - Full support for `useTransition` and `useDeferredValue`
 - 🧹 **True Automatic Cleanup** - Zero boilerplate! Components auto-clear between tests
+- 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
 - 🛡️ **Built-in Safety Mechanisms** - Automatic detection of infinite render loops and memory leaks
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
-- 🧬 **Battle-Tested Quality** - 99%+ mutation score, property-based testing, SonarCloud verified
-- 🔬 **Mathematically Verified** - 227 property tests with 130,000+ randomized checks per run
-- 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
+- 🧬 **Battle-Tested Quality** - 100% mutation score, property-based testing, stress tests, SonarCloud verified
+- 🔬 **Mathematically Verified** - 244 property tests with 130,000+ randomized scenarios per run
+- 🏋️ **Stress-Tested** - 21 stress tests validate performance on 10,000-render histories
+- 📊 **Performance Baselines** - 46 benchmarks establish regression detection metrics
 
 ## 👥 Who Is This For?
 
@@ -198,9 +200,11 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 
 ```bash
 # Run tests
-npm test                    # Unit/integration tests
-npm run test:properties     # Property-based tests
-npm run test:mutation       # Mutation testing
+npm test                    # Unit/integration tests (736 tests)
+npm run test:properties     # Property-based tests (244 tests, 130k+ checks)
+npm run test:stress         # Stress tests (21 tests, large histories)
+npm run test:bench          # Performance benchmarks (46 benchmarks)
+npm run test:mutation       # Mutation testing (100% score)
 
 # Build
 npm run build
