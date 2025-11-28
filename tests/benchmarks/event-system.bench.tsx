@@ -18,7 +18,7 @@
 import { render, cleanup } from "@testing-library/react";
 import { bench, describe, afterEach } from "vitest";
 
-import { clearRegistry, withProfiler } from "../../src";
+import { clearProfilerData, clearRegistry, withProfiler } from "../../src";
 import {
   waitForRenders,
   waitForPhase,
@@ -48,6 +48,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -56,6 +57,7 @@ describe("Event System - Performance Benchmarks", () => {
           await expect(ProfiledComponent).toEventuallyRenderTimes(1, {
             timeout: 1000,
           });
+          cleanup();
         }
       },
       {
@@ -69,6 +71,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // Fewer iterations for slower operation
         for (let rep = 0; rep < 20; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -81,6 +84,7 @@ describe("Event System - Performance Benchmarks", () => {
           await expect(ProfiledComponent).toEventuallyRenderTimes(10, {
             timeout: 1000,
           });
+          cleanup();
         }
       },
       {
@@ -94,6 +98,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
 
           const { rerender } = render(<ProfiledComponent value={0} />);
@@ -106,6 +111,7 @@ describe("Event System - Performance Benchmarks", () => {
           rerender(<ProfiledComponent value={1} />);
 
           await promise;
+          cleanup();
         }
       },
       {
@@ -119,6 +125,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -127,6 +134,7 @@ describe("Event System - Performance Benchmarks", () => {
           await expect(ProfiledComponent).toEventuallyReachPhase("mount", {
             timeout: 1000,
           });
+          cleanup();
         }
       },
       {
@@ -140,6 +148,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -148,6 +157,7 @@ describe("Event System - Performance Benchmarks", () => {
           await expect(ProfiledComponent).toEventuallyRenderAtLeast(1, {
             timeout: 1000,
           });
+          cleanup();
         }
       },
       {
@@ -163,6 +173,7 @@ describe("Event System - Performance Benchmarks", () => {
       () => {
         // Baseline: no event listeners
         for (let rep = 0; rep < 20; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -170,11 +181,18 @@ describe("Event System - Performance Benchmarks", () => {
           for (let i = 1; i < 100; i++) {
             rerender(<ProfiledComponent value={i} />);
           }
+
+          cleanup();
         }
       },
       {
-        warmupTime: 100,
-        time: 1000,
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
       },
     );
 
@@ -183,6 +201,7 @@ describe("Event System - Performance Benchmarks", () => {
       () => {
         // 1 listener subscribed
         for (let rep = 0; rep < 20; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -197,11 +216,17 @@ describe("Event System - Performance Benchmarks", () => {
           }
 
           unsubscribe();
+          cleanup();
         }
       },
       {
-        warmupTime: 100,
-        time: 1000,
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
       },
     );
 
@@ -210,6 +235,7 @@ describe("Event System - Performance Benchmarks", () => {
       () => {
         // 10 listeners subscribed
         for (let rep = 0; rep < 20; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -228,11 +254,17 @@ describe("Event System - Performance Benchmarks", () => {
           unsubscribes.forEach((unsub) => {
             unsub();
           });
+          cleanup();
         }
       },
       {
-        warmupTime: 100,
-        time: 1000,
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
       },
     );
 
@@ -241,6 +273,7 @@ describe("Event System - Performance Benchmarks", () => {
       () => {
         // 100 listeners subscribed (stress test)
         for (let rep = 0; rep < 10; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -259,11 +292,17 @@ describe("Event System - Performance Benchmarks", () => {
           unsubscribes.forEach((unsub) => {
             unsub();
           });
+          cleanup();
         }
       },
       {
-        warmupTime: 200,
-        time: 1000,
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
       },
     );
   });
@@ -276,6 +315,7 @@ describe("Event System - Performance Benchmarks", () => {
     bench(
       "1 listener - 1000 emits",
       () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -300,6 +340,7 @@ describe("Event System - Performance Benchmarks", () => {
     bench(
       "10 listeners - 1000 emits",
       () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -320,14 +361,20 @@ describe("Event System - Performance Benchmarks", () => {
         });
       },
       {
-        warmupTime: 200,
-        time: 1000,
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
       },
     );
 
     bench(
       "100 listeners - 1000 emits (stress test)",
       () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -356,6 +403,7 @@ describe("Event System - Performance Benchmarks", () => {
     bench(
       "1 listener - 100 renders with history access",
       () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -380,6 +428,7 @@ describe("Event System - Performance Benchmarks", () => {
     bench(
       "10 listeners - 100 renders with history access",
       () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -412,6 +461,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -422,6 +472,7 @@ describe("Event System - Performance Benchmarks", () => {
 
           // Should succeed immediately
           await waitForRenders(ProfiledComponent, 10, { timeout: 1000 });
+          cleanup();
         }
       },
       {
@@ -435,6 +486,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -446,6 +498,7 @@ describe("Event System - Performance Benchmarks", () => {
           rerender(<ProfiledComponent value={1} />);
 
           await promise;
+          cleanup();
         }
       },
       {
@@ -459,12 +512,14 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
 
           // Should succeed immediately
           await waitForPhase(ProfiledComponent, "mount", { timeout: 1000 });
+          cleanup();
         }
       },
       {
@@ -478,6 +533,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -489,6 +545,7 @@ describe("Event System - Performance Benchmarks", () => {
           rerender(<ProfiledComponent value={1} />);
 
           await promise;
+          cleanup();
         }
       },
       {
@@ -502,6 +559,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -510,6 +568,7 @@ describe("Event System - Performance Benchmarks", () => {
           await waitForMinimumRenders(ProfiledComponent, 1, {
             timeout: 1000,
           });
+          cleanup();
         }
       },
       {
@@ -523,6 +582,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // 50 iterations to amortize GC spikes
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -537,6 +597,7 @@ describe("Event System - Performance Benchmarks", () => {
           }
 
           await promise;
+          cleanup();
         }
       },
       {
@@ -550,6 +611,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // Real-world scenario: multiple utilities together
         for (let rep = 0; rep < 20; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -572,6 +634,7 @@ describe("Event System - Performance Benchmarks", () => {
           rerender(<ProfiledComponent value={3} />);
           rerender(<ProfiledComponent value={4} />);
           await waitForRenders(ProfiledComponent, 5, { timeout: 1000 });
+          cleanup();
         }
       },
       {
@@ -587,6 +650,7 @@ describe("Event System - Performance Benchmarks", () => {
       async () => {
         // Current v1.6.0 event-based approach
         for (let rep = 0; rep < 100; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -597,6 +661,7 @@ describe("Event System - Performance Benchmarks", () => {
           rerender(<ProfiledComponent value={1} />);
 
           await promise;
+          cleanup();
         }
       },
       {
@@ -610,6 +675,7 @@ describe("Event System - Performance Benchmarks", () => {
       () => {
         // Event-based listener approach
         for (let rep = 0; rep < 20; rep++) {
+          clearProfilerData();
           const ProfiledComponent = withProfiler(TestComponent);
           const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -623,11 +689,17 @@ describe("Event System - Performance Benchmarks", () => {
           }
 
           unsubscribe();
+          cleanup();
         }
       },
       {
-        warmupTime: 100,
-        time: 1000,
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
       },
     );
   });

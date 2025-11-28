@@ -5,7 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.0] - 2025-11-12
+## [1.8.0] - 2025-11-29
+
+### Added
+
+- **`notToHaveRenderLoops()` matcher** - Detect suspicious render loop patterns before hitting circuit breaker
+  - Catches render loops BEFORE `MAX_SAFE_RENDERS` (10,000) kicks in
+  - Configurable thresholds: `maxConsecutiveUpdates` (default: 10), `maxConsecutiveNested`
+  - Skip initialization renders: `ignoreInitialUpdates` option
+  - Detailed diagnostics with loop location, potential causes, and render history
+  - **Use cases**: Debug hanging tests, CI timeouts, useEffect→setState→useEffect cycles
+  - Example: `expect(Component).notToHaveRenderLoops({ maxConsecutiveUpdates: 5 })`
+
+- **`toMeetRenderCountBudget()` matcher** - Enforce render count constraints in tests
+  - Check single constraint: `expect(Component).toMeetRenderCountBudget({ maxRenders: 3 })`
+  - Check multiple constraints: `expect(Component).toMeetRenderCountBudget({ maxRenders: 5, maxMounts: 1, maxUpdates: 2 })`
+  - Detailed error messages with emoji indicators (✅ pass / ❌ fail) and violation details
+  - Supports `.not` modifier for negative assertions
+  - Automatically counts `nested-update` phases alongside regular `update` phases
+
+- **`clearProfilerData()` API** - Selective cleanup for benchmarks and test scenarios
+  - Clears render data while keeping components registered for reuse
+  - **vs `clearRegistry()`**: Data-only reset (keeps registration) vs full cleanup (removes components)
+  - **Use cases**: `afterEach()` hooks, benchmark `setup()`, test iteration cleanup
+
+- **Benchmark stability improvements** - 3x variance reduction (RME ±6-9% → ±2-5%)
+  - Added `gc()` setup, increased warmup (100ms→300ms) and measurement time (1s→2s)
+  - Fixed 11 benchmarks across cache-optimization, event-system, realistic-patterns files
+
+### Changed
+
+- **Default benchmark script now uses gc()** - `npm run test:bench` enables `--expose-gc` by default
+
+- **Benchmark architecture redesign** - Fixed "Infinite render loop" errors from iteration accumulation
+  - vitest `bench()` iterations accumulate renders (100 renders × 100 iterations = 10K triggers circuit breaker)
+  - Added `clearProfilerData()` + `cleanup()` to all benchmark loops (47 benchmarks across 4 files)
+
+- **Simplified MAX_SAFE_RENDERS constant** - Removed dynamic calculation
+
+- **Unified build constants** - Replaced `import.meta.env.INTERNAL_TESTS` with `__DEV__`
+  - Reduced from 3 constants (`__TEST__`, `__DEV__`, `INTERNAL_TESTS`) to 1 (`__DEV__`)
+  - Cleaner code: `if (__DEV__)` instead of `if (import.meta.env.INTERNAL_TESTS === "true")`
+  - Same tree-shaking: esbuild string replacement removes dead code in production
+
+### Removed
+
+- **`BENCHMARK_TESTS` environment variable** - No longer needed
+
+- **`test:bench:stable` npm script** - Merged into default `test:bench`
+
+### Fixed
+
+- **Benchmark stability and infinite loop errors** - 11 benchmarks fixed, RME >6% → <6%
+  - Root causes: GC pauses, render accumulation, insufficient warmup, small sample size
+  - Fixed with `gc()` setup, `clearProfilerData()` cleanup, increased warmup/measurement times
+
+## [1.7.0] - 2025-11-25
 
 ### Added
 

@@ -21,11 +21,6 @@ export default mergeConfig(
   defineConfig({
     cacheDir: "./.vitest-bench", // Separate cache for benchmarks
 
-    // Minimal define (benchmarks don't need __TEST__ or __DEV__)
-    define: {
-      "import.meta.env.BENCHMARK_TESTS": "true", // Enable benchmark metrics
-    },
-
     // Build optimization for benchmarks
     optimizeDeps: {
       force: true, // Force optimization

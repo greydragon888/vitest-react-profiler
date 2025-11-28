@@ -1,7 +1,7 @@
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, bench, describe } from "vitest";
+import { render } from "@testing-library/react";
+import { bench, describe } from "vitest";
 
-import { clearRegistry, withProfiler } from "../../src";
+import { clearProfilerData, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -32,15 +32,11 @@ import type { FC } from "react";
 const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 
 describe("Sync Matchers - Performance", () => {
-  afterEach(() => {
-    cleanup();
-    clearRegistry();
-  });
+  const ProfiledComponent = withProfiler(TestComponent);
 
   describe("toHaveRendered()", () => {
     bench("0 renders - fail scenario", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-
+      clearProfilerData();
       try {
         expect(ProfiledComponent).toHaveRendered();
       } catch {
@@ -55,8 +51,8 @@ describe("Sync Matchers - Performance", () => {
       () => {
         // 50 iterations to amortize GC spikes and stabilize measurements
         for (let rep = 0; rep < 50; rep++) {
-          const ProfiledComponent = withProfiler(TestComponent);
-          const { rerender } = render(<ProfiledComponent value={0} />);
+          clearProfilerData();
+          const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
           for (let i = 1; i < 10; i++) {
             rerender(<ProfiledComponent value={i} />);
@@ -67,6 +63,7 @@ describe("Sync Matchers - Performance", () => {
           } catch {
             // Expected to fail - triggers formatRenderHistory()
           }
+          unmount();
         }
       },
       {
@@ -76,8 +73,8 @@ describe("Sync Matchers - Performance", () => {
     );
 
     bench("100 renders - fail scenario (expensive formatting)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 100; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -88,11 +85,12 @@ describe("Sync Matchers - Performance", () => {
       } catch {
         // Expected to fail - expensive formatting
       }
+      unmount();
     });
 
     bench("500 renders - fail scenario (stress test)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 500; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -103,29 +101,8 @@ describe("Sync Matchers - Performance", () => {
       } catch {
         // Expected to fail - very expensive formatting
       }
+      unmount();
     });
-
-    bench(
-      "1000 renders - fail scenario (extreme stress)",
-      () => {
-        const ProfiledComponent = withProfiler(TestComponent);
-        const { rerender } = render(<ProfiledComponent value={0} />);
-
-        for (let i = 1; i < 1000; i++) {
-          rerender(<ProfiledComponent value={i} />);
-        }
-
-        try {
-          expect(ProfiledComponent).toHaveRenderedTimes(500);
-        } catch {
-          // Expected to fail - demonstrates O(n) formatting degradation
-        }
-      },
-      {
-        warmupTime: 300, // Longer warmup for large formatting
-        time: 1000, // More samples for stability
-      },
-    );
   });
 
   describe("toHaveMountedOnce()", () => {
@@ -134,17 +111,18 @@ describe("Sync Matchers - Performance", () => {
       () => {
         // 50 iterations to amortize GC spikes and stabilize measurements
         for (let rep = 0; rep < 50; rep++) {
-          const ProfiledComponent = withProfiler(TestComponent);
-          const { unmount } = render(<ProfiledComponent value={0} />);
+          clearProfilerData();
+          const { unmount: unmount1 } = render(<ProfiledComponent value={0} />);
 
-          unmount();
-          render(<ProfiledComponent value={1} />);
+          unmount1();
+          const { unmount: unmount2 } = render(<ProfiledComponent value={1} />);
 
           try {
             expect(ProfiledComponent).toHaveMountedOnce();
           } catch {
             // Expected to fail - triggers mount formatting
           }
+          unmount2();
         }
       },
       {
@@ -160,15 +138,16 @@ describe("Sync Matchers - Performance", () => {
       () => {
         // 50 iterations to amortize GC spikes and stabilize measurements
         for (let rep = 0; rep < 50; rep++) {
-          const ProfiledComponent = withProfiler(TestComponent);
+          clearProfilerData();
 
-          render(<ProfiledComponent value={0} />);
+          const { unmount } = render(<ProfiledComponent value={0} />);
 
           try {
             expect(ProfiledComponent).toHaveNeverMounted();
           } catch {
             // Expected to fail
           }
+          unmount();
         }
       },
       {

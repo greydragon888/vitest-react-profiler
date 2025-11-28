@@ -36,12 +36,12 @@ class CacheMetrics {
   /**
    * Record a cache hit
    *
-   * @internal This is only active when INTERNAL_TESTS is enabled.
+   * @internal This is only active when __DEV__ is enabled.
    * In production builds, this code is tree-shaken out.
    */
   recordHit(cacheType: CacheType): void {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS === "true") {
+    if (__DEV__) {
       this.metrics[cacheType].hits++;
     }
   }
@@ -49,12 +49,12 @@ class CacheMetrics {
   /**
    * Record a cache miss (computation performed)
    *
-   * @internal This is only active when INTERNAL_TESTS is enabled.
+   * @internal This is only active when __DEV__ is enabled.
    * In production builds, this code is tree-shaken out.
    */
   recordMiss(cacheType: CacheType): void {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS === "true") {
+    if (__DEV__) {
       this.metrics[cacheType].misses++;
     }
   }
@@ -64,12 +64,12 @@ class CacheMetrics {
    *
    * @returns Hit rate as percentage (0-100)
    *
-   * @internal This is only active when INTERNAL_TESTS is enabled.
+   * @internal This is only active when __DEV__ is enabled.
    * In production builds, this always returns 0.
    */
   getHitRate(cacheType: CacheType): number {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS === "true") {
+    if (__DEV__) {
       const { hits, misses } = this.metrics[cacheType];
       const total = hits + misses;
 
@@ -89,13 +89,13 @@ class CacheMetrics {
    * closureCache: 180/200 hits (90.00%)
    * ```
    *
-   * @internal This is only active when INTERNAL_TESTS is enabled.
+   * @internal This is only active when __DEV__ is enabled.
    * In production builds, this returns an empty string.
    */
   report(): string {
     /* v8 ignore next 2 -- @preserve */
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS === "true") {
+    if (__DEV__) {
       return Object.entries(this.metrics)
         .map(([type, { hits, misses }]) => {
           const total = hits + misses;
@@ -114,12 +114,12 @@ class CacheMetrics {
   /**
    * Reset all metrics (useful between test runs)
    *
-   * @internal This is only active when INTERNAL_TESTS is enabled.
+   * @internal This is only active when __DEV__ is enabled.
    * In production builds, this is a no-op.
    */
   reset(): void {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS === "true") {
+    if (__DEV__) {
       for (const cache of Object.values(this.metrics)) {
         cache.hits = 0;
         cache.misses = 0;
@@ -130,12 +130,12 @@ class CacheMetrics {
   /**
    * Get raw metrics data (for testing or custom reporting)
    *
-   * @internal This is only active when INTERNAL_TESTS is enabled.
+   * @internal This is only active when __DEV__ is enabled.
    * In production builds, this returns empty metrics structure.
    */
   getMetrics(): Readonly<Record<CacheType, Readonly<CacheStats>>> {
     // Stryker disable next-line all
-    if (import.meta.env.INTERNAL_TESTS === "true") {
+    if (__DEV__) {
       return this.metrics;
     }
 

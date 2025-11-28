@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",
@@ -70,8 +70,7 @@
     "test:mutation": "stryker run",
     "test:mutation:report": "open reports/mutation-report.html",
     "test:properties": "NODE_OPTIONS='--max-old-space-size=4096' vitest run --config vitest.config.properties.mts",
-    "test:bench": "vitest bench --config vitest.config.bench.mts",
-    "test:bench:stable": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
+    "test:bench": "NODE_OPTIONS='--expose-gc --max-old-space-size=16384' vitest bench --config vitest.config.bench.mts",
     "test:stress": "NODE_OPTIONS='--expose-gc' vitest run --config vitest.config.stress.mts",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx --fix",
@@ -149,26 +148,5 @@
   "overrides": {
     "glob": ">=11.0.0",
     "node-forge": ">=1.3.2"
-  },
-  "size-limit": [
-    {
-      "name": "ESM bundle (with tree-shaking)",
-      "path": "dist/index.js",
-      "limit": "40 KB",
-      "import": "{ withProfiler }",
-      "ignore": [
-        "react",
-        "react-dom"
-      ]
-    },
-    {
-      "name": "CJS bundle (full package)",
-      "path": "dist/index.cjs",
-      "limit": "45 KB",
-      "ignore": [
-        "react",
-        "react-dom"
-      ]
-    }
-  ]
+  }
 }

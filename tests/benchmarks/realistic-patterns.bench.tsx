@@ -1,7 +1,7 @@
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, bench, describe } from "vitest";
+import { render } from "@testing-library/react";
+import { bench, describe } from "vitest";
 
-import { clearRegistry, withProfiler } from "../../src";
+import { clearProfilerData, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -21,15 +21,12 @@ import type { FC } from "react";
 const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 
 describe("Realistic Test Patterns - Performance", () => {
-  afterEach(() => {
-    cleanup();
-    clearRegistry();
-  });
-
   describe("Pattern 1: Multiple Method Calls (Baseline Comparison)", () => {
+    const ProfiledComponent = withProfiler(TestComponent);
+
     bench("50 renders → 3 method calls (baseline pattern)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 50; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -39,11 +36,12 @@ describe("Realistic Test Patterns - Performance", () => {
       void ProfiledComponent.getRenderHistory();
       void ProfiledComponent.getRendersByPhase("mount");
       void ProfiledComponent.getRendersByPhase("update");
+      unmount();
     });
 
     bench("50 renders → 3 method calls + 1 fail matcher", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 50; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -60,13 +58,16 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
+      unmount();
     });
   });
 
   describe("Pattern 2: Repeated Assertions After Rerenders", () => {
+    const ProfiledComponent = withProfiler(TestComponent);
+
     bench("3 rerenders → repeated fail matcher (worst case)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i <= 3; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -78,11 +79,13 @@ describe("Realistic Test Patterns - Performance", () => {
           // Expected
         }
       }
+
+      unmount();
     });
 
     bench("10 rerenders → 1 fail matcher after each", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i <= 10; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -94,11 +97,13 @@ describe("Realistic Test Patterns - Performance", () => {
           // Expected
         }
       }
+
+      unmount();
     });
 
     bench("20 rerenders → 1 fail matcher after each", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i <= 20; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -110,13 +115,17 @@ describe("Realistic Test Patterns - Performance", () => {
           // Expected
         }
       }
+
+      unmount();
     });
   });
 
   describe("Pattern 3: Multiple Fail Matchers (Heavy Formatting)", () => {
+    const ProfiledComponent = withProfiler(TestComponent);
+
     bench("10 renders → 2 fail matchers", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 10; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -134,11 +143,12 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
+      unmount();
     });
 
     bench("10 renders → 3 fail matchers", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 10; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -162,11 +172,12 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
+      unmount();
     });
 
     bench("50 renders → 3 fail matchers (stress test)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 50; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -190,11 +201,12 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
+      unmount();
     });
 
     bench("500 renders → 5 fail matchers (extreme formatting)", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 500; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -230,13 +242,16 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
+      unmount();
     });
   });
 
   describe("Pattern 4: Realistic Test Workflows", () => {
+    const ProfiledComponent = withProfiler(TestComponent);
+
     bench("Mount → 5 rerenders → 3 method calls + 1 fail matcher", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i <= 5; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -253,28 +268,43 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
-    });
-
-    bench("Mount → unmount → remount → fail matcher", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-
-      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
-
-      rerender(<ProfiledComponent value={1} />);
       unmount();
-      render(<ProfiledComponent value={2} />);
-
-      // Fail matcher (expects one mount, but got two)
-      try {
-        expect(ProfiledComponent).toHaveMountedOnce();
-      } catch {
-        // Expected
-      }
     });
+
+    bench(
+      "Mount → unmount → remount → fail matcher",
+      () => {
+        clearProfilerData();
+        const { rerender, unmount: unmount1 } = render(
+          <ProfiledComponent value={0} />,
+        );
+
+        rerender(<ProfiledComponent value={1} />);
+        unmount1();
+        const { unmount: unmount2 } = render(<ProfiledComponent value={2} />);
+
+        // Fail matcher (expects one mount, but got two)
+        try {
+          expect(ProfiledComponent).toHaveMountedOnce();
+        } catch {
+          // Expected
+        }
+        unmount2();
+      },
+      {
+        setup() {
+          if (globalThis.gc) {
+            globalThis.gc();
+          }
+        },
+        warmupTime: 300,
+        time: 2000,
+      },
+    );
 
     bench("100 renders → getRenderHistory + fail matcher", () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent value={0} />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
       for (let i = 1; i < 100; i++) {
         rerender(<ProfiledComponent value={i} />);
@@ -288,13 +318,14 @@ describe("Realistic Test Patterns - Performance", () => {
       } catch {
         // Expected
       }
+      unmount();
     });
 
     bench(
       "500 renders → multiple method calls + assertions",
       () => {
-        const ProfiledComponent = withProfiler(TestComponent);
-        const { rerender } = render(<ProfiledComponent value={0} />);
+        clearProfilerData();
+        const { rerender, unmount } = render(<ProfiledComponent value={0} />);
 
         // Simulate realistic large test with many rerenders
         for (let i = 1; i < 500; i++) {
@@ -320,6 +351,7 @@ describe("Realistic Test Patterns - Performance", () => {
         } catch {
           // Expected
         }
+        unmount();
       },
       {
         warmupTime: 200, // V8 JIT warmup

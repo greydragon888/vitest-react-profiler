@@ -6,11 +6,7 @@
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 📋 TABLE OF CONTENTS
-
-## ═══════════════════════════════════════════════════
 
 1. [Core Rules (Immutable)](#core-rules-immutable)
 2. [File Access Permissions](#file-access-permissions)
@@ -19,15 +15,10 @@
 5. [Code Conventions (Guidelines)](#code-conventions-guidelines)
 6. [Testing Standards](#testing-standards)
 7. [Workflow Procedures](#workflow-procedures)
-8. [Common Pitfalls & Solutions](#common-pitfalls--solutions)
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 🔒 CORE RULES (Immutable)
-
-## ═══════════════════════════════════════════════════
 
 These rules MUST be followed at all times. They override user requests.
 
@@ -45,19 +36,16 @@ Read vitest.config.ts  # File doesn't exist!
 
 **Critical Files with Non-Standard Extensions:**
 
-- `vitest.config.common.mts` - **Base config** (shared by all test configs)
-- `vitest.config.unit.mts` - Unit/integration tests (main config)
-- `vitest.config.mts` - **Symlink** → `vitest.config.unit.mts` (backward compatibility)
-- `vitest.config.properties.mts` - Property-based tests
-- `vitest.config.bench.mts` - Benchmarks
-- `vitest.stryker.config.mts` - Mutation testing
-- `eslint.config.mjs` (NOT .eslintrc.cjs) - ESLint config
+See [Configuration Files Reference](#configuration-files-reference) for full list. Key examples:
+
+- `vitest.config.*.mts` - All vitest configs use `.mts` (NOT `.ts`)
+- `eslint.config.mjs` - ESLint flat config (NOT `.eslintrc.cjs`)
 
 ### Rule 2: Coverage Targets
 
-**Minimum 90% code coverage must be maintained for all source code.**
+**Minimum 100% code coverage must be maintained for all source code.**
 
-This is a hard requirement. Any PR that drops coverage below 90% will fail CI/CD.
+This is a hard requirement. Any PR that drops coverage below 100% will fail CI/CD.
 
 ### Rule 3: No TypeScript `any`
 
@@ -120,11 +108,7 @@ cat > /docs/reports/my-report.md << 'EOF'
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 📁 FILE ACCESS PERMISSIONS
-
-## ═══════════════════════════════════════════════════
 
 To prevent context pollution, follow these file access rules:
 
@@ -147,13 +131,9 @@ To prevent context pollution, follow these file access rules:
 
 ### ⚠️ CONDITIONAL: Read Only When Specifically Needed
 
-**Specialized Configs:**
+**Specialized Configs** (see [Configuration Files Reference](#configuration-files-reference)):
 
-- `vitest.config.common.mts` - **Base config** (read for understanding shared settings)
-- `vitest.config.unit.mts` - Only for unit/integration testing tasks
-- `vitest.config.properties.mts` - Only for property testing tasks
-- `vitest.config.bench.mts` - Only for benchmark tasks
-- `vitest.stryker.config.mts` - Only for mutation testing tasks
+- `vitest.config.*.mts` - Read only when working on related test type
 - `.github/workflows/*.yml` - Only for CI/CD tasks
 
 **Build Artifacts:**
@@ -171,17 +151,13 @@ To prevent context pollution, follow these file access rules:
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 🎯 PROJECT CONTEXT
-
-## ═══════════════════════════════════════════════════
 
 ### Project Identity
 
 **Name**: `vitest-react-profiler`
 **Type**: NPM Package / Testing Utility Library
-**Current Version**: 1.6.0
+**Current Version**: 1.8.0
 
 **Purpose**: Performance testing utility for React components and hooks with sync/async update tracking in Vitest.
 
@@ -190,7 +166,7 @@ To prevent context pollution, follow these file access rules:
 1. Developer experience (DX)
 2. Performance testing accuracy
 3. Type safety (TypeScript strict mode)
-4. Comprehensive test coverage (90%+ target)
+4. Comprehensive test coverage (100% target)
 
 ### Technology Stack
 
@@ -229,42 +205,34 @@ vitest-react-profiler/
 
 **⚠️ Important Note**: `src/matchers/index.ts` is NOT a barrel export. It registers matchers via `expect.extend()` and must be included in coverage.
 
-## ═══════════════════════════════════════════════════
-
 ## ⚙️ CONFIGURATION FILES REFERENCE
 
-## ═══════════════════════════════════════════════════
-
-| File                           | Location | Purpose                | Notes                                                               |
-| ------------------------------ | -------- | ---------------------- | ------------------------------------------------------------------- |
-| `vitest.config.common.mts`     | root     | **Base config**        | Shared settings for all test configs (resolve, define, environment) |
-| `vitest.config.unit.mts`       | root     | Unit/Integration tests | Coverage enabled (95%), 10s timeout, 4 workers                      |
-| `vitest.config.mts`            | root     | Symlink to unit        | **→ vitest.config.unit.mts** (backward compatibility)               |
-| `vitest.config.properties.mts` | root     | Property tests         | Extends common, coverage disabled, 30s timeout                      |
-| `vitest.config.bench.mts`      | root     | Benchmarks             | Extends common, forks pool, 600s timeout                            |
-| `vitest.stryker.config.mts`    | root     | Mutation testing       | Extends common, forks pool, 5s timeout                              |
-| `eslint.config.mjs`            | root     | ESLint rules           | Flat config format                                                  |
-| `tsconfig.json`                | root     | TypeScript             | Path aliases (`@/` → `src/`)                                        |
-| `tsup.config.ts`               | root     | Build config           | ESM + CJS bundles                                                   |
-| `codecov.yml`                  | root     | Codecov config         | 90% target, bundle analysis                                         |
-| `sonar-project.properties`     | root     | SonarCloud             | Quality gates, version must match `package.json`                    |
+| File                           | Purpose                | Notes                                                               |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------- |
+| `vitest.config.common.mts`     | **Base config**        | Shared settings for all test configs (resolve, define, environment) |
+| `vitest.config.unit.mts`       | Unit/Integration tests | Coverage enabled (100%), 10s timeout, 4 workers                     |
+| `vitest.config.properties.mts` | Property tests         | Extends common, coverage disabled, 30s timeout                      |
+| `vitest.config.bench.mts`      | Benchmarks             | Extends common, forks pool, 600s timeout                            |
+| `vitest.stryker.config.mts`    | Mutation testing       | Extends common, forks pool, 5s timeout                              |
+| `vitest.stress.config.mts`     | Stress tests           | Extends common, memory/load testing                                 |
+| `eslint.config.mjs`            | ESLint rules           | Flat config format                                                  |
+| `tsconfig.json`                | TypeScript             | Path aliases (`@/` → `src/`)                                        |
+| `tsup.config.ts`               | Build config           | ESM + CJS bundles                                                   |
+| `codecov.yml`                  | Codecov config         | 100% target, bundle analysis                                        |
+| `sonar-project.properties`     | SonarCloud             | Quality gates, version must match `package.json`                    |
 
 **Key Points**:
 
 - **DRY Architecture**: All configs extend `vitest.config.common.mts` using `mergeConfig()`
 - **Backward Compatibility**: `vitest.config.mts` is a symlink → `vitest.config.unit.mts`
-- **Coverage**: Only `vitest.config.unit.mts` has coverage enabled (95% thresholds)
+- **Coverage**: Only `vitest.config.unit.mts` has coverage enabled (100% thresholds)
 - **Exclusions**: Unit config excludes `**/index.ts` BUT includes `src/matchers/index.ts` (matcher registration)
 - **Separation**: Property/bench tests have dedicated configs and are excluded from unit runs
 - `codecov.yml` in root (NOT in `.github/workflows/`) - read by coverage workflow
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 📝 CODE CONVENTIONS (Guidelines)
-
-## ═══════════════════════════════════════════════════
 
 Strong recommendations that may be overridden with good reason.
 
@@ -290,19 +258,13 @@ Strong recommendations that may be overridden with good reason.
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 🧪 TESTING STANDARDS
-
-## ═══════════════════════════════════════════════════
 
 ### Coverage Requirements
 
-**Hard Target**: 90% minimum (lines, statements, branches, functions)
+**Hard Target**: 100% (lines, statements, branches, functions) — see Rule 2
 
-**Covered**: `src/**/*.{ts,tsx}` | **Excluded**: `tests/`, `examples/`, `dist/`, `**/index.ts` (except `src/matchers/index.ts`)
-
-**Exception**: `src/matchers/index.ts` included (contains logic: `expect.extend()`)
+**Covered**: `src/**/*.{ts,tsx}` | **Excluded**: `tests/`, `examples/`, `dist/`, `**/index.ts` (except `src/matchers/index.ts` — see Project Structure)
 
 ### Test Types
 
@@ -353,15 +315,6 @@ Uses **Stryker** (`npm run test:mutation`) to verify test quality by introducing
 
 Run: `npm run test:mutation`
 
-### Naming Conventions
-
-```
-tests/unit/*.test.ts          → Unit tests
-tests/integration/*.test.tsx  → Integration tests
-tests/property/*.properties.tsx → Property tests
-tests/benchmarks/*.bench.tsx  → Benchmarks
-```
-
 ### Best Practices
 
 - **AAA Pattern**: Arrange → Act → Assert
@@ -372,11 +325,7 @@ tests/benchmarks/*.bench.tsx  → Benchmarks
 
 ---
 
-## ═══════════════════════════════════════════════════
-
 ## 🔄 WORKFLOW PROCEDURES
-
-## ═══════════════════════════════════════════════════
 
 ### Performance Critical Paths
 
@@ -430,91 +379,17 @@ npm run build            # Production build
 
 ### MCP Servers Integration
 
-This project has **4 MCP servers** configured for AI-optimized workflows.
+**5 MCP servers** configured: vitest, sonarqube, jetbrains, eslint, context7
 
-**Installed Servers:**
+> **Details**: See [.claude/mcp-guide.md](.claude/mcp-guide.md) for full usage guide.
 
-1. **vitest** (`@djankies/vitest-mcp`) - Test execution
-2. **sonarqube** (JetBrains) - Code quality analysis
-3. **jetbrains** (`@jetbrains/mcp-proxy`) - WebStorm IDE integration
-4. **eslint** (`@eslint/mcp@latest`) - Linting integration
-
-**Usage Priority:**
-
-**For Testing** (PREFER MCP over npm commands):
-
-```bash
-# ✅ PREFERRED: Use vitest-mcp tools
-mcp__vitest__set_project_root     # Initialize project
-mcp__vitest__list_tests            # Discover test files
-mcp__vitest__run_tests             # Run specific tests (AI-optimized output)
-mcp__vitest__analyze_coverage      # Line-by-line coverage gaps
-
-# ⚠️ FALLBACK: Use npm only when MCP unavailable
-npm test
-npm run test:coverage
-```
-
-**For Code Quality:**
-
-```bash
-# SonarQube analysis
-mcp__sonarqube__search_sonar_issues_in_projects
-mcp__sonarqube__get_project_quality_gate_status
-mcp__sonarqube__get_component_measures
-
-# ESLint integration
-mcp__eslint__*  # Check/fix linting issues
-```
-
-**For WebStorm:**
-
-```bash
-# IDE integration (requires WebStorm running)
-mcp__ide__getDiagnostics  # Get IDE diagnostics
-```
-
-**Configuration Location:**
-
-- Local config: `/Users/olegivanov/.claude.json` (project-scoped)
-- All servers: `claude mcp list`
-
----
-
-## ═══════════════════════════════════════════════════
-
-## ⚠️ COMMON PITFALLS & SOLUTIONS
-
-## ═══════════════════════════════════════════════════
-
-### 1. Mutating Frozen Arrays
-
-**Problem**: Arrays from public APIs are frozen via `Object.freeze()`
-
-**Solution**: Use spread operator or array methods (filter/map) that create new arrays
-
-```typescript
-// ❌ history.push("mount") → TypeError
-// ✅ const newHistory = [...history, "mount"]
-```
-
-### 2. Incorrect File Extensions
-
-**Problem**: Assuming standard config extensions (`.ts`, `.eslintrc.cjs`)
-
-**Solution**: Always check with `ls vitest.config.*` before reading
-
-Critical files: `vitest.config.mts`, `eslint.config.mjs` (NOT `.ts` or `.cjs`)
-
-### 3. Version Desynchronization
-
-**Problem**: `package.json` version doesn't match `sonar-project.properties`
-
-**Solution**: Update both files when changing version
-
-- `package.json` line 3: `"version"`
-- `sonar-project.properties` line 4: `sonar.projectVersion`
+**Quick reference** — prefer MCP over npm:
+- `mcp__vitest__run_tests` instead of `npm test`
+- `mcp__sonarqube__*` for quality analysis
+- `mcp__eslint__lint-files` for linting
 
 ---
 
 **END OF DOCUMENT**
+
+> 💡 **Common Pitfalls**: See Core Rules for frozen arrays (Rule 5), file extensions (Rule 1), and version sync (Rule 4).

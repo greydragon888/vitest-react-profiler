@@ -67,10 +67,7 @@ jobs:
           fi
 
       - name: Analyze with size-limit
-        if: false # Enable when size-limit is configured
-        run: |
-          npx size-limit --json > size-report.json
-          cat size-report.json
+        run: npm run size
 
       - name: Comment PR with size
         uses: actions/github-script@v8
@@ -98,13 +95,22 @@ jobs:
 
             const comment = `## 📊 Bundle Size Report
 
+            ### File Sizes (raw + gzipped)
+
             | Format | Size | Gzipped |
             |--------|------|---------|
             | ESM    | ${formatSize(esmSize)} | ${formatSize(esmGzSize)} |
             | CJS    | ${formatSize(cjsSize)} | ${formatSize(cjsGzSize)} |
             | Types  | ${formatSize(dtsSize)} | ${formatSize(dtsGzSize)} |
 
-            **Total**: ${formatSize(esmSize + cjsSize + dtsSize)} (gzipped: ${formatSize(esmGzSize + cjsGzSize + dtsGzSize)})`;
+            **Total**: ${formatSize(esmSize + cjsSize + dtsSize)} (gzipped: ${formatSize(esmGzSize + cjsGzSize + dtsGzSize)})
+
+            ### Size Limits
+
+            - ESM with tree-shaking: **Limit: 40 KB** (with dependencies, brotli)
+            - CJS full package: **Limit: 45 KB** (with dependencies, brotli)
+
+            ℹ️ Run \`npm run size\` locally to see size-limit results with dependencies.`;
 
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({

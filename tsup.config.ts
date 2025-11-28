@@ -37,6 +37,9 @@ export default defineConfig({
       keep_classnames: false, // Allow class name mangling
       keep_fnames: true, // Keep function names (already set in keepNames)
     },
+    format: {
+      comments: /^!/, // Keep comments starting with /*! (like banner), remove others
+    },
   },
 
   // Bundle external dependencies
@@ -53,7 +56,7 @@ export default defineConfig({
   noExternal: [],
 
   // Target modern browsers and Node 18+
-  target: "es2022",
+  target: "esnext",
 
   // Enable tree-shaking
   treeshake: true,
@@ -70,9 +73,9 @@ export default defineConfig({
   },
 
   // Build-time constants for tree-shaking
+  // Same pattern as vitest.config.common.mts
   define: {
-    "import.meta.env.INTERNAL_TESTS": "false", // Disable internal metrics in production
-    "import.meta.env.BENCHMARK_TESTS": "false", // Disable internal metrics in production
+    __DEV__: "false", // Production build - replaced with keyword false
   },
 
   // Output configuration
@@ -80,7 +83,7 @@ export default defineConfig({
 
   // Generate banner with package info
   banner: {
-    js: `/**
+    js: `/*!
  * vitest-react-profiler v${process.env.npm_package_version || "0.0.0"}
  * (c) ${new Date().getFullYear()} ${process.env.npm_package_author_name || "Contributors"}
  * Released under the MIT License.

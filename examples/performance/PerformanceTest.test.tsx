@@ -4,7 +4,6 @@ import { withProfiler } from "../../src";
 import { AnimationStressTest } from "./components/AnimationStressTest";
 import { ReconciliationTest } from "./components/ReconciliationTest";
 import { ContextPerformanceTest } from "./components/ContextPerformanceTest";
-import { ContextConsumer } from "./components/ContextConsumer";
 import { LargeList } from "./components/LargeList";
 import { HeavyComputation } from "./components/HeavyComputation";
 import { ConditionalRendering } from "./components/ConditionalRendering";
@@ -118,6 +117,7 @@ describe("Performance Testing Suite", () => {
       );
 
       const initialRenderCount = ProfiledWithKeys.getRenderCount();
+      expect(initialRenderCount).toBeGreaterThanOrEqual(2); // mount + useEffect update
 
       // Trigger multiple shuffles
       rerenderWithKeys(
@@ -149,7 +149,9 @@ describe("Performance Testing Suite", () => {
 
       await waitFor(
         () => {
-          expect(ProfiledWithIndexKeys.getRenderCount()).toBeGreaterThanOrEqual(2);
+          expect(ProfiledWithIndexKeys.getRenderCount()).toBeGreaterThanOrEqual(
+            2,
+          );
         },
         { timeout: 500 },
       );
@@ -171,9 +173,7 @@ describe("Performance Testing Suite", () => {
       expect(renderCountWithKeys).toBeGreaterThanOrEqual(2);
       expect(renderCountWithIndexKeys).toBeGreaterThanOrEqual(2);
 
-      console.log(
-        `Reconciliation performance (${itemCount} items, shuffle):`,
-      );
+      console.log(`Reconciliation performance (${itemCount} items, shuffle):`);
       console.log(`  With stable keys: ${renderCountWithKeys} renders`);
       console.log(`  With index keys: ${renderCountWithIndexKeys} renders`);
     });
@@ -293,8 +293,6 @@ describe("Performance Testing Suite", () => {
         "ContextPerf-5Consumers",
       );
 
-      const ProfiledConsumer = withProfiler(ContextConsumer, "Consumer");
-
       const { unmount } = render(
         <ProfiledContext
           consumerCount={consumerCount}
@@ -350,17 +348,27 @@ describe("Performance Testing Suite", () => {
         );
 
         const { unmount, rerender } = render(
-          <ProfiledContext consumerCount={count} updateFrequency={updateFrequency} />,
+          <ProfiledContext
+            consumerCount={count}
+            updateFrequency={updateFrequency}
+          />,
         );
 
         const initialRenders = ProfiledContext.getRenderCount();
+        expect(initialRenders).toBe(1); // Only mount
 
         // Trigger a few re-renders by updating props
         rerender(
-          <ProfiledContext consumerCount={count} updateFrequency={updateFrequency} />,
+          <ProfiledContext
+            consumerCount={count}
+            updateFrequency={updateFrequency}
+          />,
         );
         rerender(
-          <ProfiledContext consumerCount={count} updateFrequency={updateFrequency} />,
+          <ProfiledContext
+            consumerCount={count}
+            updateFrequency={updateFrequency}
+          />,
         );
 
         const finalRenders = ProfiledContext.getRenderCount();
@@ -519,14 +527,12 @@ describe("Performance Testing Suite", () => {
       );
 
       const rendersAfterUpdateNoVirt = ProfiledListNoVirt.getRenderCount();
+      expect(rendersAfterUpdateNoVirt).toBeGreaterThanOrEqual(rendersNoVirt + 1); // At least one more render
 
       unmountNoVirt();
 
       // Test with virtualization (renders only visible items)
-      const ProfiledListVirt = withProfiler(
-        LargeList,
-        "LargeList-Virtualized",
-      );
+      const ProfiledListVirt = withProfiler(LargeList, "LargeList-Virtualized");
 
       const { unmount: unmountVirt, rerender: rerenderVirt } = render(
         <ProfiledListVirt
@@ -549,6 +555,7 @@ describe("Performance Testing Suite", () => {
       );
 
       const rendersAfterUpdateVirt = ProfiledListVirt.getRenderCount();
+      expect(rendersAfterUpdateVirt).toBeGreaterThanOrEqual(rendersVirt + 1); // At least one more render
 
       unmountVirt();
 
@@ -557,12 +564,12 @@ describe("Performance Testing Suite", () => {
       expect(rendersNoVirt).toBeGreaterThanOrEqual(1);
       expect(rendersVirt).toBeGreaterThanOrEqual(1);
 
-      console.log(
-        `Large list performance comparison (${itemCount} items):`,
-      );
+      console.log(`Large list performance comparison (${itemCount} items):`);
       console.log(`  Without virtualization: ${rendersNoVirt} initial renders`);
       console.log(`  With virtualization: ${rendersVirt} initial renders`);
-      console.log(`  Note: Virtualization benefits are in DOM nodes, not React renders`);
+      console.log(
+        `  Note: Virtualization benefits are in DOM nodes, not React renders`,
+      );
     });
 
     it("should verify virtualization renders only visible items", () => {
@@ -596,18 +603,17 @@ describe("Performance Testing Suite", () => {
         `Virtualization verification (${itemCount} total, ~${visibleItemsCount} visible):`,
       );
       console.log(`  Component renders: ${ProfiledList.getRenderCount()}`);
-      console.log(`  Expected visible items: ~${visibleItemsCount} (vs ${itemCount} total)`);
+      console.log(
+        `  Expected visible items: ~${visibleItemsCount} (vs ${itemCount} total)`,
+      );
     });
 
     it("should measure performance with search filtering", async () => {
       const itemCount = 500;
 
-      const ProfiledList = withProfiler(
-        LargeList,
-        "LargeList-WithFiltering",
-      );
+      const ProfiledList = withProfiler(LargeList, "LargeList-WithFiltering");
 
-      const { unmount, rerender } = render(
+      const { unmount } = render(
         <ProfiledList
           itemCount={itemCount}
           enableVirtualization={true}
@@ -626,9 +632,7 @@ describe("Performance Testing Suite", () => {
       // Wait for state update
       await waitFor(
         () => {
-          expect(ProfiledList.getRenderCount()).toBeGreaterThan(
-            initialRenders,
-          );
+          expect(ProfiledList.getRenderCount()).toBeGreaterThan(initialRenders);
         },
         { timeout: 500 },
       );
@@ -641,9 +645,7 @@ describe("Performance Testing Suite", () => {
 
       unmount();
 
-      console.log(
-        `Large list with search filtering (${itemCount} items):`,
-      );
+      console.log(`Large list with search filtering (${itemCount} items):`);
       console.log(`  Initial renders: ${initialRenders}`);
       console.log(`  After typing "10": ${rendersAfterSearch} renders`);
       console.log(
@@ -689,11 +691,11 @@ describe("Performance Testing Suite", () => {
 
       unmount();
 
-      console.log(
-        `useMemo optimization test (${iterations} iterations):`,
-      );
+      console.log(`useMemo optimization test (${iterations} iterations):`);
       console.log(`  Total renders: ${ProfiledOptimized.getRenderCount()}`);
-      console.log(`  Calculation memoized: ✓ (no recalculation on counter change)`);
+      console.log(
+        `  Calculation memoized: ✓ (no recalculation on counter change)`,
+      );
     });
 
     it("should compare memoized vs unmemoized render performance", () => {
@@ -710,6 +712,7 @@ describe("Performance Testing Suite", () => {
       );
 
       const memoizedInitialRenders = ProfiledMemoized.getRenderCount();
+      expect(memoizedInitialRenders).toBe(1); // Only mount
 
       // Trigger re-renders
       rerenderMemoized(
@@ -738,6 +741,8 @@ describe("Performance Testing Suite", () => {
         );
 
       const unmemoizedInitialRenders = ProfiledUnmemoized.getRenderCount();
+      // Note: Unmemoized may trigger additional renders due to heavy computation
+      expect(unmemoizedInitialRenders).toBeGreaterThanOrEqual(1);
 
       rerenderUnmemoized(
         <ProfiledUnmemoized
@@ -766,7 +771,9 @@ describe("Performance Testing Suite", () => {
       );
       console.log(`  Memoized renders: ${memoizedFinalRenders}`);
       console.log(`  Unmemoized renders: ${unmemoizedFinalRenders}`);
-      console.log(`  Note: useMemo optimizes computation, not React render count`);
+      console.log(
+        `  Note: useMemo optimizes computation, not React render count`,
+      );
     });
   });
 
@@ -809,7 +816,9 @@ describe("Performance Testing Suite", () => {
       console.log(
         `Conditional rendering with filters (${itemCount} items, threshold ${filterThreshold}):`,
       );
-      console.log(`  Renders after 2 filter toggles: ${ProfiledConditional.getRenderCount()}`);
+      console.log(
+        `  Renders after 2 filter toggles: ${ProfiledConditional.getRenderCount()}`,
+      );
     });
 
     it("should track performance impact of sorting", async () => {
@@ -849,9 +858,7 @@ describe("Performance Testing Suite", () => {
       expect(rendersAfterSort).toBe(initialRenders + 1);
       expect(rendersAfterHighlight).toBe(rendersAfterSort + 1);
 
-      console.log(
-        `Conditional rendering with sorting (${itemCount} items):`,
-      );
+      console.log(`Conditional rendering with sorting (${itemCount} items):`);
       console.log(`  Initial renders: ${initialRenders}`);
       console.log(`  After sort toggle: ${rendersAfterSort}`);
       console.log(`  After highlight toggle: ${rendersAfterHighlight}`);

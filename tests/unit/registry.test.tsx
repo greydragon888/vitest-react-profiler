@@ -15,7 +15,7 @@ import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import { withProfiler } from "@/profiler/components/withProfiler";
-import { clearRegistry, registry } from "@/registry";
+import { clearProfilerData, clearRegistry, registry } from "@/registry";
 
 describe("ComponentRegistry", () => {
   beforeEach(() => {
@@ -210,6 +210,65 @@ describe("ComponentRegistry", () => {
       expect(clearCount1).toBe(0);
       // ✅ component2.clear() was called (still registered)
       expect(clearCount2).toBe(1);
+    });
+  });
+
+  describe("clearProfilerData() public API", () => {
+    it("should clear render data from all components", () => {
+      const TestComponent = () => React.createElement("div", null, "Test");
+      const ProfiledComponent = withProfiler(TestComponent);
+
+      // Render multiple times
+      const { rerender } = render(<ProfiledComponent />);
+
+      rerender(<ProfiledComponent />);
+      rerender(<ProfiledComponent />);
+
+      // Component has 3 renders
+      expect(ProfiledComponent.getRenderCount()).toBe(3);
+
+      // clearProfilerData() clears data
+      clearProfilerData();
+
+      // ✅ Render data is cleared
+      expect(ProfiledComponent.getRenderCount()).toBe(0);
+      expect(ProfiledComponent.getRenderHistory()).toStrictEqual([]);
+    });
+
+    it("should work in afterEach() hooks", () => {
+      const TestComponent = () => React.createElement("div", null, "Test");
+      const ProfiledComponent = withProfiler(TestComponent);
+
+      // Simulate multiple test runs
+      for (let i = 0; i < 5; i++) {
+        render(<ProfiledComponent />);
+
+        expect(ProfiledComponent.getRenderCount()).toBe(1);
+
+        // clearProfilerData() between tests
+        clearProfilerData();
+
+        // After clear, back to 0
+        expect(ProfiledComponent.getRenderCount()).toBe(0);
+      }
+    });
+
+    it("should work in benchmark setup()", () => {
+      const TestComponent = () => React.createElement("div", null, "Bench");
+      const ProfiledComponent = withProfiler(TestComponent);
+
+      // Simulate benchmark iterations
+      for (let iteration = 0; iteration < 10; iteration++) {
+        // Setup: clear before each iteration
+        clearProfilerData();
+
+        expect(ProfiledComponent.getRenderCount()).toBe(0);
+
+        // Benchmark: render component
+        render(<ProfiledComponent />);
+
+        expect(ProfiledComponent.getRenderCount()).toBe(1);
+      }
     });
   });
 

@@ -32,9 +32,7 @@ export const commonConfig = defineConfig({
    * These enable internal metrics and debugging features
    */
   define: {
-    __TEST__: true,
-    __DEV__: process.env.NODE_ENV !== "production",
-    "import.meta.env.INTERNAL_TESTS": "true", // Enable CacheMetrics and internal logging
+    __DEV__: true, // Development/test mode - enables CacheMetrics and internal logging
   },
 
   /**

@@ -8,6 +8,9 @@ import "../src/matchers";
 // Import cache metrics for reporting
 import { cacheMetrics } from "@/profiler/core/CacheMetrics.ts";
 
+// Import registry cleanup
+import { clearRegistry } from "../src/registry";
+
 /**
  * Setup file for benchmarks
  *
@@ -34,6 +37,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup(); // Clear React Testing Library DOM nodes
+  clearRegistry(); // Clear profiler data and component references
 
   if (globalThis.gc) {
     globalThis.gc(); // Force garbage collection after cleanup

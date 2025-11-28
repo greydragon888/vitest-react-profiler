@@ -1,7 +1,7 @@
-import { cleanup, render } from "@testing-library/react";
-import { afterEach, bench, describe } from "vitest";
+import { render } from "@testing-library/react";
+import { bench, describe } from "vitest";
 
-import { clearRegistry, withProfiler } from "../../src";
+import { clearProfilerData, withProfiler } from "../../src";
 
 /**
  * Benchmark for getRendersByPhase() and hasMounted() caching
@@ -16,25 +16,23 @@ import { clearRegistry, withProfiler } from "../../src";
 const TestComponent = () => <div>Test</div>;
 
 describe("getRendersByPhase() caching", () => {
-  afterEach(() => {
-    cleanup();
-    clearRegistry();
-  });
+  const ProfiledComponent = withProfiler(TestComponent);
 
   bench("single call - 100 renders", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
     }
 
     ProfiledComponent.getRendersByPhase("update");
+    unmount();
   });
 
   bench("10 calls - 100 renders (9 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
@@ -44,11 +42,13 @@ describe("getRendersByPhase() caching", () => {
     for (let i = 0; i < 10; i++) {
       ProfiledComponent.getRendersByPhase("update");
     }
+
+    unmount();
   });
 
   bench("100 calls - 100 renders (99 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
@@ -58,26 +58,42 @@ describe("getRendersByPhase() caching", () => {
     for (let i = 0; i < 100; i++) {
       ProfiledComponent.getRendersByPhase("update");
     }
+
+    unmount();
   });
 
-  bench("100 calls - 500 renders (99 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+  bench(
+    "100 calls - 500 renders (99 cache hits)",
+    () => {
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent />);
 
-    for (let i = 1; i < 500; i++) {
-      rerender(<ProfiledComponent />);
-    }
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent />);
+      }
 
-    for (let i = 0; i < 100; i++) {
-      ProfiledComponent.getRendersByPhase("update");
-    }
-  });
+      for (let i = 0; i < 100; i++) {
+        ProfiledComponent.getRendersByPhase("update");
+      }
+
+      unmount();
+    },
+    {
+      setup() {
+        if (globalThis.gc) {
+          globalThis.gc();
+        }
+      },
+      warmupTime: 300,
+      time: 2000,
+    },
+  );
 
   bench(
     "1000 calls - 500 renders (999 cache hits)",
     () => {
-      const ProfiledComponent = withProfiler(TestComponent);
-      const { rerender } = render(<ProfiledComponent />);
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent />);
 
       for (let i = 1; i < 500; i++) {
         rerender(<ProfiledComponent />);
@@ -87,34 +103,39 @@ describe("getRendersByPhase() caching", () => {
       for (let i = 0; i < 1000; i++) {
         ProfiledComponent.getRendersByPhase("update");
       }
+
+      unmount();
     },
     {
-      warmupTime: 200, // V8 JIT warmup
-      time: 1000, // More samples for stability
+      setup() {
+        if (globalThis.gc) {
+          globalThis.gc();
+        }
+      },
+      warmupTime: 300,
+      time: 2000,
     },
   );
 });
 
 describe("hasMounted() caching", () => {
-  afterEach(() => {
-    cleanup();
-    clearRegistry();
-  });
+  const ProfiledComponent = withProfiler(TestComponent);
 
   bench("single call - 100 renders", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
     }
 
     ProfiledComponent.hasMounted();
+    unmount();
   });
 
   bench("10 calls - 100 renders (9 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
@@ -123,11 +144,13 @@ describe("hasMounted() caching", () => {
     for (let i = 0; i < 10; i++) {
       ProfiledComponent.hasMounted();
     }
+
+    unmount();
   });
 
   bench("100 calls - 100 renders (99 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
@@ -136,45 +159,72 @@ describe("hasMounted() caching", () => {
     for (let i = 0; i < 100; i++) {
       ProfiledComponent.hasMounted();
     }
+
+    unmount();
   });
 
-  bench("100 calls - 500 renders (99 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+  bench(
+    "100 calls - 500 renders (99 cache hits)",
+    () => {
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent />);
 
-    for (let i = 1; i < 500; i++) {
-      rerender(<ProfiledComponent />);
-    }
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent />);
+      }
 
-    for (let i = 0; i < 100; i++) {
-      ProfiledComponent.hasMounted();
-    }
-  });
+      for (let i = 0; i < 100; i++) {
+        ProfiledComponent.hasMounted();
+      }
 
-  bench("1000 calls - 500 renders (999 cache hits)", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+      unmount();
+    },
+    {
+      setup() {
+        if (globalThis.gc) {
+          globalThis.gc();
+        }
+      },
+      warmupTime: 300,
+      time: 2000,
+    },
+  );
 
-    for (let i = 1; i < 500; i++) {
-      rerender(<ProfiledComponent />);
-    }
+  bench(
+    "1000 calls - 500 renders (999 cache hits)",
+    () => {
+      clearProfilerData();
+      const { rerender, unmount } = render(<ProfiledComponent />);
 
-    // Demonstrate cache effectiveness with many calls
-    for (let i = 0; i < 1000; i++) {
-      ProfiledComponent.hasMounted();
-    }
-  });
+      for (let i = 1; i < 500; i++) {
+        rerender(<ProfiledComponent />);
+      }
+
+      // Demonstrate cache effectiveness with many calls
+      for (let i = 0; i < 1000; i++) {
+        ProfiledComponent.hasMounted();
+      }
+
+      unmount();
+    },
+    {
+      setup() {
+        if (globalThis.gc) {
+          globalThis.gc();
+        }
+      },
+      warmupTime: 300,
+      time: 2000,
+    },
+  );
 });
 
 describe("Multiple phases caching", () => {
-  afterEach(() => {
-    cleanup();
-    clearRegistry();
-  });
+  const ProfiledComponent = withProfiler(TestComponent);
 
   bench("all 3 phases called 10 times each - 100 renders", () => {
-    const ProfiledComponent = withProfiler(TestComponent);
-    const { rerender } = render(<ProfiledComponent />);
+    clearProfilerData();
+    const { rerender, unmount } = render(<ProfiledComponent />);
 
     for (let i = 1; i < 100; i++) {
       rerender(<ProfiledComponent />);
@@ -186,5 +236,7 @@ describe("Multiple phases caching", () => {
       ProfiledComponent.getRendersByPhase("update");
       ProfiledComponent.getRendersByPhase("nested-update");
     }
+
+    unmount();
   });
 });

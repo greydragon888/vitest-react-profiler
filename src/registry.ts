@@ -102,6 +102,29 @@ class ComponentRegistry {
 export const registry = new ComponentRegistry();
 
 /**
+ * Clear render data from all profiled components but keep them registered
+ *
+ * Use this in afterEach() hooks or between benchmark iterations to reset
+ * render history while keeping components registered for reuse.
+ *
+ * @example
+ * ```typescript
+ * import { afterEach } from "vitest";
+ * import { clearProfilerData } from "vitest-react-profiler";
+ *
+ * afterEach(() => {
+ *   clearProfilerData();
+ * });
+ * ```
+ *
+ * @public
+ * @since v1.7.0
+ */
+export const clearProfilerData = (): void => {
+  registry.clearAll();
+};
+
+/**
  * Clear all component references from registry
  *
  * Use this in afterAll() hooks for stress tests that create many components

@@ -1,5 +1,5 @@
-import { render, cleanup } from "@testing-library/react";
-import { bench, describe, afterEach } from "vitest";
+import { render } from "@testing-library/react";
+import { bench, describe } from "vitest";
 
 import { withProfiler } from "../../src";
 
@@ -34,10 +34,6 @@ import type { FC } from "react";
 const TestComponent: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
 
 describe("Async Matchers - Performance (Overhead)", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
   describe("toEventuallyRenderTimes() - Timeout Scenarios", () => {
     bench(
       "1 render - expect 10 (fast timeout) - 50 iterations",

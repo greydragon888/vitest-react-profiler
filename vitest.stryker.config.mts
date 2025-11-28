@@ -23,10 +23,6 @@ export default mergeConfig(
     cacheDir: "./.vitest-stryker",
 
     test: {
-      /**
-       * Reporter - minimal for speed
-       */
-      reporters: ["dot"], // Minimal reporter for speed
       watch: false,
 
       /**

@@ -39,7 +39,7 @@ export type {
 } from "./utils/renderProfiled";
 
 // Testing utilities
-export { clearRegistry } from "./registry";
+export { clearProfilerData, clearRegistry } from "./registry";
 
 // Types
 export type {

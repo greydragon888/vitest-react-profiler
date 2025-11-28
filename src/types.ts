@@ -40,6 +40,29 @@ export interface ProfilerMatchers<R = unknown> {
   toHaveRenderedTimes: (count: number) => R;
 
   /**
+   * Assert that component renders within budget constraints
+   *
+   * Checks total renders, mounts, and/or updates against budget.
+   * At least one budget constraint must be provided.
+   *
+   * @param budget - Budget constraints (maxRenders, maxMounts, maxUpdates)
+   * @returns - Matcher result
+   * @example
+   * // Check total renders only
+   * expect(ProfiledComponent).toMeetRenderCountBudget({ maxRenders: 3 });
+   *
+   * @example
+   * // Check mounts and updates separately
+   * expect(ProfiledComponent).toMeetRenderCountBudget({
+   *   maxMounts: 1,
+   *   maxUpdates: 2,
+   *   componentName: 'Header'
+   * });
+   * @since v1.8.0
+   */
+  toMeetRenderCountBudget: (budget: RenderCountBudget) => R;
+
+  /**
    * Assert that component mounted exactly once
    *
    * @returns - Matcher result
@@ -109,6 +132,32 @@ export interface ProfilerMatchers<R = unknown> {
     phase: PhaseType,
     options?: WaitOptions,
   ) => Promise<R>;
+
+  /**
+   * Assert that component does not have suspicious render loop patterns
+   *
+   * Detects consecutive same-phase renders that may indicate infinite loops.
+   * Catches render loops BEFORE hitting MAX_SAFE_RENDERS (10,000).
+   *
+   * @param options - Loop detection options (thresholds, ignore initial updates, etc.)
+   * @returns - Matcher result
+   * @example
+   * // Default threshold (10 consecutive updates)
+   * expect(ProfiledComponent).notToHaveRenderLoops()
+   *
+   * @example
+   * // Custom threshold
+   * expect(ProfiledComponent).notToHaveRenderLoops({ maxConsecutiveUpdates: 5 })
+   *
+   * @example
+   * // Ignore initialization updates
+   * expect(ProfiledComponent).notToHaveRenderLoops({
+   *   ignoreInitialUpdates: 2,
+   *   componentName: 'Header'
+   * })
+   * @since v1.8.0
+   */
+  notToHaveRenderLoops: (options?: RenderLoopOptions) => R;
 }
 
 /**
@@ -119,6 +168,79 @@ export interface ProfilerMatchers<R = unknown> {
  * - `nested-update` - Update triggered during another component's render
  */
 export type PhaseType = "mount" | "update" | "nested-update";
+
+/**
+ * Budget constraints for render count assertions
+ *
+ * At least one constraint must be provided
+ *
+ * @since v1.8.0
+ */
+export interface RenderCountBudget {
+  /**
+   * Maximum allowed total renders (mount + update + nested-update)
+   */
+  maxRenders?: number;
+
+  /**
+   * Maximum allowed mount-phase renders
+   */
+  maxMounts?: number;
+
+  /**
+   * Maximum allowed update-phase renders (update + nested-update)
+   */
+  maxUpdates?: number;
+
+  /**
+   * Component name for error messages (optional)
+   *
+   * @default "Component"
+   */
+  componentName?: string;
+}
+
+/**
+ * Options for detecting render loops
+ *
+ * @since v1.8.0
+ */
+export interface RenderLoopOptions {
+  /**
+   * Maximum allowed consecutive 'update' phases
+   *
+   * @default 10
+   */
+  maxConsecutiveUpdates?: number;
+
+  /**
+   * Maximum allowed consecutive 'nested-update' phases
+   *
+   * If not provided, defaults to maxConsecutiveUpdates value
+   */
+  maxConsecutiveNested?: number;
+
+  /**
+   * Skip first N updates (useful for initialization)
+   *
+   * @default 0
+   */
+  ignoreInitialUpdates?: number;
+
+  /**
+   * Show full render history in error message
+   *
+   * @default false
+   */
+  showFullHistory?: boolean;
+
+  /**
+   * Component name for error messages
+   *
+   * @default "Component"
+   */
+  componentName?: string;
+}
 
 /**
  * Information passed to render event listeners

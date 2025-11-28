@@ -37,9 +37,9 @@ export default {
 
   // Mutation score thresholds
   thresholds: {
-    high: 90, // Plugin complexity - moderate threshold
-    low: 70,
-    break: 60,
+    high: 100, // Plugin complexity - moderate threshold
+    low: 95,
+    break: 90,
   },
 
   // Performance settings

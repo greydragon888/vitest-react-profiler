@@ -1,0 +1,15 @@
+[
+  {
+    "name": "ESM bundle (with tree-shaking)",
+    "path": "dist/index.js",
+    "limit": "40 KB",
+    "import": "{ withProfiler }",
+    "ignore": ["react", "react-dom"]
+  },
+  {
+    "name": "CJS bundle (full package)",
+    "path": "dist/index.cjs",
+    "limit": "45 KB",
+    "ignore": ["react", "react-dom"]
+  }
+]
