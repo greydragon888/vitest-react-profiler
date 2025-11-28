@@ -1,3 +1,8 @@
+/* eslint-disable vitest/no-conditional-expect, vitest/no-conditional-in-test */
+// These rules are disabled because this test file extensively validates error messages
+// by catching exceptions and inspecting their content. This is intentional behavior
+// for testing custom matcher implementation details.
+
 import { render } from "@testing-library/react";
 import * as React from "react";
 import { describe, beforeEach, it, expect } from "vitest";
