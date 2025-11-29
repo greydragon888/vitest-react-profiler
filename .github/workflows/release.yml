@@ -86,7 +86,7 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Publish to NPM (via OIDC Trusted Publishing)
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --registry https://registry.npmjs.org
         # Note: No NODE_AUTH_TOKEN needed - npm CLI uses OIDC token automatically
         # The CLI exchanges the workflow's OIDC ID token for publish credentials
         # Requires: npm CLI >= 11.5.1 (included with Node.js 22+)
