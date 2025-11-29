@@ -100,21 +100,44 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2 # Need previous commit to detect changes
+
+      - name: Check if relevant files changed
+        id: changes
+        run: |
+          # Get changed files between HEAD and HEAD~1
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          # Check if src/, tests/property/, or property config changed
+          if echo "$CHANGED_FILES" | grep -qE '^(src/|tests/property/|vitest\.config\.properties\.mts)'; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Relevant files changed - running property tests"
+            echo "$CHANGED_FILES" | grep -E '^(src/|tests/property/|vitest\.config)' | head -10
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No relevant changes - skipping property tests"
+            echo "Changed files:"
+            echo "$CHANGED_FILES" | head -10
+          fi
 
       - name: Setup Node.js
+        if: steps.changes.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.changes.outputs.should_run == 'true'
         run: npm ci
 
       - name: Run property-based tests
+        if: steps.changes.outputs.should_run == 'true'
         run: npm run test:properties
 
       - name: Upload property test results
-        if: always()
+        if: always() && steps.changes.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: property-test-results
@@ -123,29 +146,56 @@ jobs:
             coverage/
           retention-days: 7
 
+      - name: Skip property tests (no relevant changes)
+        if: steps.changes.outputs.should_run != 'true'
+        run: echo "⏭️ Property tests skipped - no changes to src/, tests/property/, or vitest.config.properties.mts"
+
   stress-test:
     name: Stress Testing
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2 # Need previous commit to detect changes
+
+      - name: Check if relevant files changed
+        id: changes
+        run: |
+          # Get changed files between HEAD and HEAD~1
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          # Check if src/, tests/stress/, or stress config changed
+          if echo "$CHANGED_FILES" | grep -qE '^(src/|tests/stress/|vitest\.stress\.config\.mts)'; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Relevant files changed - running stress tests"
+            echo "$CHANGED_FILES" | grep -E '^(src/|tests/stress/|vitest\.stress)' | head -10
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No relevant changes - skipping stress tests"
+            echo "Changed files:"
+            echo "$CHANGED_FILES" | head -10
+          fi
 
       - name: Setup Node.js
+        if: steps.changes.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.changes.outputs.should_run == 'true'
         run: npm ci
 
       - name: Run stress tests
+        if: steps.changes.outputs.should_run == 'true'
         run: npm run test:stress
         env:
           NODE_OPTIONS: "--expose-gc"
 
       - name: Upload stress test results
-        if: always()
+        if: always() && steps.changes.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: stress-test-results
@@ -154,28 +204,72 @@ jobs:
             .vitest-stress/
           retention-days: 7
 
+      - name: Skip stress tests (no relevant changes)
+        if: steps.changes.outputs.should_run != 'true'
+        run: echo "⏭️ Stress tests skipped - no changes to src/, tests/stress/, or vitest.stress.config.mts"
+
   mutation-test:
     name: Mutation Testing
     runs-on: ubuntu-latest
-    # Run only on master branch to save CI time
-    if: github.ref == 'refs/heads/master' || github.event_name == 'push'
+    # Run mutation tests only when:
+    # 1. Push to master branch AND
+    # 2. Source or test files changed (skip for docs/workflow-only changes)
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2 # Need previous commit to detect changes
+
+      - name: Check if source/test files changed
+        id: changes
+        run: |
+          # Get changed files between HEAD and HEAD~1
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          # Check if any src/ or tests/ files changed
+          if echo "$CHANGED_FILES" | grep -qE '^(src/|tests/)'; then
+            echo "source_changed=true" >> $GITHUB_OUTPUT
+            echo "✅ Source/test files changed - running mutation tests"
+            echo "$CHANGED_FILES" | grep -E '^(src/|tests/)' | head -10
+          else
+            echo "source_changed=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No source/test changes - skipping mutation tests"
+            echo "Changed files:"
+            echo "$CHANGED_FILES" | head -10
+          fi
 
       - name: Setup Node.js
+        if: steps.changes.outputs.source_changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.changes.outputs.source_changed == 'true'
         run: npm ci
 
+      # Cache Stryker incremental results for faster subsequent runs
+      # Key includes hash of src/ and tests/ to invalidate on code changes
+      - name: Cache Stryker incremental results
+        if: steps.changes.outputs.source_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .stryker-tmp/incremental.json
+          key: stryker-incremental-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**/*.test.ts', 'tests/**/*.test.tsx') }}
+          restore-keys: |
+            stryker-incremental-${{ runner.os }}-
+
       - name: Run mutation tests
+        if: steps.changes.outputs.source_changed == 'true'
         run: npm run test:mutation
         env:
           STRYKER_DASHBOARD_API_KEY: ${{ secrets.STRYKER_DASHBOARD_API_KEY }}
+
+      - name: Skip mutation tests (no source changes)
+        if: steps.changes.outputs.source_changed != 'true'
+        run: echo "⏭️ Mutation tests skipped - no changes to src/ or tests/"
 
   build:
     name: Build
