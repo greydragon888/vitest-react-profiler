@@ -47,7 +47,9 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
-          registry-url: "https://registry.npmjs.org"
+          # NOTE: Do NOT use registry-url here!
+          # It creates .npmrc with ${NODE_AUTH_TOKEN} which conflicts with OIDC Trusted Publishing.
+          # npm CLI v11.5.1+ automatically detects OIDC and uses it for authentication.
 
       - name: Install dependencies
         run: npm ci
