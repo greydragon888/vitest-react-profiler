@@ -85,6 +85,32 @@ jobs:
           npm version "$VERSION" --no-git-tag-version --allow-same-version
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
+      - name: Debug OIDC environment
+        run: |
+          echo "=== GitHub Context ==="
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Workflow: ${{ github.workflow }}"
+          echo ""
+          echo "=== OIDC Environment Variables ==="
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL:-NOT SET}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+SET (${#ACTIONS_ID_TOKEN_REQUEST_TOKEN} chars)}"
+          echo ""
+          echo "=== npm Configuration ==="
+          echo "npm version: $(npm --version)"
+          echo "node version: $(node --version)"
+          echo ""
+          echo "=== .npmrc files ==="
+          echo "~/.npmrc:"
+          cat ~/.npmrc 2>/dev/null || echo "(not found)"
+          echo ""
+          echo "NPM_CONFIG_USERCONFIG: ${NPM_CONFIG_USERCONFIG:-NOT SET}"
+          if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
+            echo "Content of $NPM_CONFIG_USERCONFIG:"
+            cat "$NPM_CONFIG_USERCONFIG" | sed 's/=.*/=***MASKED***/'
+          fi
+
       - name: Publish to NPM (via OIDC Trusted Publishing)
         run: npm publish --provenance --access public --registry https://registry.npmjs.org
         # Note: No NODE_AUTH_TOKEN needed - npm CLI uses OIDC token automatically
