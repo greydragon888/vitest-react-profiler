@@ -15,7 +15,7 @@ on:
 # No NPM_TOKEN secret is required - authentication is handled via GitHub's OIDC tokens
 #
 # Prerequisites:
-# 1. npm CLI >= 11.5.1 (included with Node.js 22+)
+# 1. npm CLI >= 11.5.1 (included with Node.js 24+)
 # 2. Package must be configured with Trusted Publisher on npmjs.com:
 #    - Go to: https://www.npmjs.com/package/vitest-react-profiler/access
 #    - Add Trusted Publisher with these settings:
@@ -45,11 +45,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: "npm"
           # NOTE: Do NOT use registry-url here!
           # It creates .npmrc with ${NODE_AUTH_TOKEN} which conflicts with OIDC Trusted Publishing.
           # npm CLI v11.5.1+ automatically detects OIDC and uses it for authentication.
+          # Node.js 24 includes npm 11.6.2 which supports OIDC Trusted Publishing.
 
       - name: Install dependencies
         run: npm ci
