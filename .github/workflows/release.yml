@@ -11,10 +11,26 @@ on:
         required: true
         type: string
 
+# NOTE: This workflow uses npm Trusted Publishing with OIDC (OpenID Connect)
+# No NPM_TOKEN secret is required - authentication is handled via GitHub's OIDC tokens
+#
+# Prerequisites:
+# 1. npm CLI >= 11.5.1 (included with Node.js 22+)
+# 2. Package must be configured with Trusted Publisher on npmjs.com:
+#    - Go to: https://www.npmjs.com/package/vitest-react-profiler/access
+#    - Add Trusted Publisher with these settings:
+#      * Provider: GitHub Actions
+#      * Organization/User: greydragon888
+#      * Repository: vitest-react-profiler
+#      * Workflow: release.yml
+#      * Environment: (leave empty)
+#
+# Documentation: https://docs.npmjs.com/trusted-publishers/
+
 permissions:
   contents: write
   packages: write
-  id-token: write # Required for OIDC/Trusted Publishers
+  id-token: write # Required for OIDC Trusted Publishing
 
 jobs:
   release:
@@ -67,10 +83,11 @@ jobs:
           npm version "$VERSION" --no-git-tag-version --allow-same-version
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      - name: Publish to NPM
+      - name: Publish to NPM (via OIDC Trusted Publishing)
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # Note: No NODE_AUTH_TOKEN needed - npm CLI uses OIDC token automatically
+        # The CLI exchanges the workflow's OIDC ID token for publish credentials
+        # Requires: npm CLI >= 11.5.1 (included with Node.js 22+)
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
