@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",

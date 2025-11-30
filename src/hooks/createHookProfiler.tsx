@@ -1,11 +1,14 @@
 import { profileHook } from "./profileHook";
 
+import type { ProfileHookOptions } from "./profileHook";
 import type { PhaseType, ProfiledComponent } from "../types";
 
 /**
  * Simplified API for hook profiling with built-in assertions
  *
  * @param hook - The hook function to profile
+ * @param initialPropsOrOptions - Initial props for hooks with parameters, or options for hooks without
+ * @param options - Options including renderOptions for wrapping in context providers
  * @returns Profiler object with assertion helpers and metrics
  *
  * @example
@@ -21,10 +24,16 @@ import type { PhaseType, ProfiledComponent } from "../types";
  * );
  * profiler.rerender({ value: 2 });
  * profiler.expectRenderCount(2);
+ *
+ * // With context provider
+ * const profiler = createHookProfiler(
+ *   () => useMyContextHook(),
+ *   { renderOptions: { wrapper: MyContextProvider } }
+ * );
  * ```
  */
 
-// Type overload for hooks without parameters
+// Type overload 1: Hook without parameters, without options
 export function createHookProfiler<TResult>(hook: () => TResult): {
   result: { readonly current: TResult };
   rerender: () => void;
@@ -36,13 +45,44 @@ export function createHookProfiler<TResult>(hook: () => TResult): {
   getLastRender: () => PhaseType | undefined;
 };
 
-// Type overload for hooks with parameters
-export function createHookProfiler<TProps, TResult>(
+// Type overload 2: Hook without parameters, with options
+export function createHookProfiler<TResult>(
+  hook: () => TResult,
+  options: ProfileHookOptions,
+): {
+  result: { readonly current: TResult };
+  rerender: () => void;
+  unmount: () => void;
+  ProfiledHook: ProfiledComponent<object>;
+  expectRenderCount: (expected: number) => void;
+  getRenderCount: () => number;
+  getRenderHistory: () => readonly PhaseType[];
+  getLastRender: () => PhaseType | undefined;
+};
+
+// Type overload 3: Hook with parameters, without options
+export function createHookProfiler<TProps extends object, TResult>(
   hook: (props: TProps) => TResult,
   initialProps: TProps,
 ): {
   result: { readonly current: TResult };
-  rerender: (newProps: TProps) => void;
+  rerender: (newProps?: TProps) => void;
+  unmount: () => void;
+  ProfiledHook: ProfiledComponent<TProps>;
+  expectRenderCount: (expected: number) => void;
+  getRenderCount: () => number;
+  getRenderHistory: () => readonly PhaseType[];
+  getLastRender: () => PhaseType | undefined;
+};
+
+// Type overload 4: Hook with parameters, with options
+export function createHookProfiler<TProps extends object, TResult>(
+  hook: (props: TProps) => TResult,
+  initialProps: TProps,
+  options: ProfileHookOptions,
+): {
+  result: { readonly current: TResult };
+  rerender: (newProps?: TProps) => void;
   unmount: () => void;
   ProfiledHook: ProfiledComponent<TProps>;
   expectRenderCount: (expected: number) => void;
@@ -56,11 +96,23 @@ export function createHookProfiler<TProps, TResult>(
 export function createHookProfiler<
   TProps extends object = object,
   TResult = unknown,
->(hook: (props: TProps) => TResult, initialProps?: TProps) {
-  const { result, rerender, unmount, ProfiledHook } = profileHook(
-    hook,
-    initialProps!, // eslint-disable-line @typescript-eslint/no-non-null-assertion
-  );
+>(
+  hook: (props: TProps) => TResult,
+  secondArg?: TProps | ProfileHookOptions,
+  thirdArg?: ProfileHookOptions,
+) {
+  // Forward all arguments to profileHook - it handles all the type checking
+  // Use type assertion to bypass TypeScript's overload resolution
+  // since profileHook's runtime type guard will determine the correct path
+  const { result, rerender, unmount, ProfiledHook } =
+    thirdArg === undefined
+      ? (
+          profileHook as (
+            hook: (props: TProps) => TResult,
+            secondArg?: TProps | ProfileHookOptions,
+          ) => ReturnType<typeof profileHook<TProps, TResult>>
+        )(hook, secondArg)
+      : profileHook(hook, secondArg as TProps, thirdArg);
 
   return {
     // Access to hook result

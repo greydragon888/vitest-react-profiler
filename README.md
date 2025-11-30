@@ -48,6 +48,7 @@
 - 🔍 **Precise Render Tracking** - Count exact number of renders with zero guesswork
 - ⚡ **Performance Monitoring** - Detect unnecessary re-renders and track component behavior
 - 🎯 **Phase Detection** - Distinguish between mount, update, and nested update phases
+- 🪝 **Hook Profiling** - Profile custom hooks with full Context support via `wrapper` option
 - ⏱️ **Async Testing** - Subscribe to renders with `onRender()` and wait with `waitForNextRender()`
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
 - ⚛️ **React 18+ Concurrent Ready** - Full support for `useTransition` and `useDeferredValue`

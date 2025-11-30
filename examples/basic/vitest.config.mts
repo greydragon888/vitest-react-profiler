@@ -6,6 +6,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "../../src"),
+      "vitest-react-profiler": path.resolve(__dirname, "../../src/index.ts"),
     },
   },
 

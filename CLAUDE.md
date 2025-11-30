@@ -157,7 +157,7 @@ To prevent context pollution, follow these file access rules:
 
 **Name**: `vitest-react-profiler`
 **Type**: NPM Package / Testing Utility Library
-**Current Version**: 1.8.0
+**Current Version**: 1.9.0
 
 **Purpose**: Performance testing utility for React components and hooks with sync/async update tracking in Vitest.
 

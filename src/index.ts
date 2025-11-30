@@ -17,6 +17,8 @@ export { withProfiler } from "./profiler/components/withProfiler";
 // Hook profiling
 export { profileHook, createHookProfiler } from "./hooks";
 
+export type { ProfileHookOptions } from "./hooks";
+
 // Utilities
 export {
   formatRenderHistory,

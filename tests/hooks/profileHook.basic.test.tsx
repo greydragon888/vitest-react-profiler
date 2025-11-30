@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, createContext } from "react";
 import { describe, it, expect } from "vitest";
 
 import { profileHook } from "@/hooks";
@@ -105,5 +105,101 @@ describe("profileHook - Basic functionality", () => {
     expect(ProfiledHook.displayName).not.toBe("");
     // Verify hook name is not empty in displayName
     expect(ProfiledHook.displayName).toContain("useTestHook");
+  });
+});
+
+describe("profileHook - Context wrapper support", () => {
+  // Create a test context
+  const TestContext = createContext({ value: "default" });
+
+  function useTestContext() {
+    return useContext(TestContext);
+  }
+
+  const TestProvider = ({ children }: { children: React.ReactNode }) => (
+    <TestContext.Provider value={{ value: "from-provider" }}>
+      {children}
+    </TestContext.Provider>
+  );
+
+  it("should support wrapper option for hooks without parameters", () => {
+    const { result, ProfiledHook } = profileHook(() => useTestContext(), {
+      renderOptions: { wrapper: TestProvider },
+    });
+
+    expect(ProfiledHook).toHaveRenderedTimes(1);
+    expect(result.current).toStrictEqual({ value: "from-provider" });
+  });
+
+  it("should support wrapper option for hooks with parameters", () => {
+    function useTestHookWithProps(props: { multiplier: number }) {
+      const ctx = useContext(TestContext);
+
+      return { ...ctx, multiplied: props.multiplier * 2 };
+    }
+
+    const { result, ProfiledHook } = profileHook(
+      (props) => useTestHookWithProps(props),
+      { multiplier: 5 },
+      { renderOptions: { wrapper: TestProvider } },
+    );
+
+    expect(ProfiledHook).toHaveRenderedTimes(1);
+    expect(result.current).toStrictEqual({
+      value: "from-provider",
+      multiplied: 10,
+    });
+  });
+
+  it("should preserve wrapper during rerender", () => {
+    const { result, rerender, ProfiledHook } = profileHook(
+      () => useTestContext(),
+      { renderOptions: { wrapper: TestProvider } },
+    );
+
+    expect(ProfiledHook).toHaveRenderedTimes(1);
+    expect(result.current.value).toBe("from-provider");
+
+    // Rerender should still have access to context
+    rerender();
+
+    expect(ProfiledHook).toHaveRenderedTimes(2);
+    expect(result.current.value).toBe("from-provider");
+  });
+
+  it("should preserve wrapper during rerender with props", () => {
+    function useTestHookWithProps(props: { count: number }) {
+      const ctx = useContext(TestContext);
+
+      return { ...ctx, count: props.count };
+    }
+
+    const { result, rerender, ProfiledHook } = profileHook(
+      (props) => useTestHookWithProps(props),
+      { count: 1 },
+      { renderOptions: { wrapper: TestProvider } },
+    );
+
+    expect(result.current).toStrictEqual({ value: "from-provider", count: 1 });
+
+    rerender({ count: 2 });
+
+    expect(ProfiledHook).toHaveRenderedTimes(2);
+    expect(result.current).toStrictEqual({ value: "from-provider", count: 2 });
+  });
+
+  it("should work with empty options object (edge case)", () => {
+    // Empty options should work like no options
+    const { ProfiledHook } = profileHook(() => useState(0), {});
+
+    expect(ProfiledHook).toHaveRenderedTimes(1);
+  });
+
+  it("should work with undefined renderOptions (edge case)", () => {
+    const { ProfiledHook } = profileHook(() => useState(0), {
+      renderOptions: undefined,
+    });
+
+    expect(ProfiledHook).toHaveRenderedTimes(1);
   });
 });

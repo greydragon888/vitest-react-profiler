@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2025-11-30
+
+### Added
+
+- **`wrapper` support for `profileHook` and `createHookProfiler`** - Profile hooks that depend on React Context
+  - New `ProfileHookOptions` interface with `renderOptions` for passing RTL render options (wrapper, container, etc.)
+  - 4 function overloads covering all use cases:
+    - `profileHook(hook)` - Hook without parameters
+    - `profileHook(hook, options)` - Hook without parameters, with context wrapper
+    - `profileHook(hook, props)` - Hook with parameters
+    - `profileHook(hook, props, options)` - Hook with parameters and context wrapper
+  - Wrapper preserved during `rerender()` calls automatically
+  - **Use case**: Testing hooks that use `useContext()`, `useRouter()`, `useTheme()`, etc.
+
+  ```typescript
+  // Before: ❌ Error - useRouter must be used within RouterProvider
+  const { result } = profileHook(() => useRouter());
+
+  // After: ✅ Works with wrapper option
+  const { result } = profileHook(() => useRouter(), {
+    renderOptions: { wrapper: RouterProvider }
+  });
+  ```
+
+- **`ProfileHookOptions` type export** - Available from main package entry
+  - Exported from `vitest-react-profiler` for TypeScript consumers
+  - Consistent with `renderProfiled` API pattern
+
+- **`isProfileHookOptions` type guard export** - Runtime type checking utility
+  - Distinguishes between `ProfileHookOptions` and hook props
+  - Exported from `profileHook` module for advanced use cases
+
+- **Comprehensive context hook examples** (`examples/hooks/ContextHooks.test.tsx`)
+  - Theme context hook profiling
+  - Auth context with props and wrapper
+  - Router-like context (real-world scenario)
+  - Anti-pattern demonstration (missing provider error)
+
+- **Integration tests for wrapper support** (`tests/hooks/profileHook-context.test.tsx`)
+  - 308 lines covering all context scenarios
+  - Tests for wrapper preservation during rerenders
+  - Tests for nested context providers
+  - Tests for `createHookProfiler` with wrapper
+
+### Changed
+
+- **Simplified `createHookProfiler` implementation** - Removed duplicate type guard
+- **Optimized `profileHook` argument parsing** - Cleaner conditional flow
+- **Examples vitest configs** - Added `vitest-react-profiler` alias
+
 ## [1.8.0] - 2025-11-29
 
 ### Added
@@ -807,6 +857,8 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.9.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.9.0
+[1.8.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.8.0
 [1.7.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.7.0
 [1.6.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.6.0
 [1.5.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.5.0

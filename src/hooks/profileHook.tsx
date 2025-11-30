@@ -3,11 +3,44 @@ import { render, act } from "@testing-library/react";
 import { withProfiler } from "../profiler/components/withProfiler";
 
 import type { ProfiledComponent } from "../types";
+import type { RenderOptions } from "@testing-library/react";
+
+/**
+ * Options for profileHook
+ */
+export interface ProfileHookOptions {
+  /**
+   * React Testing Library render options.
+   * Most commonly used for wrapping the hook in a context provider.
+   *
+   * @example
+   * ```tsx
+   * const { result } = profileHook(
+   *   () => useMyContextHook(),
+   *   { renderOptions: { wrapper: MyContextProvider } }
+   * );
+   * ```
+   */
+  renderOptions?: RenderOptions;
+}
+
+/**
+ * Type guard to distinguish ProfileHookOptions from initialProps
+ */
+export function isProfileHookOptions(
+  value: unknown,
+): value is ProfileHookOptions {
+  return (
+    typeof value === "object" && value !== null && "renderOptions" in value
+  );
+}
 
 /**
  * Profile a React Hook to detect extra renders
  *
  * @param hook - The hook function to profile
+ * @param initialPropsOrOptions - Initial props for hooks with parameters, or options for hooks without
+ * @param options - Options including renderOptions for wrapping in context providers
  * @returns Object with hook result and profiled component
  *
  * @example
@@ -21,11 +54,21 @@ import type { ProfiledComponent } from "../types";
  *   { value: 1 }
  * );
  *
- * expect(ProfiledHook).toHaveRenderedTimes(2); // Detected extra render!
+ * // Hook with context dependency
+ * const wrapper = ({ children }: { children: React.ReactNode }) => (
+ *   <MyContextProvider>{children}</MyContextProvider>
+ * );
+ *
+ * const { result, ProfiledHook } = profileHook(
+ *   () => useMyContextHook(),
+ *   { renderOptions: { wrapper } }
+ * );
+ *
+ * expect(ProfiledHook).toHaveRenderedTimes(1);
  * ```
  */
 
-// Type overload for hooks without parameters
+// Type overload 1: Hook without parameters, without options
 export function profileHook<TResult>(hook: () => TResult): {
   result: { readonly current: TResult };
   rerender: () => void;
@@ -33,13 +76,36 @@ export function profileHook<TResult>(hook: () => TResult): {
   ProfiledHook: ProfiledComponent<object>;
 };
 
-// Type overload for hooks with parameters
-export function profileHook<TProps, TResult>(
+// Type overload 2: Hook without parameters, with options
+export function profileHook<TResult>(
+  hook: () => TResult,
+  options: ProfileHookOptions,
+): {
+  result: { readonly current: TResult };
+  rerender: () => void;
+  unmount: () => void;
+  ProfiledHook: ProfiledComponent<object>;
+};
+
+// Type overload 3: Hook with parameters, without options
+export function profileHook<TProps extends object, TResult>(
   hook: (props: TProps) => TResult,
   initialProps: TProps,
 ): {
   result: { readonly current: TResult };
-  rerender: (newProps: TProps) => void;
+  rerender: (newProps?: TProps) => void;
+  unmount: () => void;
+  ProfiledHook: ProfiledComponent<TProps>;
+};
+
+// Type overload 4: Hook with parameters, with options
+export function profileHook<TProps extends object, TResult>(
+  hook: (props: TProps) => TResult,
+  initialProps: TProps,
+  options: ProfileHookOptions,
+): {
+  result: { readonly current: TResult };
+  rerender: (newProps?: TProps) => void;
   unmount: () => void;
   ProfiledHook: ProfiledComponent<TProps>;
 };
@@ -47,13 +113,32 @@ export function profileHook<TProps, TResult>(
 // Implementation
 export function profileHook<TProps extends object = object, TResult = unknown>(
   hook: (props: TProps) => TResult,
-  initialProps?: TProps,
+  secondArg?: TProps | ProfileHookOptions,
+  thirdArg?: ProfileHookOptions,
 ): {
   result: { readonly current: TResult };
   rerender: (newProps?: TProps) => void;
   unmount: () => void;
   ProfiledHook: ProfiledComponent<TProps>;
 } {
+  // Determine initialProps and options based on arguments
+  // The type guard isProfileHookOptions distinguishes options from props
+  let initialProps: TProps | undefined;
+  let options: ProfileHookOptions | undefined;
+
+  if (thirdArg !== undefined) {
+    // 3 args: profileHook(hook, props, options)
+    initialProps = secondArg as TProps;
+    options = thirdArg;
+  } else if (isProfileHookOptions(secondArg)) {
+    // 2 args with options: profileHook(hook, options)
+    options = secondArg;
+  } else {
+    // 1-2 args: profileHook(hook) or profileHook(hook, props)
+    // When secondArg is undefined, initialProps stays undefined (correct for no-props case)
+    initialProps = secondArg;
+  }
+
   let hookResult: TResult;
 
   // Component wrapper that calls the hook
@@ -74,9 +159,10 @@ export function profileHook<TProps extends object = object, TResult = unknown>(
   // Use empty object for hooks without parameters
   const propsToUse = (initialProps ?? {}) as TProps;
 
-  // Render the component
+  // Render the component with optional renderOptions (for wrapper, etc.)
   const { rerender: rtlRerender, unmount } = render(
     <ProfiledHook {...propsToUse} />,
+    options?.renderOptions,
   );
 
   return {
@@ -87,6 +173,7 @@ export function profileHook<TProps extends object = object, TResult = unknown>(
       },
     },
     // Wrap rerender in act() to avoid warnings
+    // Note: RTL's rerender preserves the wrapper from initial render()
     rerender: (newProps?: TProps) => {
       act(() => {
         const props = (newProps ?? {}) as TProps;

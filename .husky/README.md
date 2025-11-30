@@ -12,13 +12,15 @@ Runs **before** every commit to ensure code quality on staged files.
 
 - 📝 **Formatting and Linting** (via `lint-staged`)
   - Auto-fixes and formats only staged files
-  - Runs ESLint with `--fix`
+  - Runs ESLint with `--fix` and Prettier
 - 🔷 **Type Checking** (`npm run typecheck`)
   - Validates TypeScript types across the entire project
-- 🧪 **Tests** (`npm run test`)
-  - Runs all tests without coverage (for speed)
+- 🧹 **Unused Code Check** (`npm run lint:unused`)
+  - Detects unused exports, dependencies, and dead code via Knip
+- 🧪 **Tests with Coverage** (`npm run test:coverage`)
+  - Runs all unit/integration tests with 100% coverage threshold
 
-**Purpose:** Fast checks to catch obvious issues before committing.
+**Purpose:** Comprehensive checks to catch issues before committing.
 
 ---
 
@@ -28,20 +30,25 @@ Runs **before** pushing to remote to ensure production-ready code.
 
 **Checks:**
 
-- 📝 **Format Check** (`npm run format -- --check`)
-  - Verifies all files are properly formatted (doesn't auto-fix)
 - 🔍 **Linting** (`npm run lint`)
   - Runs ESLint on the entire codebase
 - 🔷 **Type Checking** (`npm run typecheck`)
   - Validates TypeScript types
+- 🧹 **Unused Code Check** (`npm run lint:unused`)
+  - Detects unused exports and dependencies
+- 📦 **Package Validation** (`npm run lint:package`)
+  - Validates package.json exports and configuration
 - 🧪 **Tests with Coverage** (`npm run test:coverage`)
   - Runs all tests with coverage reporting
-  - Ensures coverage thresholds are met
+  - Ensures 100% coverage threshold is met
+- 💪 **Stress Tests** (`npm run test:stress`)
+  - Runs memory and performance stress tests
+- 📝 **Examples** (`npm run test:examples`)
+  - Validates all example tests pass
 - 📦 **Build** (`npm run build`)
   - Verifies the project builds successfully
-  - Ensures no build errors before pushing
 
-**Purpose:** Comprehensive validation before sharing code with the team.
+**Purpose:** Full validation before sharing code with the team.
 
 ---
 
@@ -61,6 +68,9 @@ feat: add new feature
 fix: resolve bug in component
 docs: update README
 chore: update dependencies
+refactor: simplify argument parsing
+test: add mutation killer tests
+perf: optimize render tracking
 ```
 
 ---
@@ -83,6 +93,10 @@ git push --no-verify
 
 ## Configuration
 
-- **lint-staged config:** `.lintstagedrc.json`
-- **commitlint config:** `commitlint.config.js`
-- **husky hooks:** `.husky/`
+| Config | File |
+|--------|------|
+| lint-staged | `.lintstagedrc.json` |
+| commitlint | `commitlint.config.js` |
+| husky hooks | `.husky/` |
+| knip (unused) | `knip.config.ts` |
+| package lint | `package.json` (publint) |
