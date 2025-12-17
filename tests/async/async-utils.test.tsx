@@ -174,7 +174,7 @@ describe("waitForMinimumRenders", () => {
 
     await expect(
       waitForMinimumRenders(ProfiledStatic, 3, { timeout: 100 }),
-    ).rejects.toThrow(/Expected at least 3 renders, but got 1/);
+    ).rejects.toThrowError(/Expected at least 3 renders, but got 1/);
   });
 
   it("should show correct arithmetic in error message (minCount - actual)", async () => {
@@ -256,7 +256,7 @@ describe("waitForPhase", () => {
     // Only mounted, never updated
     await expect(
       waitForPhase(ProfiledStatic, "update", { timeout: 100 }),
-    ).rejects.toThrow(/Expected component to reach phase "update"/);
+    ).rejects.toThrowError(/Expected component to reach phase "update"/);
   });
 
   it("should provide helpful error message with current phases", async () => {
@@ -340,7 +340,7 @@ describe("waitForPhase", () => {
     // Correct: should timeout waiting for "update"
     await expect(
       waitForPhase(ProfiledComponent, "update", { timeout: 100 }),
-    ).rejects.toThrow(/Expected component to reach phase "update"/);
+    ).rejects.toThrowError(/Expected component to reach phase "update"/);
 
     // Verify it only has mount phase
     const history = ProfiledComponent.getRenderHistory();
@@ -406,10 +406,10 @@ describe("Parameter Validation", () => {
     it("should throw TypeError for negative count", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrow(
+      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrowError(
         TypeError,
       );
-      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrow(
+      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrowError(
         /non-negative integer/,
       );
     });
@@ -417,18 +417,18 @@ describe("Parameter Validation", () => {
     it("should throw TypeError for NaN count", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForRenders(ProfiledCounter, Number.NaN)).rejects.toThrow(
-        TypeError,
-      );
-      await expect(waitForRenders(ProfiledCounter, Number.NaN)).rejects.toThrow(
-        /non-negative integer/,
-      );
+      await expect(
+        waitForRenders(ProfiledCounter, Number.NaN),
+      ).rejects.toThrowError(TypeError);
+      await expect(
+        waitForRenders(ProfiledCounter, Number.NaN),
+      ).rejects.toThrowError(/non-negative integer/);
     });
 
     it("should throw TypeError for float count", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForRenders(ProfiledCounter, 3.14)).rejects.toThrow(
+      await expect(waitForRenders(ProfiledCounter, 3.14)).rejects.toThrowError(
         TypeError,
       );
     });
@@ -436,9 +436,9 @@ describe("Parameter Validation", () => {
     it("should throw TypeError for Infinity count", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForRenders(ProfiledCounter, Infinity)).rejects.toThrow(
-        TypeError,
-      );
+      await expect(
+        waitForRenders(ProfiledCounter, Infinity),
+      ).rejects.toThrowError(TypeError);
     });
 
     it("should throw TypeError for zero timeout", async () => {
@@ -446,10 +446,10 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForRenders(ProfiledCounter, 3, { timeout: 0 }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
       await expect(
         waitForRenders(ProfiledCounter, 3, { timeout: 0 }),
-      ).rejects.toThrow(/positive number/);
+      ).rejects.toThrowError(/positive number/);
     });
 
     it("should throw TypeError for negative timeout", async () => {
@@ -457,7 +457,7 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForRenders(ProfiledCounter, 3, { timeout: -100 }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
     });
 
     it("should throw TypeError for NaN timeout", async () => {
@@ -465,7 +465,7 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForRenders(ProfiledCounter, 3, { timeout: Number.NaN }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
     });
 
     it("should throw TypeError for Infinity timeout", async () => {
@@ -473,7 +473,7 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForRenders(ProfiledCounter, 3, { timeout: Infinity }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
     });
   });
 
@@ -490,12 +490,12 @@ describe("Parameter Validation", () => {
     it("should throw TypeError for negative minCount", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForMinimumRenders(ProfiledCounter, -5)).rejects.toThrow(
-        TypeError,
-      );
-      await expect(waitForMinimumRenders(ProfiledCounter, -5)).rejects.toThrow(
-        /non-negative integer/,
-      );
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, -5),
+      ).rejects.toThrowError(TypeError);
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, -5),
+      ).rejects.toThrowError(/non-negative integer/);
     });
 
     it("should throw TypeError for NaN minCount", async () => {
@@ -503,7 +503,7 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForMinimumRenders(ProfiledCounter, Number.NaN),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
     });
 
     it("should throw TypeError for zero timeout", async () => {
@@ -511,10 +511,10 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForMinimumRenders(ProfiledCounter, 3, { timeout: 0 }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
       await expect(
         waitForMinimumRenders(ProfiledCounter, 3, { timeout: 0 }),
-      ).rejects.toThrow(/positive number/);
+      ).rejects.toThrowError(/positive number/);
     });
 
     it("should throw TypeError for negative timeout", async () => {
@@ -522,10 +522,10 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForMinimumRenders(ProfiledCounter, 3, { timeout: -100 }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
       await expect(
         waitForMinimumRenders(ProfiledCounter, 3, { timeout: -100 }),
-      ).rejects.toThrow(/positive number/);
+      ).rejects.toThrowError(/positive number/);
     });
   });
 
@@ -535,10 +535,10 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForPhase(ProfiledCounter, "update", { timeout: 0 }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
       await expect(
         waitForPhase(ProfiledCounter, "update", { timeout: 0 }),
-      ).rejects.toThrow(/positive number/);
+      ).rejects.toThrowError(/positive number/);
     });
 
     it("should throw TypeError for negative timeout", async () => {
@@ -546,7 +546,7 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForPhase(ProfiledCounter, "update", { timeout: -50 }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
     });
 
     it("should throw TypeError for Infinity timeout", async () => {
@@ -554,7 +554,7 @@ describe("Parameter Validation", () => {
 
       await expect(
         waitForPhase(ProfiledCounter, "update", { timeout: Infinity }),
-      ).rejects.toThrow(TypeError);
+      ).rejects.toThrowError(TypeError);
     });
   });
 });

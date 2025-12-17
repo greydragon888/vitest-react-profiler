@@ -24,8 +24,10 @@ export interface RenderProfiledOptions {
 /**
  * Result of renderProfiled that includes the profiled component and all RTL utilities
  */
-export interface RenderProfiledResult<P extends object>
-  extends Omit<RenderResult, "rerender"> {
+export interface RenderProfiledResult<P extends object> extends Omit<
+  RenderResult,
+  "rerender"
+> {
   /**
    * The profiled component with profiling API methods
    */

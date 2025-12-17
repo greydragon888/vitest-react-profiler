@@ -406,7 +406,7 @@ describe("Event System - Integration Tests", () => {
       // Wait without triggering render
       const promise = ProfiledComponent.waitForNextRender({ timeout: 100 });
 
-      await expect(promise).rejects.toThrow(
+      await expect(promise).rejects.toThrowError(
         "Timeout: No render occurred within 100ms",
       );
 
@@ -436,13 +436,13 @@ describe("Event System - Integration Tests", () => {
       // Unsubscribe should be safe after unmount
       expect(() => {
         unsubscribe();
-      }).not.toThrow();
+      }).not.toThrowError();
 
       // Can call multiple times safely
       expect(() => {
         unsubscribe();
         unsubscribe();
-      }).not.toThrow();
+      }).not.toThrowError();
     });
 
     it("onRender with error in listener", () => {
@@ -468,7 +468,7 @@ describe("Event System - Integration Tests", () => {
       // Note: Error in listener will throw, but we need to catch it
       expect(() => {
         rerender(<ProfiledComponent value={2} />);
-      }).toThrow("Listener error");
+      }).toThrowError("Listener error");
 
       // First listener should have been called before error
       expect(goodListener1).toHaveBeenCalledTimes(1);
@@ -491,7 +491,7 @@ describe("Event System - Integration Tests", () => {
       // Now renders should work without errors
       expect(() => {
         rerender(<ProfiledComponent value={3} />);
-      }).not.toThrow();
+      }).not.toThrowError();
 
       expect(goodListener1).toHaveBeenCalledTimes(2);
     });

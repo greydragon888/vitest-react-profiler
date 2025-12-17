@@ -19,7 +19,7 @@ describe("Custom Matchers", () => {
       // In normal usage, component will mount first
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(/Expected component to have only updates/);
+      }).toThrowError(/Expected component to have only updates/);
     });
 
     it("should fail with updates and mount", () => {
@@ -31,7 +31,7 @@ describe("Custom Matchers", () => {
       // Component has mount + updates, so toHaveOnlyUpdated should fail
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(/Expected component to have only updates/);
+      }).toThrowError(/Expected component to have only updates/);
     });
 
     it("should fail when mount occurred", () => {
@@ -39,7 +39,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(
+      }).toThrowError(
         /Expected component to have only updates, but it only mounted/,
       );
     });
@@ -51,7 +51,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(
+      }).toThrowError(
         /Expected component to have only updates, but it also mounted/,
       );
     });
@@ -59,7 +59,7 @@ describe("Custom Matchers", () => {
     it("should fail when no renders occurred", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(
+      }).toThrowError(
         /Expected component to have only updates, but it never rendered/,
       );
     });
@@ -69,7 +69,9 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toHaveOnlyUpdated();
-      }).toThrow(/Expected a profiled component created with withProfiler/);
+      }).toThrowError(
+        /Expected a profiled component created with withProfiler/,
+      );
     });
 
     it("should verify phase-specific logic (not all phases count)", () => {
@@ -92,7 +94,7 @@ describe("Custom Matchers", () => {
       // This tests the logic: pass = !hasMounts && hasUpdates
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(
+      }).toThrowError(
         /Expected component to have only updates, but it also mounted/,
       );
     });
@@ -131,7 +133,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(
+      }).toThrowError(
         /Expected component to have only updates, but it only mounted/,
       );
     });
@@ -156,12 +158,14 @@ describe("Custom Matchers", () => {
       // - LogicalOperator: hasMounts && !hasUpdates → hasMounts || !hasUpdates
       expect(() => {
         expect(TestProfiledComponent).toHaveOnlyUpdated();
-      }).toThrow(/Expected component not to have only updates, but it did/);
+      }).toThrowError(
+        /Expected component not to have only updates, but it did/,
+      );
 
       // Also verify it's NOT the "only mounted" message (which mutants would produce)
       expect(() => {
         expect(TestProfiledComponent).toHaveOnlyUpdated();
-      }).not.toThrow(/only mounted/);
+      }).not.toThrowError(/only mounted/);
 
       // Restore the mock
       vi.restoreAllMocks();

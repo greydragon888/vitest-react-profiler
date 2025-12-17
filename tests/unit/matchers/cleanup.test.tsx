@@ -27,7 +27,9 @@ describe("Custom Matchers", () => {
       invalidInputs.forEach((input) => {
         expect(() => {
           expect(input).toHaveRendered();
-        }).toThrow(/Expected a profiled component created with withProfiler/);
+        }).toThrowError(
+          /Expected a profiled component created with withProfiler/,
+        );
       });
     });
   });

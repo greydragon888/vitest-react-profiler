@@ -131,7 +131,7 @@ describe("cleanupAndResolve", () => {
       // Should throw because we don't handle errors
       expect(() => {
         cleanupAndResolve(realTimeout, unsubscribeMock, resolveMock, "value");
-      }).toThrow("Unsubscribe failed");
+      }).toThrowError("Unsubscribe failed");
 
       // But clearTimeout should have been called before the error
       expect(unsubscribeMock).toHaveBeenCalledTimes(1);

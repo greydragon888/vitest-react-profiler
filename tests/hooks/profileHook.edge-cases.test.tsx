@@ -100,7 +100,7 @@ describe("profileHook - Edge cases", () => {
 
     expect(() => {
       profileHook(() => useBrokenHook());
-    }).toThrow("Hook error!");
+    }).toThrowError("Hook error!");
   });
 
   it("should run cleanup on unmount", () => {
@@ -201,7 +201,7 @@ describe("profileHook - Edge cases", () => {
       // Second: try to rerender with shouldThrow=true - this should throw
       expect(() => {
         rerender({ shouldThrow: true });
-      }).toThrow("Failed after update");
+      }).toThrowError("Failed after update");
     });
 
     it("should handle hook that throws conditionally based on props", () => {
@@ -226,7 +226,7 @@ describe("profileHook - Edge cases", () => {
       // Should throw when shouldThrow becomes true
       expect(() => {
         rerender({ shouldThrow: true });
-      }).toThrow("Conditional error");
+      }).toThrowError("Conditional error");
 
       // Should have profiled the successful render before the throw
       expect(ProfiledHook).toHaveRenderedTimes(1);
@@ -252,7 +252,7 @@ describe("profileHook - Edge cases", () => {
       // They're caught by React's error boundary system
       expect(() => {
         profileHook(() => useThrowsInEffect());
-      }).toThrow("Effect error");
+      }).toThrowError("Effect error");
 
       // Effect should have been called
       expect(effectCalls).toContain("effect-start");

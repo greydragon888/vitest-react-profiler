@@ -102,7 +102,7 @@ describe("ProfilerEvents", () => {
           phase: "mount",
           history: Object.freeze(["mount"]),
         });
-      }).not.toThrow();
+      }).not.toThrowError();
     });
   });
 
@@ -240,7 +240,7 @@ describe("ProfilerEvents", () => {
 
       expect(() => {
         events.clear();
-      }).not.toThrow();
+      }).not.toThrowError();
 
       expect(events.hasListeners()).toBe(false);
     });
@@ -350,7 +350,7 @@ describe("ProfilerEvents", () => {
 
       expect(() => {
         listeners.forEach((listener) => events.subscribe(listener));
-      }).not.toThrow();
+      }).not.toThrowError();
 
       expect(events.hasListeners()).toBe(true);
     });
@@ -361,7 +361,7 @@ describe("ProfilerEvents", () => {
 
       expect(() => {
         listeners.forEach((listener) => events.subscribe(listener));
-      }).toThrow(/Memory leak detected/);
+      }).toThrowError(/Memory leak detected/);
     });
 
     it("should include listener count in error message", () => {
@@ -370,7 +370,7 @@ describe("ProfilerEvents", () => {
 
       expect(() => {
         listeners.forEach((listener) => events.subscribe(listener));
-      }).toThrow(/Component has 101 event listeners/);
+      }).toThrowError(/Component has 101 event listeners/);
     });
 
     it("should include debugging tips in error message", () => {
@@ -444,7 +444,7 @@ describe("ProfilerEvents", () => {
       // Now we can subscribe one more (total = 100)
       expect(() => {
         events.subscribe(vi.fn());
-      }).not.toThrow();
+      }).not.toThrowError();
     });
 
     it("should reset count after clear", () => {
@@ -462,7 +462,7 @@ describe("ProfilerEvents", () => {
 
       expect(() => {
         newListeners.forEach((listener) => events.subscribe(listener));
-      }).not.toThrow();
+      }).not.toThrowError();
     });
   });
 
@@ -484,7 +484,7 @@ describe("ProfilerEvents", () => {
           phase: "mount",
           history: Object.freeze(["mount"]),
         });
-      }).toThrow("Listener error");
+      }).toThrowError("Listener error");
 
       // First listener was called (and threw)
       expect(errorListener).toHaveBeenCalledTimes(1);

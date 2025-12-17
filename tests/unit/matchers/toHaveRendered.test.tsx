@@ -18,13 +18,13 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveRendered();
-      }).not.toThrow();
+      }).not.toThrowError();
     });
 
     it("should fail when component has not rendered", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveRendered();
-      }).toThrow(/Expected component to render at least once/);
+      }).toThrowError(/Expected component to render at least once/);
     });
 
     it("should fail with non-profiled component", () => {
@@ -32,7 +32,9 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toHaveRendered();
-      }).toThrow(/Expected a profiled component created with withProfiler/);
+      }).toThrowError(
+        /Expected a profiled component created with withProfiler/,
+      );
     });
 
     it("should provide correct failure message for rendered component", () => {
@@ -40,7 +42,9 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.toHaveRendered();
-      }).toThrow(/Expected component not to render, but it rendered 1 time/);
+      }).toThrowError(
+        /Expected component not to render, but it rendered 1 time/,
+      );
     });
   });
 });

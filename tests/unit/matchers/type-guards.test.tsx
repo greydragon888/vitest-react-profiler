@@ -32,7 +32,7 @@ describe("Custom Matchers", () => {
       ];
 
       matchersToTest.forEach((matcher) => {
-        expect(matcher).toThrow(errorPattern);
+        expect(matcher).toThrowError(errorPattern);
       });
     });
 
@@ -51,7 +51,7 @@ describe("Custom Matchers", () => {
       testCases.forEach(({ input, type }) => {
         expect(() => {
           expect(input).toHaveRendered();
-        }).toThrow(
+        }).toThrowError(
           new RegExp(
             String.raw`Expected a profiled component created with withProfiler\(\), received ${type}`,
           ),
@@ -68,23 +68,23 @@ describe("Custom Matchers", () => {
       // Test all sync matchers
       expect(() => {
         expect(null).toHaveRendered();
-      }).toThrow(errorPattern);
+      }).toThrowError(errorPattern);
 
       expect(() => {
         expect(null).toHaveRenderedTimes(1);
-      }).toThrow(errorPattern);
+      }).toThrowError(errorPattern);
 
       expect(() => {
         expect(null).toHaveMountedOnce();
-      }).toThrow(errorPattern);
+      }).toThrowError(errorPattern);
 
       expect(() => {
         expect(null).toHaveNeverMounted();
-      }).toThrow(errorPattern);
+      }).toThrowError(errorPattern);
 
       expect(() => {
         expect(null).toHaveOnlyUpdated();
-      }).toThrow(errorPattern);
+      }).toThrowError(errorPattern);
     });
 
     it("should explicitly reject null for async matchers", async () => {
@@ -92,17 +92,17 @@ describe("Custom Matchers", () => {
       const errorPattern =
         /Expected a profiled component created with withProfiler.*received object/;
 
-      await expect(expect(null).toEventuallyRenderTimes(1)).rejects.toThrow(
-        errorPattern,
-      );
+      await expect(
+        expect(null).toEventuallyRenderTimes(1),
+      ).rejects.toThrowError(errorPattern);
 
-      await expect(expect(null).toEventuallyRenderAtLeast(1)).rejects.toThrow(
-        errorPattern,
-      );
+      await expect(
+        expect(null).toEventuallyRenderAtLeast(1),
+      ).rejects.toThrowError(errorPattern);
 
       await expect(
         expect(null).toEventuallyReachPhase("mount"),
-      ).rejects.toThrow(errorPattern);
+      ).rejects.toThrowError(errorPattern);
     });
 
     it("should accept profiled components for all matchers", () => {
@@ -114,20 +114,24 @@ describe("Custom Matchers", () => {
       // toHaveRendered - will throw "not rendered" but not validation error
       expect(() => {
         expect(ProfiledTestComponent).toHaveRendered();
-      }).toThrow(/Expected component to render at least once/);
+      }).toThrowError(/Expected component to render at least once/);
 
       expect(() => {
         expect(ProfiledTestComponent).toHaveRendered();
-      }).not.toThrow(/Expected a profiled component created with withProfiler/);
+      }).not.toThrowError(
+        /Expected a profiled component created with withProfiler/,
+      );
 
       // toHaveRenderedTimes - will throw wrong count but not validation error
       expect(() => {
         expect(ProfiledTestComponent).toHaveRenderedTimes(5);
-      }).toThrow(/Expected 5 renders, but got 0/);
+      }).toThrowError(/Expected 5 renders, but got 0/);
 
       expect(() => {
         expect(ProfiledTestComponent).toHaveRenderedTimes(5);
-      }).not.toThrow(/Expected a profiled component created with withProfiler/);
+      }).not.toThrowError(
+        /Expected a profiled component created with withProfiler/,
+      );
 
       // Render the component so other matchers can work
       render(<ProfiledTestComponent />);
@@ -135,11 +139,15 @@ describe("Custom Matchers", () => {
       // These should all pass validation (may pass or fail the actual assertion)
       expect(() => {
         expect(ProfiledTestComponent).toHaveRendered();
-      }).not.toThrow(/Expected a profiled component created with withProfiler/);
+      }).not.toThrowError(
+        /Expected a profiled component created with withProfiler/,
+      );
 
       expect(() => {
         expect(ProfiledTestComponent).toHaveMountedOnce();
-      }).not.toThrow(/Expected a profiled component created with withProfiler/);
+      }).not.toThrowError(
+        /Expected a profiled component created with withProfiler/,
+      );
     });
   });
 });

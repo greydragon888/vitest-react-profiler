@@ -409,7 +409,7 @@ describe("withProfiler", () => {
       // Attempting to mutate should fail silently or throw in strict mode
       expect(() => {
         (history as any).push({} as any);
-      }).toThrow();
+      }).toThrowError();
     });
 
     it("should handle conditional rendering", () => {

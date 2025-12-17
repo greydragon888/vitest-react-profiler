@@ -82,7 +82,7 @@ describe("profileHook - Context Integration", () => {
       // This should throw because useTheme requires ThemeProvider
       expect(() => {
         profileHook(() => useTheme());
-      }).toThrow("useTheme must be used within a ThemeProvider");
+      }).toThrowError("useTheme must be used within a ThemeProvider");
     });
 
     it("should work with custom initial context value", () => {

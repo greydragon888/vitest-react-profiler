@@ -19,7 +19,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(RegularComponent).toHaveRenderedTimes(1);
-      }).toThrow(/withProfiler.*function/);
+      }).toThrowError(/withProfiler.*function/);
     });
 
     it("should include actual vs expected in failure messages", () => {
@@ -27,7 +27,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes(5);
-      }).toThrow(/Expected 5 renders, but got 1/);
+      }).toThrowError(/Expected 5 renders, but got 1/);
     });
   });
 
@@ -41,7 +41,7 @@ describe("Custom Matchers", () => {
       // Now it has rendered
       expect(() => {
         expect(ProfiledComponent).not.toHaveRendered();
-      }).toThrow();
+      }).toThrowError();
 
       // Wrong count
       expect(ProfiledComponent).not.toHaveRenderedTimes(2);
@@ -53,7 +53,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.toHaveRenderedTimes(1);
-      }).toThrow(/Expected component not to render 1 time/);
+      }).toThrowError(/Expected component not to render 1 time/);
     });
   });
 });

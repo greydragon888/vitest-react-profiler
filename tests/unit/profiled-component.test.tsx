@@ -432,13 +432,13 @@ describe("ProfiledComponent", () => {
       const api = new ProfilerAPI(storage);
       const waitForNextRender = api.createWaitForNextRender(Component);
 
-      await expect(waitForNextRender()).rejects.toThrow(
+      await expect(waitForNextRender()).rejects.toThrowError(
         /Component has no profiler data/,
       );
-      await expect(waitForNextRender()).rejects.toThrow(
+      await expect(waitForNextRender()).rejects.toThrowError(
         /Did you forget to wrap it with withProfiler\(\)?/,
       );
-      await expect(waitForNextRender()).rejects.toThrow(/TestComponent/);
+      await expect(waitForNextRender()).rejects.toThrowError(/TestComponent/);
     });
 
     it("waitForNextRender should show component name in error", async () => {
@@ -447,7 +447,7 @@ describe("ProfiledComponent", () => {
       const api = new ProfilerAPI(storage);
       const waitForNextRender = api.createWaitForNextRender(UnnamedComponent);
 
-      await expect(waitForNextRender()).rejects.toThrow(
+      await expect(waitForNextRender()).rejects.toThrowError(
         /Component: UnnamedComponent/,
       );
     });
@@ -459,7 +459,9 @@ describe("ProfiledComponent", () => {
         <div>Test</div>
       ));
 
-      await expect(waitForNextRender()).rejects.toThrow(/Component: Unknown/);
+      await expect(waitForNextRender()).rejects.toThrowError(
+        /Component: Unknown/,
+      );
     });
   });
 });

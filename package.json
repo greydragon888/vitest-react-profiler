@@ -86,7 +86,7 @@
     "sonar:debug": "dotenv -- sonar-scanner -Dsonar.login=$SONAR_TOKEN -Dsonar.log.level=DEBUG -Dsonar.verbose=true",
     "sonar:local": "npm run typecheck && npm run test:coverage && npm run sonar",
     "prepare": "node -e \"try { require('husky') } catch (e) {}\"",
-    "prepublishOnly": "npm run lint:types && npm run lint:package && npm run lint:unused && npm run typecheck && npm run test:coverage && npm run build"
+    "prepublishOnly": "npm run typecheck && npm run test:coverage && npm run build && npm run lint:types && npm run lint:package && npm run lint:unused"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
