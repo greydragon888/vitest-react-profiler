@@ -138,7 +138,7 @@ jobs:
 
       - name: Upload property test results
         if: always() && steps.changes.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: property-test-results
           path: |
@@ -196,7 +196,7 @@ jobs:
 
       - name: Upload stress test results
         if: always() && steps.changes.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stress-test-results
           path: |
@@ -306,7 +306,7 @@ jobs:
           fi
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dist
           path: dist/
