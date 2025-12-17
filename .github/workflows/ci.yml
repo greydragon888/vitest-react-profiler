@@ -254,7 +254,7 @@ jobs:
       # Key includes hash of src/ and tests/ to invalidate on code changes
       - name: Cache Stryker incremental results
         if: steps.changes.outputs.source_changed == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .stryker-tmp/incremental.json
           key: stryker-incremental-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**/*.test.ts', 'tests/**/*.test.tsx') }}
