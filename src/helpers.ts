@@ -107,3 +107,47 @@ export const cleanupAndResolveIfPhaseMatches = <T>(
   // Phases match - perform cleanup and resolve
   cleanupAndResolve(timeoutId, unsubscribe, resolve, value);
 };
+
+/**
+ * Performs cleanup and resolves a promise for stabilization operations.
+ *
+ * This helper ensures the correct cleanup sequence for debounce-based stabilization:
+ * 1. Cancel the timeout timer (overall timeout)
+ * 2. Cancel the debounce timer (stabilization debounce)
+ * 3. Unsubscribe from render events (prevent memory leaks)
+ * 4. Resolve the promise with the result
+ *
+ * @template T - The type of value to resolve with
+ * @param timeoutId - The overall timeout ID to clear
+ * @param debounceId - The debounce timer ID to clear
+ * @param unsubscribe - Callback to unsubscribe from event listener
+ * @param resolve - Promise resolve function
+ * @param value - Value to resolve the promise with
+ *
+ * @example
+ * ```typescript
+ * // Usage in stabilization
+ * cleanupAndResolveStabilization(
+ *   timeoutId,
+ *   debounceId,
+ *   unsubscribe,
+ *   resolve,
+ *   { renderCount: 5, lastPhase: 'update' }
+ * );
+ * ```
+ *
+ * @since 1.12.0
+ * @internal - This is a low-level helper, not part of public API
+ */
+export const cleanupAndResolveStabilization = <T>(
+  timeoutId: NodeJS.Timeout,
+  debounceId: NodeJS.Timeout,
+  unsubscribe: () => void,
+  resolve: (value: T) => void,
+  value: T,
+): void => {
+  clearTimeout(timeoutId);
+  clearTimeout(debounceId);
+  unsubscribe();
+  resolve(value);
+};

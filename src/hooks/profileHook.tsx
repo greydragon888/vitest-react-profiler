@@ -2,6 +2,10 @@ import { render, act } from "@testing-library/react";
 
 import { withProfiler } from "../profiler/components/withProfiler";
 
+import type {
+  ProfileHookResultNoProps,
+  ProfileHookResultWithProps,
+} from "./types";
 import type { ProfiledComponent } from "../types";
 import type { RenderOptions } from "@testing-library/react";
 
@@ -69,46 +73,28 @@ export function isProfileHookOptions(
  */
 
 // Type overload 1: Hook without parameters, without options
-export function profileHook<TResult>(hook: () => TResult): {
-  result: { readonly current: TResult };
-  rerender: () => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<object>;
-};
+export function profileHook<TResult>(
+  hook: () => TResult,
+): ProfileHookResultNoProps<TResult>;
 
 // Type overload 2: Hook without parameters, with options
 export function profileHook<TResult>(
   hook: () => TResult,
   options: ProfileHookOptions,
-): {
-  result: { readonly current: TResult };
-  rerender: () => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<object>;
-};
+): ProfileHookResultNoProps<TResult>;
 
 // Type overload 3: Hook with parameters, without options
 export function profileHook<TProps extends object, TResult>(
   hook: (props: TProps) => TResult,
   initialProps: TProps,
-): {
-  result: { readonly current: TResult };
-  rerender: (newProps?: TProps) => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<TProps>;
-};
+): ProfileHookResultWithProps<TProps, TResult>;
 
 // Type overload 4: Hook with parameters, with options
 export function profileHook<TProps extends object, TResult>(
   hook: (props: TProps) => TResult,
   initialProps: TProps,
   options: ProfileHookOptions,
-): {
-  result: { readonly current: TResult };
-  rerender: (newProps?: TProps) => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<TProps>;
-};
+): ProfileHookResultWithProps<TProps, TResult>;
 
 // Implementation
 export function profileHook<TProps extends object = object, TResult = unknown>(

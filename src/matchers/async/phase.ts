@@ -1,6 +1,7 @@
 import { cleanupAndResolveIfPhaseMatches } from "@/helpers";
-import { isProfiledComponent } from "@/matchers/type-guards";
 import { formatRenderSummary } from "@/utils/formatRenderHistory";
+
+import { validateAsyncMatcherPrerequisites, validatePhase } from "./validation";
 
 import type { WaitOptions, MatcherResult } from "@/matchers/types";
 import type { PhaseType } from "@/types";
@@ -27,37 +28,25 @@ export async function toEventuallyReachPhase(
   phase: PhaseType,
   options?: WaitOptions,
 ): Promise<MatcherResult> {
-  if (!isProfiledComponent(received)) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected a profiled component created with withProfiler(), received ${typeof received}`,
-    };
+  // Validate prerequisites (component + timeout)
+  const validation = validateAsyncMatcherPrerequisites(received, options);
+
+  if (!validation.ok) {
+    return validation.error;
   }
 
-  const validPhases = ["mount", "update", "nested-update"];
+  // Validate phase
+  const phaseError = validatePhase(phase);
 
-  if (!validPhases.includes(phase)) {
-    return {
-      pass: false,
-      message: () =>
-        `Phase must be one of: ${validPhases.join(", ")}, received ${phase}`,
-    };
+  if (phaseError) {
+    return phaseError;
   }
 
-  const { timeout = 1000 } = options ?? {};
-
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected timeout to be a positive number, received ${timeout}`,
-    };
-  }
+  const { component, timeout } = validation;
 
   return new Promise((resolve) => {
     // Race condition protection: check if already satisfied
-    if (received.getRenderHistory().includes(phase)) {
+    if (component.getRenderHistory().includes(phase)) {
       resolve({
         pass: true,
         message: () =>
@@ -71,7 +60,7 @@ export async function toEventuallyReachPhase(
     const timeoutId = setTimeout(() => {
       unsubscribe();
 
-      const history = received.getRenderHistory();
+      const history = component.getRenderHistory();
       const phases = history.join(", ");
       const summary = formatRenderSummary(history);
 
@@ -83,7 +72,7 @@ export async function toEventuallyReachPhase(
     }, timeout);
 
     // Subscribe to render events
-    const unsubscribe = received.onRender(({ phase: renderPhase }) => {
+    const unsubscribe = component.onRender(({ phase: renderPhase }) => {
       // Callback is just a data pipe - no logic!
       // All conditional logic moved inside helper (unit-testable)
       cleanupAndResolveIfPhaseMatches(

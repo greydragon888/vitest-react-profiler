@@ -5,6 +5,7 @@ import {
   toEventuallyRerender,
   toEventuallyRerenderTimes,
 } from "@/matchers/async/rerender";
+import { toEventuallyStabilize } from "@/matchers/async/stabilization";
 
 import {
   toEventuallyRenderAtLeast,
@@ -62,4 +63,6 @@ expect.extend({
   // Asynchronous snapshot delta matchers (v1.11.0)
   toEventuallyRerender,
   toEventuallyRerenderTimes,
+  // Asynchronous stabilization matcher (v1.12.0)
+  toEventuallyStabilize,
 });

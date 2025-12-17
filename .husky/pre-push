@@ -17,6 +17,10 @@ npm run typecheck
 echo "🧹 Checking for unused code..."
 npm run lint:unused
 
+# Check for code duplication
+echo "📋 Checking for code duplication..."
+npx jscpd src --threshold 2
+
 # Validate package.json exports
 echo "📦 Validating package configuration..."
 npm run lint:package

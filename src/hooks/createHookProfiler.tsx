@@ -1,7 +1,10 @@
 import { profileHook } from "./profileHook";
 
 import type { ProfileHookOptions } from "./profileHook";
-import type { PhaseType, ProfiledComponent } from "../types";
+import type {
+  CreateHookProfilerResultNoProps,
+  CreateHookProfilerResultWithProps,
+} from "./types";
 
 /**
  * Simplified API for hook profiling with built-in assertions
@@ -34,62 +37,28 @@ import type { PhaseType, ProfiledComponent } from "../types";
  */
 
 // Type overload 1: Hook without parameters, without options
-export function createHookProfiler<TResult>(hook: () => TResult): {
-  result: { readonly current: TResult };
-  rerender: () => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<object>;
-  expectRenderCount: (expected: number) => void;
-  getRenderCount: () => number;
-  getRenderHistory: () => readonly PhaseType[];
-  getLastRender: () => PhaseType | undefined;
-};
+export function createHookProfiler<TResult>(
+  hook: () => TResult,
+): CreateHookProfilerResultNoProps<TResult>;
 
 // Type overload 2: Hook without parameters, with options
 export function createHookProfiler<TResult>(
   hook: () => TResult,
   options: ProfileHookOptions,
-): {
-  result: { readonly current: TResult };
-  rerender: () => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<object>;
-  expectRenderCount: (expected: number) => void;
-  getRenderCount: () => number;
-  getRenderHistory: () => readonly PhaseType[];
-  getLastRender: () => PhaseType | undefined;
-};
+): CreateHookProfilerResultNoProps<TResult>;
 
 // Type overload 3: Hook with parameters, without options
 export function createHookProfiler<TProps extends object, TResult>(
   hook: (props: TProps) => TResult,
   initialProps: TProps,
-): {
-  result: { readonly current: TResult };
-  rerender: (newProps?: TProps) => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<TProps>;
-  expectRenderCount: (expected: number) => void;
-  getRenderCount: () => number;
-  getRenderHistory: () => readonly PhaseType[];
-  getLastRender: () => PhaseType | undefined;
-};
+): CreateHookProfilerResultWithProps<TProps, TResult>;
 
 // Type overload 4: Hook with parameters, with options
 export function createHookProfiler<TProps extends object, TResult>(
   hook: (props: TProps) => TResult,
   initialProps: TProps,
   options: ProfileHookOptions,
-): {
-  result: { readonly current: TResult };
-  rerender: (newProps?: TProps) => void;
-  unmount: () => void;
-  ProfiledHook: ProfiledComponent<TProps>;
-  expectRenderCount: (expected: number) => void;
-  getRenderCount: () => number;
-  getRenderHistory: () => readonly PhaseType[];
-  getLastRender: () => PhaseType | undefined;
-};
+): CreateHookProfilerResultWithProps<TProps, TResult>;
 
 // Implementation
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types

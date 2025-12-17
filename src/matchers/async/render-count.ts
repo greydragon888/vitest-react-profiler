@@ -1,9 +1,10 @@
 import { cleanupAndResolve } from "@/helpers";
-import { isProfiledComponent } from "@/matchers/type-guards";
+
 import {
-  formatRenderHistory,
-  formatRenderSummary,
-} from "@/utils/formatRenderHistory";
+  createRenderCountTimeoutResult,
+  validateAsyncMatcherPrerequisites,
+  validateNonNegativeInteger,
+} from "./validation";
 
 import type { WaitOptions, MatcherResult } from "@/matchers/types";
 
@@ -29,35 +30,28 @@ export async function toEventuallyRenderTimes(
   expected: number,
   options?: WaitOptions,
 ): Promise<MatcherResult> {
-  if (!isProfiledComponent(received)) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected a profiled component created with withProfiler(), received ${typeof received}`,
-    };
+  // Validate prerequisites (component + timeout)
+  const validation = validateAsyncMatcherPrerequisites(received, options);
+
+  if (!validation.ok) {
+    return validation.error;
   }
 
-  if (!Number.isInteger(expected) || expected < 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected render count must be a non-negative integer, received ${expected}`,
-    };
+  // Validate expected count
+  const countError = validateNonNegativeInteger(
+    expected,
+    "Expected render count",
+  );
+
+  if (countError) {
+    return countError;
   }
 
-  const { timeout = 1000 } = options ?? {};
-
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected timeout to be a positive number, received ${timeout}`,
-    };
-  }
+  const { component, timeout } = validation;
 
   return new Promise((resolve) => {
     // Race condition protection: check if already satisfied
-    if (received.getRenderCount() === expected) {
+    if (component.getRenderCount() === expected) {
       resolve({
         pass: true,
         message: () =>
@@ -72,23 +66,18 @@ export async function toEventuallyRenderTimes(
     // Setup timeout
     const timeoutId = setTimeout(() => {
       unsubscribe();
-
-      const actual = received.getRenderCount();
-      const history = received.getRenderHistory();
-      const summary = formatRenderSummary(history);
-      const details = formatRenderHistory(history, 10);
-
-      resolve({
-        pass: false,
-        message: () =>
-          `Expected component to eventually render ${expected} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
-        actual,
-        expected,
-      });
+      resolve(
+        createRenderCountTimeoutResult(
+          component,
+          expected,
+          (actual, summary, details) =>
+            `Expected component to eventually render ${expected} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
+        ),
+      );
     }, timeout);
 
     // Subscribe to render events
-    const unsubscribe = received.onRender(({ count }) => {
+    const unsubscribe = component.onRender(({ count }) => {
       if (count === expected) {
         cleanupAndResolve(timeoutId, unsubscribe, resolve, {
           pass: true,
@@ -124,36 +113,29 @@ export async function toEventuallyRenderAtLeast(
   minCount: number,
   options?: WaitOptions,
 ): Promise<MatcherResult> {
-  if (!isProfiledComponent(received)) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected a profiled component created with withProfiler(), received ${typeof received}`,
-    };
+  // Validate prerequisites (component + timeout)
+  const validation = validateAsyncMatcherPrerequisites(received, options);
+
+  if (!validation.ok) {
+    return validation.error;
   }
 
-  if (!Number.isInteger(minCount) || minCount < 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Minimum render count must be a non-negative integer, received ${minCount}`,
-    };
+  // Validate minCount
+  const countError = validateNonNegativeInteger(
+    minCount,
+    "Minimum render count",
+  );
+
+  if (countError) {
+    return countError;
   }
 
-  const { timeout = 1000 } = options ?? {};
-
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected timeout to be a positive number, received ${timeout}`,
-    };
-  }
+  const { component, timeout } = validation;
 
   return new Promise((resolve) => {
     // Race condition protection: check if already satisfied
-    if (received.getRenderCount() >= minCount) {
-      const actual = received.getRenderCount();
+    if (component.getRenderCount() >= minCount) {
+      const actual = component.getRenderCount();
 
       resolve({
         pass: true,
@@ -169,23 +151,18 @@ export async function toEventuallyRenderAtLeast(
     // Setup timeout
     const timeoutId = setTimeout(() => {
       unsubscribe();
-
-      const actual = received.getRenderCount();
-      const history = received.getRenderHistory();
-      const summary = formatRenderSummary(history);
-      const details = formatRenderHistory(history, 10);
-
-      resolve({
-        pass: false,
-        message: () =>
-          `Expected component to eventually render at least ${minCount} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
-        actual,
-        expected: minCount,
-      });
+      resolve(
+        createRenderCountTimeoutResult(
+          component,
+          minCount,
+          (actual, summary, details) =>
+            `Expected component to eventually render at least ${minCount} times within ${timeout}ms, but got ${actual} (${summary})\n\n${details}`,
+        ),
+      );
     }, timeout);
 
     // Subscribe to render events
-    const unsubscribe = received.onRender(({ count }) => {
+    const unsubscribe = component.onRender(({ count }) => {
       if (count >= minCount) {
         cleanupAndResolve(timeoutId, unsubscribe, resolve, {
           pass: true,

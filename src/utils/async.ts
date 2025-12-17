@@ -1,5 +1,10 @@
 import { cleanupAndResolve, cleanupAndResolveIfPhaseMatches } from "@/helpers";
 
+import {
+  validateAndExtractTimeout,
+  validateNonNegativeIntegerArg,
+} from "./validation";
+
 import type { PhaseType, ProfiledComponent, WaitOptions } from "../types";
 
 /**
@@ -32,21 +37,9 @@ export async function waitForRenders<P>(
   count: number,
   options?: WaitOptions,
 ): Promise<void> {
-  // Validate count parameter
-  if (!Number.isInteger(count) || count < 0) {
-    throw new TypeError(
-      `Expected count to be a non-negative integer, received ${count}`,
-    );
-  }
-
-  const { timeout = 1000 } = options ?? {};
-
-  // Validate timeout parameter
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    throw new TypeError(
-      `Expected timeout to be a positive number, received ${timeout}`,
-    );
-  }
+  // Validate parameters
+  validateNonNegativeIntegerArg(count, "count");
+  const timeout = validateAndExtractTimeout(options);
 
   return new Promise((resolve, reject) => {
     // Race condition protection: check if already satisfied
@@ -108,21 +101,9 @@ export async function waitForMinimumRenders<P>(
   minCount: number,
   options?: WaitOptions,
 ): Promise<void> {
-  // Validate minCount parameter
-  if (!Number.isInteger(minCount) || minCount < 0) {
-    throw new TypeError(
-      `Expected minCount to be a non-negative integer, received ${minCount}`,
-    );
-  }
-
-  const { timeout = 1000 } = options ?? {};
-
-  // Validate timeout parameter
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    throw new TypeError(
-      `Expected timeout to be a positive number, received ${timeout}`,
-    );
-  }
+  // Validate parameters
+  validateNonNegativeIntegerArg(minCount, "minCount");
+  const timeout = validateAndExtractTimeout(options);
 
   return new Promise((resolve, reject) => {
     // Race condition protection: check if already satisfied
@@ -186,14 +167,8 @@ export async function waitForPhase<P>(
   phase: PhaseType,
   options?: WaitOptions,
 ): Promise<void> {
-  const { timeout = 1000 } = options ?? {};
-
-  // Validate timeout parameter
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    throw new TypeError(
-      `Expected timeout to be a positive number, received ${timeout}`,
-    );
-  }
+  // Validate timeout
+  const timeout = validateAndExtractTimeout(options);
 
   return new Promise((resolve, reject) => {
     // Race condition protection: check if already satisfied

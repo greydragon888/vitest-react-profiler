@@ -264,6 +264,21 @@ export interface ProfilerMatchers<R = unknown> {
    * @since v1.10.0
    */
   toHaveLastRenderedWithPhase: (phase: PhaseType) => R;
+
+  /**
+   * Assert that component eventually stabilizes (stops rendering for debounceMs)
+   *
+   * Stabilization occurs when no renders happen for `debounceMs` milliseconds.
+   * Useful for testing components that render multiple times in quick succession
+   * (virtualization, debounced search, animations).
+   *
+   * @param options - Stabilization options (debounceMs, timeout)
+   * @returns - Matcher result promise
+   * @example await expect(ProfiledComponent).toEventuallyStabilize()
+   * @example await expect(ProfiledComponent).toEventuallyStabilize({ debounceMs: 100, timeout: 2000 })
+   * @since v1.12.0
+   */
+  toEventuallyStabilize: (options?: StabilizationOptions) => Promise<R>;
 }
 
 /**
@@ -371,6 +386,43 @@ export interface RenderEventInfo {
 export interface WaitOptions {
   /** Maximum wait time in milliseconds (default: 1000) */
   timeout?: number;
+}
+
+/**
+ * Options for stabilization detection
+ *
+ * Stabilization occurs when component stops rendering for `debounceMs` milliseconds.
+ * Use case: virtualization, debounced search, animations.
+ *
+ * @since v1.12.0
+ */
+export interface StabilizationOptions {
+  /**
+   * Time to wait after last render before considering component stable (ms)
+   *
+   * @default 50
+   */
+  debounceMs?: number;
+
+  /**
+   * Maximum time to wait for stabilization (ms)
+   *
+   * @default 1000
+   */
+  timeout?: number;
+}
+
+/**
+ * Result of waitForStabilization()
+ *
+ * @since v1.12.0
+ */
+export interface StabilizationResult {
+  /** Number of renders that occurred while waiting for stabilization */
+  renderCount: number;
+
+  /** Phase of the last render (undefined if no renders occurred) */
+  lastPhase?: PhaseType;
 }
 
 /**
@@ -518,6 +570,35 @@ export interface ProfiledComponent<P> {
    * console.log(ProfiledComponent.getRendersSinceSnapshot()); // 2
    */
   getRendersSinceSnapshot: () => number;
+
+  /**
+   * Wait for component to stabilize (stop rendering for debounceMs)
+   *
+   * Stabilization occurs when no renders happen for `debounceMs` milliseconds.
+   * Useful for components that render multiple times in quick succession
+   * (virtualization, debounced search, animations).
+   *
+   * @param options - Stabilization options (debounceMs, timeout)
+   * @returns Promise with stabilization result (renderCount, lastPhase)
+   * @throws Error if timeout exceeded or debounceMs >= timeout
+   *
+   * @since v1.12.0
+   *
+   * @example
+   * // Wait for virtualized list to stabilize after scroll
+   * const result = await ProfiledComponent.waitForStabilization();
+   * console.log(`Stabilized after ${result.renderCount} renders`);
+   *
+   * @example
+   * // Custom debounce and timeout
+   * const result = await ProfiledComponent.waitForStabilization({
+   *   debounceMs: 100,
+   *   timeout: 2000
+   * });
+   */
+  waitForStabilization: (
+    options?: StabilizationOptions,
+  ) => Promise<StabilizationResult>;
 
   /** Original component for reference */
   OriginalComponent: ComponentType<P>;

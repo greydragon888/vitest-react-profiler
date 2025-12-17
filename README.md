@@ -173,6 +173,19 @@ it('should handle async updates', async () => {
 
 ---
 
+## 🎯 Stabilization API (v1.12.0)
+
+Wait for components to "stabilize" - useful for virtualized lists, debounced search, and animations.
+
+### Key Methods
+
+- **`waitForStabilization(options)`** - Wait for renders to stop (debounce pattern)
+- **`toEventuallyStabilize(options)`** - Matcher version for cleaner assertions
+
+📚 **[Read the complete guide →](../../wiki/API-Reference#waitforstabilization)**
+
+---
+
 ## 🪝 Hook Profiling
 
 Profile custom hooks with full Context support.

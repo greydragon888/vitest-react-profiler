@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2025-12-03
+
+### Added
+
+- **Stabilization API** - Wait for components to "stabilize" (stop rendering for a debounce period)
+  - **`waitForStabilization(options?)`** - Wait for renders to stop for `debounceMs` milliseconds
+  - **`toEventuallyStabilize(options?)`** - Matcher version for cleaner assertions
+
+  ```typescript
+  const ProfiledList = withProfiler(VirtualList);
+  const { rerender } = render(<ProfiledList items={items} scrollTop={0} />);
+
+  // Start waiting for stabilization
+  const promise = ProfiledList.waitForStabilization({
+    debounceMs: 50,   // Wait 50ms after last render
+    timeout: 2000     // Fail after 2s if still rendering
+  });
+
+  // Simulate rapid scroll (many rerenders)
+  for (let i = 1; i <= 10; i++) {
+    rerender(<ProfiledList items={items} scrollTop={i * 100} />);
+  }
+
+  // Wait for list to stabilize
+  const result = await promise;
+  expect(result.renderCount).toBe(10);
+  expect(result.lastPhase).toBe("update");
+
+  // Or use matcher
+  await expect(ProfiledList).toEventuallyStabilize();
+  ```
+
+  **Key Use Cases:**
+  - Virtualized lists - Wait for scroll to complete
+  - Debounced search - Wait for input to settle
+  - Animations - Wait for animation frames to complete
+  - Data loading cascades - Wait for dependent fetches to resolve
+
+  **Options:**
+  - `debounceMs?: number` - Time without renders to consider stable (default: 50)
+  - `timeout?: number` - Max wait time before timeout error (default: 1000)
+
+  **Result:**
+  - `renderCount: number` - Number of renders tracked during wait
+  - `lastPhase?: PhaseType` - Last render phase (undefined if no renders)
+
+### Changed
+
+- **Internal code deduplication** - Reduced code duplication from <4% to >1%
+  - Added `jscpd` check to pre-commit hook with 2% threshold
+
 ## [1.11.0] - 2025-12-02
 
 ### Added
@@ -930,6 +981,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.12.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.12.0
 [1.11.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.11.0
 [1.10.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.10.0
 [1.9.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.9.0

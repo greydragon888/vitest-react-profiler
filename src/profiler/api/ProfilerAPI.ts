@@ -1,13 +1,16 @@
-import { cleanupAndResolve } from "@/helpers";
+import { cleanupAndResolve, cleanupAndResolveStabilization } from "@/helpers";
 
 import { cacheMetrics } from "../core/CacheMetrics";
 
+import type { ProfilerData } from "../core/ProfilerData";
 import type { ProfilerStorage } from "../core/ProfilerStorage";
 import type {
   AnyComponentType,
   PhaseType,
   ProfiledComponent,
   RenderEventInfo,
+  StabilizationOptions,
+  StabilizationResult,
   WaitOptions,
 } from "@/types";
 import type { ComponentType } from "react";
@@ -31,23 +34,51 @@ export class ProfilerAPI {
   }
 
   /**
+   * Creates a cached data getter function for a component.
+   *
+   * This helper encapsulates the closure caching pattern used across all API methods:
+   * - First call: records cache miss, fetches data from storage
+   * - Subsequent calls: records cache hit, returns cached data
+   *
+   * @param component - The component to get profiler data for
+   * @param fetchData - Function to fetch profiler data (allows get vs getOrCreate)
+   * @returns A function that returns cached ProfilerData
+   *
+   * @since v1.12.0 - Extracted common caching pattern (DRY refactoring)
+   */
+  private createCachedDataGetter(
+    component: AnyComponentType,
+    fetchData: (c: AnyComponentType) => ProfilerData | undefined,
+  ): () => ProfilerData | undefined {
+    let cachedData: ProfilerData | undefined;
+
+    return () => {
+      /* v8 ignore next -- @preserve */
+      if (__DEV__) {
+        if (cachedData === undefined) {
+          cacheMetrics.recordMiss("closureCache");
+        } else {
+          cacheMetrics.recordHit("closureCache");
+        }
+      }
+
+      cachedData ??= fetchData(component);
+
+      return cachedData;
+    };
+  }
+
+  /**
    * Create getRenderCount method for component
    *
    * @since v1.6.0 - Optimized: lazy closure caching eliminates WeakMap lookup
    */
   createGetRenderCount(component: AnyComponentType): () => number {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return () => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.getRenderCount() ?? 0;
-    };
+    return () => getCachedData()?.getRenderCount() ?? 0;
   }
 
   /**
@@ -58,18 +89,11 @@ export class ProfilerAPI {
   createGetRenderHistory(
     component: AnyComponentType,
   ): () => readonly PhaseType[] {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return () => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.getHistory() ?? EMPTY_FROZEN_ARRAY;
-    };
+    return () => getCachedData()?.getHistory() ?? EMPTY_FROZEN_ARRAY;
   }
 
   /**
@@ -80,18 +104,11 @@ export class ProfilerAPI {
   createGetLastRender(
     component: AnyComponentType,
   ): () => PhaseType | undefined {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return () => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.getLastRender();
-    };
+    return () => getCachedData()?.getLastRender();
   }
 
   /**
@@ -102,18 +119,11 @@ export class ProfilerAPI {
   createGetRenderAt(
     component: AnyComponentType,
   ): (index: number) => PhaseType | undefined {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return (index: number) => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.getRenderAt(index);
-    };
+    return (index: number) => getCachedData()?.getRenderAt(index);
   }
 
   /**
@@ -124,18 +134,12 @@ export class ProfilerAPI {
   createGetRendersByPhase(
     component: AnyComponentType,
   ): (phase: PhaseType) => readonly PhaseType[] {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return (phase: PhaseType) => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.getRendersByPhase(phase) ?? EMPTY_FROZEN_ARRAY;
-    };
+    return (phase: PhaseType) =>
+      getCachedData()?.getRendersByPhase(phase) ?? EMPTY_FROZEN_ARRAY;
   }
 
   /**
@@ -144,18 +148,11 @@ export class ProfilerAPI {
    * @since v1.6.0 - Optimized: lazy closure caching eliminates WeakMap lookup
    */
   createHasMounted(component: AnyComponentType): () => boolean {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return () => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.hasMounted() ?? false;
-    };
+    return () => getCachedData()?.hasMounted() ?? false;
   }
 
   /**
@@ -166,18 +163,11 @@ export class ProfilerAPI {
    * @since v1.10.0
    */
   createSnapshot(component: AnyComponentType): () => void {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return () => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      cachedData?.snapshot();
-    };
+    return () => getCachedData()?.snapshot();
   }
 
   /**
@@ -188,18 +178,11 @@ export class ProfilerAPI {
    * @since v1.10.0
    */
   createGetRendersSinceSnapshot(component: AnyComponentType): () => number {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
-    return () => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
-
-      return cachedData?.getRendersSinceSnapshot() ?? 0;
-    };
+    return () => getCachedData()?.getRendersSinceSnapshot() ?? 0;
   }
 
   /**
@@ -226,24 +209,19 @@ export class ProfilerAPI {
   createOnRender(
     component: AnyComponentType,
   ): (callback: (info: RenderEventInfo) => void) => () => void {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
     return (callback) => {
-      if (cachedData === undefined) {
-        cacheMetrics.recordMiss("closureCache");
-        cachedData = this.storage.get(component);
-      } else {
-        cacheMetrics.recordHit("closureCache");
-      }
+      const cachedData = getCachedData();
 
       if (!cachedData) {
         // Return no-op unsubscribe if no profiler data
         return () => {};
       }
 
-      const events = cachedData.getEvents();
-
-      return events.subscribe(callback);
+      return cachedData.getEvents().subscribe(callback);
     };
   }
 
@@ -268,18 +246,15 @@ export class ProfilerAPI {
   createWaitForNextRender(
     component: AnyComponentType,
   ): (options?: WaitOptions) => Promise<RenderEventInfo> {
-    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.get(c),
+    );
 
     return (options) => {
       const { timeout = 1000 } = options ?? {};
 
       return new Promise((resolve, reject) => {
-        if (cachedData === undefined) {
-          cacheMetrics.recordMiss("closureCache");
-          cachedData = this.storage.get(component);
-        } else {
-          cacheMetrics.recordHit("closureCache");
-        }
+        const cachedData = getCachedData();
 
         if (!cachedData) {
           reject(
@@ -308,6 +283,118 @@ export class ProfilerAPI {
   }
 
   /**
+   * Create waitForStabilization method for component
+   *
+   * Waits for component to "stabilize" - when renders stop for debounceMs.
+   * Uses debounce pattern: resets timer on each render, resolves when stable.
+   *
+   * @param component - Component to wait for
+   * @returns Function that accepts options and returns promise
+   *
+   * @since v1.12.0
+   *
+   * @example
+   * ```typescript
+   * const waitForStabilization = api.createWaitForStabilization(MyComponent);
+   * const result = await waitForStabilization({ debounceMs: 50, timeout: 1000 });
+   * console.log(`Stabilized after ${result.renderCount} renders`);
+   * ```
+   */
+  createWaitForStabilization(
+    component: AnyComponentType,
+  ): (options?: StabilizationOptions) => Promise<StabilizationResult> {
+    // Use getOrCreate - guarantees data exists (initialized by withProfiler)
+    const getCachedData = this.createCachedDataGetter(component, (c) =>
+      this.storage.getOrCreate(c),
+    );
+
+    return (options) => {
+      const { debounceMs = 50, timeout = 1000 } = options ?? {};
+
+      return new Promise((resolve, reject) => {
+        // Validation: debounceMs must be less than timeout
+        if (debounceMs >= timeout) {
+          reject(
+            new Error(
+              `ValidationError: debounceMs (${debounceMs}) must be less than timeout (${timeout})`,
+            ),
+          );
+
+          return;
+        }
+
+        // getOrCreate guarantees cachedData is defined
+        const cachedData = getCachedData();
+
+        /* istanbul ignore if -- @preserve */
+        if (!cachedData) {
+          // This should never happen because getOrCreate is used
+          return;
+        }
+
+        const events = cachedData.getEvents();
+
+        // Track renders during stabilization
+        let renderCount = 0;
+        let lastPhase: PhaseType | undefined;
+
+        // Timeout handler - reject if not stabilized within timeout
+        const timeoutId = setTimeout(() => {
+          clearTimeout(debounceId);
+          unsubscribe();
+          reject(
+            new Error(
+              `StabilizationTimeoutError: Component did not stabilize within ${timeout}ms (${renderCount} renders)`,
+            ),
+          );
+        }, timeout);
+
+        // Helper to build result object (handles exactOptionalPropertyTypes)
+        const buildResult = (): StabilizationResult => {
+          const result: StabilizationResult = { renderCount };
+
+          if (lastPhase !== undefined) {
+            result.lastPhase = lastPhase;
+          }
+
+          return result;
+        };
+
+        // Debounce handler - starts stabilization check
+        // Initial debounce: resolve if no renders occur for debounceMs
+        let debounceId = setTimeout(() => {
+          cleanupAndResolveStabilization(
+            timeoutId,
+            debounceId,
+            unsubscribe,
+            resolve,
+            buildResult(),
+          );
+        }, debounceMs);
+
+        // Subscribe to render events
+        const unsubscribe = events.subscribe((info) => {
+          // Render occurred - reset debounce timer
+          renderCount++;
+          lastPhase = info.phase;
+
+          // Clear and restart debounce timer
+          clearTimeout(debounceId);
+          debounceId = setTimeout(() => {
+            cleanupAndResolveStabilization(
+              timeoutId,
+              debounceId,
+              unsubscribe,
+              resolve,
+              buildResult(),
+            );
+          }, debounceMs);
+        });
+      });
+    };
+  }
+
+  /**
    * Create all API methods for component
    */
   createAllMethods<P>(
@@ -322,6 +409,7 @@ export class ProfilerAPI {
     | "hasMounted"
     | "onRender"
     | "waitForNextRender"
+    | "waitForStabilization"
     | "snapshot"
     | "getRendersSinceSnapshot"
   > {
@@ -334,6 +422,7 @@ export class ProfilerAPI {
       hasMounted: this.createHasMounted(component),
       onRender: this.createOnRender(component),
       waitForNextRender: this.createWaitForNextRender(component),
+      waitForStabilization: this.createWaitForStabilization(component),
       snapshot: this.createSnapshot(component),
       getRendersSinceSnapshot: this.createGetRendersSinceSnapshot(component),
     };

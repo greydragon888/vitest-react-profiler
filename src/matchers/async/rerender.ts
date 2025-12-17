@@ -1,6 +1,10 @@
 import { cleanupAndResolve } from "@/helpers";
-import { isProfiledComponent } from "@/matchers/type-guards";
 import { formatRenderHistory } from "@/utils/formatRenderHistory";
+
+import {
+  validateAsyncMatcherPrerequisites,
+  validateNonNegativeInteger,
+} from "./validation";
 
 import type { WaitOptions, MatcherResult } from "@/matchers/types";
 
@@ -33,27 +37,18 @@ export async function toEventuallyRerender(
   received: unknown,
   options?: WaitOptions,
 ): Promise<MatcherResult> {
-  if (!isProfiledComponent(received)) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected a profiled component created with withProfiler(), received ${typeof received}`,
-    };
+  // Validate prerequisites (component + timeout)
+  const validation = validateAsyncMatcherPrerequisites(received, options);
+
+  if (!validation.ok) {
+    return validation.error;
   }
 
-  const { timeout = 1000 } = options ?? {};
-
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected timeout to be a positive number, received ${timeout}`,
-    };
-  }
+  const { component, timeout } = validation;
 
   return new Promise((resolve) => {
     // Race condition protection: check if already rerendered
-    const initialCount = received.getRendersSinceSnapshot();
+    const initialCount = component.getRendersSinceSnapshot();
 
     if (initialCount >= 1) {
       const times = initialCount === 1 ? "time" : "times";
@@ -74,7 +69,7 @@ export async function toEventuallyRerender(
     const timeoutId = setTimeout(() => {
       unsubscribe();
 
-      const history = received.getRenderHistory();
+      const history = component.getRenderHistory();
       const details = formatRenderHistory(history, 10);
 
       resolve({
@@ -92,7 +87,7 @@ export async function toEventuallyRerender(
     // - Initial check passed (count was 0)
     // - This is the first onRender callback (we clean up immediately after)
     // The plural case (count > 1) is only reachable via the initial check above
-    const unsubscribe = received.onRender(() => {
+    const unsubscribe = component.onRender(() => {
       cleanupAndResolve(timeoutId, unsubscribe, resolve, {
         pass: true,
         message: () =>
@@ -132,34 +127,27 @@ export async function toEventuallyRerenderTimes(
   expected: number,
   options?: WaitOptions,
 ): Promise<MatcherResult> {
-  if (!isProfiledComponent(received)) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected a profiled component created with withProfiler(), received ${typeof received}`,
-    };
+  // Validate prerequisites (component + timeout)
+  const validation = validateAsyncMatcherPrerequisites(received, options);
+
+  if (!validation.ok) {
+    return validation.error;
   }
 
-  if (!Number.isInteger(expected) || expected < 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected rerender count must be a non-negative integer, received ${expected}`,
-    };
+  // Validate expected count
+  const countError = validateNonNegativeInteger(
+    expected,
+    "Expected rerender count",
+  );
+
+  if (countError) {
+    return countError;
   }
 
-  const { timeout = 1000 } = options ?? {};
-
-  if (!Number.isFinite(timeout) || timeout <= 0) {
-    return {
-      pass: false,
-      message: () =>
-        `Expected timeout to be a positive number, received ${timeout}`,
-    };
-  }
+  const { component, timeout } = validation;
 
   return new Promise((resolve) => {
-    const actual = received.getRendersSinceSnapshot();
+    const actual = component.getRendersSinceSnapshot();
 
     // Already met condition
     if (actual === expected) {
@@ -177,7 +165,7 @@ export async function toEventuallyRerenderTimes(
     // Already exceeded - early failure
     // Stryker disable next-line EqualityOperator
     if (actual > expected) {
-      const history = received.getRenderHistory();
+      const history = component.getRenderHistory();
       const details = formatRenderHistory(history, 10);
 
       resolve({
@@ -195,8 +183,8 @@ export async function toEventuallyRerenderTimes(
     const timeoutId = setTimeout(() => {
       unsubscribe();
 
-      const finalActual = received.getRendersSinceSnapshot();
-      const history = received.getRenderHistory();
+      const finalActual = component.getRendersSinceSnapshot();
+      const history = component.getRenderHistory();
       const details = formatRenderHistory(history, 10);
 
       resolve({
@@ -209,8 +197,8 @@ export async function toEventuallyRerenderTimes(
     }, timeout);
 
     // Subscribe to render events
-    const unsubscribe = received.onRender(() => {
-      const currentCount = received.getRendersSinceSnapshot();
+    const unsubscribe = component.onRender(() => {
+      const currentCount = component.getRendersSinceSnapshot();
 
       if (currentCount === expected) {
         cleanupAndResolve(timeoutId, unsubscribe, resolve, {

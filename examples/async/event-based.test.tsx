@@ -1,8 +1,13 @@
 /**
- * Event-Based API Examples (v1.6.0)
+ * Event-Based API Examples (v1.6.0+)
  *
  * This file demonstrates real-world usage patterns for the event-based API.
  * Examples are copy-paste ready and demonstrate best practices.
+ *
+ * Includes:
+ * - onRender() - Subscribe to render events
+ * - waitForNextRender() - Wait for next render
+ * - waitForStabilization() - Wait for component to stop rendering (v1.12.0)
  *
  * @see https://github.com/greydragon888/vitest-react-profiler
  */
@@ -707,5 +712,237 @@ describe("6. Multiple subscribers", () => {
     // Cleanup remaining
     unsubscribe1();
     unsubscribe3();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// 7. WAITFORSTABILIZATION USAGE (v1.12.0)
+// ═══════════════════════════════════════════════════════════════════
+
+describe("7. waitForStabilization usage (v1.12.0)", () => {
+  /**
+   * Example 1: Basic stabilization wait
+   *
+   * Use case: Wait for component to stop rendering after initial load
+   *
+   * This demonstrates the basic stabilization pattern:
+   * - Component renders multiple times during initialization
+   * - Wait for renders to stop (debounce period with no new renders)
+   * - Get information about the stabilization process
+   */
+  it("should wait for component to stabilize", async () => {
+    const ProfiledCounter = withProfiler(AsyncCounter);
+    const { rerender } = render(<ProfiledCounter />);
+
+    // Trigger some rapid updates
+    rerender(<ProfiledCounter />);
+    rerender(<ProfiledCounter />);
+
+    // Wait for stabilization (no renders for 50ms = stable)
+    const result = await ProfiledCounter.waitForStabilization({
+      debounceMs: 50, // Wait 50ms after last render
+      timeout: 1000, // Max wait time
+    });
+
+    // Check stabilization result
+    expect(result.renderCount).toBe(0); // No renders during wait (all happened before)
+    console.log(`Component stabilized after ${result.renderCount} renders`);
+  });
+
+  /**
+   * Example 2: Debounced search input
+   *
+   * Use case: User types in search input, component re-renders on each keystroke
+   *
+   * This shows how waitForStabilization() helps test debounced inputs:
+   * - Multiple rapid state updates (simulating typing)
+   * - Wait for debounce period to pass
+   * - Verify final stable state
+   */
+  it("should wait for debounced search to stabilize", async () => {
+    const ProfiledValidator = withProfiler(FormValidator);
+    const { getByPlaceholderText } = render(<ProfiledValidator />);
+
+    const input = getByPlaceholderText("Enter your email");
+
+    // Start waiting for stabilization
+    const stabilizationPromise = ProfiledValidator.waitForStabilization({
+      debounceMs: 100, // 100ms debounce period
+      timeout: 2000,
+    });
+
+    // Simulate rapid typing (multiple state updates)
+    fireEvent.change(input, { target: { value: "t" } });
+    fireEvent.change(input, { target: { value: "te" } });
+    fireEvent.change(input, { target: { value: "tes" } });
+    fireEvent.change(input, { target: { value: "test" } });
+
+    // Wait for typing to "settle"
+    const result = await stabilizationPromise;
+
+    // Component received multiple renders during typing
+    expect(result.renderCount).toBeGreaterThanOrEqual(4);
+    expect(result.lastPhase).toBe("update");
+    console.log(`Search stabilized after ${result.renderCount} renders`);
+  });
+
+  /**
+   * Example 3: Cascading state updates
+   *
+   * Use case: Component with multiple dependent state updates
+   *
+   * This demonstrates waiting for cascading updates to settle:
+   * - Multiple state updates trigger sequential renders
+   * - Wait for all updates to complete
+   */
+  it("should wait for cascading updates to stabilize", async () => {
+    const ProfiledCounter = withProfiler(AsyncCounter);
+    const { getByText } = render(<ProfiledCounter />);
+
+    // Start stabilization wait
+    const stabilizationPromise = ProfiledCounter.waitForStabilization({
+      debounceMs: 50,
+      timeout: 1000,
+    });
+
+    // Trigger multiple rapid clicks (cascading updates)
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
+    fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
+
+    const result = await stabilizationPromise;
+
+    // Should have captured all 3 updates
+    expect(result.renderCount).toBe(3);
+    expect(result.lastPhase).toBe("update");
+    console.log(`Cascading updates stabilized: ${result.renderCount} renders`);
+  });
+
+  /**
+   * Example 4: Using toEventuallyStabilize matcher
+   *
+   * Use case: Declarative assertion that component will stabilize
+   *
+   * This shows the matcher syntax (more readable for assertions):
+   * - Works with expect() chain
+   * - Cleaner test code for simple stabilization checks
+   */
+  it("should use toEventuallyStabilize matcher", async () => {
+    const ProfiledCounter = withProfiler(AsyncCounter);
+    const { rerender } = render(<ProfiledCounter />);
+
+    // Trigger some updates
+    rerender(<ProfiledCounter />);
+    rerender(<ProfiledCounter />);
+
+    // Declarative assertion
+    await expect(ProfiledCounter).toEventuallyStabilize({
+      debounceMs: 50,
+      timeout: 500,
+    });
+
+    // Component is now stable
+    expect(ProfiledCounter.getRenderCount()).toBe(3); // mount + 2 updates
+  });
+
+  /**
+   * Example 5: Animation completion
+   *
+   * Use case: Wait for animation frames to complete
+   *
+   * This demonstrates testing animated components:
+   * - Component renders on each animation frame
+   * - Animation completes (renders stop)
+   * - Test can proceed with stable state
+   */
+  it("should wait for animation to complete", async () => {
+    // Simulating animated component with rapid updates
+    const ProfiledCounter = withProfiler(AsyncCounter);
+    const { rerender } = render(<ProfiledCounter />);
+
+    // Start waiting for stabilization
+    const stabilizationPromise = ProfiledCounter.waitForStabilization({
+      debounceMs: 30, // Short debounce for animation frames
+      timeout: 500,
+    });
+
+    // Simulate animation frames (rapid sequential renders)
+    for (let frame = 0; frame < 10; frame++) {
+      rerender(<ProfiledCounter />);
+      await new Promise((resolve) => setTimeout(resolve, 5)); // ~5ms per frame
+    }
+
+    const result = await stabilizationPromise;
+
+    // Animation completed
+    expect(result.renderCount).toBe(10);
+    expect(result.lastPhase).toBe("update");
+    console.log(`Animation completed: ${result.renderCount} frames`);
+  });
+
+  /**
+   * Example 6: Timeout handling
+   *
+   * Use case: Component never stops rendering (infinite loop detection)
+   *
+   * This shows how to handle cases where component doesn't stabilize:
+   * - Set reasonable timeout
+   * - Handle rejection gracefully
+   * - Use for debugging infinite render loops
+   */
+  it("should timeout if component never stabilizes", async () => {
+    const ProfiledCounter = withProfiler(AsyncCounter);
+    const { getByText } = render(<ProfiledCounter />);
+
+    // Start stabilization wait with short timeout
+    const stabilizationPromise = ProfiledCounter.waitForStabilization({
+      debounceMs: 50,
+      timeout: 100,
+    });
+
+    // Continuously render (simulating infinite loop)
+    const interval = setInterval(() => {
+      fireEvent.click(getByText(INCREMENT_SYNC_BUTTON));
+    }, 10);
+
+    // Should reject with timeout error
+    await expect(stabilizationPromise).rejects.toThrow(
+      /StabilizationTimeoutError/,
+    );
+
+    clearInterval(interval);
+  });
+
+  /**
+   * Example 7: Virtual list scrolling
+   *
+   * Use case: Virtualized list re-renders during scroll
+   *
+   * This demonstrates testing virtualized components:
+   * - Multiple renders as scroll position changes
+   * - Wait for scroll to "settle"
+   * - Verify final visible items
+   */
+  it("should wait for virtual list to stabilize after scroll", async () => {
+    const ProfiledCounter = withProfiler(AsyncCounter);
+    const { rerender } = render(<ProfiledCounter />);
+
+    // Start waiting for stabilization
+    const stabilizationPromise = ProfiledCounter.waitForStabilization({
+      debounceMs: 50,
+      timeout: 500,
+    });
+
+    // Simulate scroll updates (multiple rapid renders)
+    for (let scrollTop = 0; scrollTop <= 500; scrollTop += 100) {
+      rerender(<ProfiledCounter />);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    const result = await stabilizationPromise;
+
+    // Virtual list stabilized
+    expect(result.renderCount).toBe(6); // 6 scroll positions
+    expect(result.lastPhase).toBe("update");
   });
 });

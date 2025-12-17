@@ -1,6 +1,10 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-import { cleanupAndResolve, cleanupAndResolveIfPhaseMatches } from "@/helpers";
+import {
+  cleanupAndResolve,
+  cleanupAndResolveIfPhaseMatches,
+  cleanupAndResolveStabilization,
+} from "@/helpers";
 
 describe("cleanupAndResolve", () => {
   let realTimeout: NodeJS.Timeout;
@@ -528,6 +532,222 @@ describe("cleanupAndResolveIfPhaseMatches", () => {
       );
 
       expect(resolveMock).toHaveBeenCalledTimes(3);
+    });
+  });
+});
+
+describe("cleanupAndResolveStabilization", () => {
+  let realTimeout: NodeJS.Timeout;
+  let realDebounce: NodeJS.Timeout;
+
+  beforeEach(() => {
+    realTimeout = setTimeout(() => {}, 10_000);
+    realDebounce = setTimeout(() => {}, 10_000);
+  });
+
+  afterEach(() => {
+    clearTimeout(realTimeout);
+    clearTimeout(realDebounce);
+  });
+
+  it("should clear both timeoutId and debounceId", () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+    const unsubscribeMock = vi.fn();
+    const resolveMock = vi.fn();
+    const value = { renderCount: 5, lastPhase: "update" as const };
+
+    cleanupAndResolveStabilization(
+      realTimeout,
+      realDebounce,
+      unsubscribeMock,
+      resolveMock,
+      value,
+    );
+
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(realTimeout);
+    expect(clearTimeoutSpy).toHaveBeenCalledWith(realDebounce);
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(2);
+
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("should call unsubscribe callback", () => {
+    const unsubscribeMock = vi.fn();
+    const resolveMock = vi.fn();
+    const value = { renderCount: 3 };
+
+    cleanupAndResolveStabilization(
+      realTimeout,
+      realDebounce,
+      unsubscribeMock,
+      resolveMock,
+      value,
+    );
+
+    expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call resolve with the provided value", () => {
+    const unsubscribeMock = vi.fn();
+    const resolveMock = vi.fn();
+    const value = { renderCount: 10, lastPhase: "nested-update" as const };
+
+    cleanupAndResolveStabilization(
+      realTimeout,
+      realDebounce,
+      unsubscribeMock,
+      resolveMock,
+      value,
+    );
+
+    expect(resolveMock).toHaveBeenCalledWith(value);
+    expect(resolveMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("should perform all four operations (clearTimeout x2, unsubscribe, resolve)", () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+    const unsubscribeMock = vi.fn();
+    const resolveMock = vi.fn();
+    const value = { renderCount: 0 };
+
+    cleanupAndResolveStabilization(
+      realTimeout,
+      realDebounce,
+      unsubscribeMock,
+      resolveMock,
+      value,
+    );
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(2);
+    expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+    expect(resolveMock).toHaveBeenCalledTimes(1);
+
+    clearTimeoutSpy.mockRestore();
+  });
+
+  describe("Call order verification", () => {
+    it("should call operations in correct order: clearTimeout(timeout) → clearTimeout(debounce) → unsubscribe → resolve", () => {
+      const callOrder: string[] = [];
+      let clearTimeoutCallCount = 0;
+      const clearTimeoutSpy = vi
+        .spyOn(globalThis, "clearTimeout")
+        .mockImplementation(() => {
+          clearTimeoutCallCount++;
+          callOrder.push(`clearTimeout-${clearTimeoutCallCount}`);
+        });
+      const unsubscribeMock = vi.fn(() => {
+        callOrder.push("unsubscribe");
+      });
+      const resolveMock = vi.fn(() => {
+        callOrder.push("resolve");
+      });
+
+      cleanupAndResolveStabilization(
+        realTimeout,
+        realDebounce,
+        unsubscribeMock,
+        resolveMock,
+        { renderCount: 5 },
+      );
+
+      expect(callOrder).toStrictEqual([
+        "clearTimeout-1",
+        "clearTimeout-2",
+        "unsubscribe",
+        "resolve",
+      ]);
+
+      clearTimeoutSpy.mockRestore();
+    });
+  });
+
+  describe("StabilizationResult value types", () => {
+    it("should work with renderCount only (no lastPhase)", () => {
+      const unsubscribeMock = vi.fn();
+      const resolveMock = vi.fn();
+      const value = { renderCount: 0 };
+
+      cleanupAndResolveStabilization(
+        realTimeout,
+        realDebounce,
+        unsubscribeMock,
+        resolveMock,
+        value,
+      );
+
+      expect(resolveMock).toHaveBeenCalledWith({ renderCount: 0 });
+    });
+
+    it("should work with mount phase", () => {
+      const unsubscribeMock = vi.fn();
+      const resolveMock = vi.fn();
+      const value = { renderCount: 1, lastPhase: "mount" as const };
+
+      cleanupAndResolveStabilization(
+        realTimeout,
+        realDebounce,
+        unsubscribeMock,
+        resolveMock,
+        value,
+      );
+
+      expect(resolveMock).toHaveBeenCalledWith(value);
+    });
+
+    it("should work with update phase", () => {
+      const unsubscribeMock = vi.fn();
+      const resolveMock = vi.fn();
+      const value = { renderCount: 100, lastPhase: "update" as const };
+
+      cleanupAndResolveStabilization(
+        realTimeout,
+        realDebounce,
+        unsubscribeMock,
+        resolveMock,
+        value,
+      );
+
+      expect(resolveMock).toHaveBeenCalledWith(value);
+    });
+
+    it("should work with nested-update phase", () => {
+      const unsubscribeMock = vi.fn();
+      const resolveMock = vi.fn();
+      const value = { renderCount: 50, lastPhase: "nested-update" as const };
+
+      cleanupAndResolveStabilization(
+        realTimeout,
+        realDebounce,
+        unsubscribeMock,
+        resolveMock,
+        value,
+      );
+
+      expect(resolveMock).toHaveBeenCalledWith(value);
+    });
+  });
+
+  describe("Memory leak prevention", () => {
+    it("should clear both timers to prevent memory leaks", () => {
+      const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+      const unsubscribeMock = vi.fn();
+      const resolveMock = vi.fn();
+
+      const timeout1 = setTimeout(() => {}, 5000);
+      const debounce1 = setTimeout(() => {}, 5000);
+
+      cleanupAndResolveStabilization(
+        timeout1,
+        debounce1,
+        unsubscribeMock,
+        resolveMock,
+        { renderCount: 1 },
+      );
+
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(timeout1);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(debounce1);
+
+      clearTimeoutSpy.mockRestore();
     });
   });
 });
