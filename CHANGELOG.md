@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2025-12-02
+
+### Added
+
+- **Extended Matchers for Snapshot API** - Flexible assertions for snapshot-based testing
+  - **`toHaveRerendered()`** - Assert at least one rerender occurred after snapshot
+  - **`toHaveRerendered(n)`** - Assert exactly `n` rerenders after snapshot (with validation)
+  - **`toEventuallyRerender(options?)`** - Async matcher, wait for at least one rerender
+  - **`toEventuallyRerenderTimes(n, options?)`** - Async matcher, wait for exact rerender count
+
+  ```typescript
+  // Sync matchers
+  ProfiledComponent.snapshot();
+  fireEvent.click(button);
+  expect(ProfiledComponent).toHaveRerendered();     // At least one
+  expect(ProfiledComponent).toHaveRerendered(3);    // Exactly 3
+
+  // Async matchers - wait for rerenders with timeout
+  ProfiledComponent.snapshot();
+  triggerAsyncAction();
+  await expect(ProfiledComponent).toEventuallyRerender();
+  await expect(ProfiledComponent).toEventuallyRerenderTimes(2, { timeout: 2000 });
+  ```
+
+  **Key Features:**
+  - Full `.not` modifier support for all matchers
+  - Parameter validation (non-negative integers only)
+  - Early failure when count exceeded (async matchers don't wait for timeout)
+  - Detailed error messages with render history and tips
+
 ## [1.10.0] - 2025-12-01
 
 ### Added
@@ -900,6 +930,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.11.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.11.0
 [1.10.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.10.0
 [1.9.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.9.0
 [1.8.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.8.0

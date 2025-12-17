@@ -2,7 +2,7 @@ import { afterAll, afterEach } from "vitest";
 
 import { registry } from "./registry";
 
-// Stryker disable  all
+// Stryker disable all
 /**
  * Automatically registers cleanup hooks when imported
  * This ensures test isolation without manual intervention

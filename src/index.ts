@@ -19,12 +19,6 @@ export { profileHook, createHookProfiler } from "./hooks";
 
 export type { ProfileHookOptions } from "./hooks";
 
-// Utilities
-export {
-  formatRenderHistory,
-  formatRenderSummary,
-} from "./utils/formatRenderHistory";
-
 // Async utilities
 export {
   waitForRenders,

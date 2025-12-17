@@ -134,6 +134,49 @@ export interface ProfilerMatchers<R = unknown> {
   ) => Promise<R>;
 
   /**
+   * Wait for component to rerender after snapshot() (async)
+   *
+   * Resolves when at least one rerender occurs after the last snapshot.
+   * Times out if no rerender occurs within the timeout period.
+   *
+   * @param options - Wait options (timeout)
+   * @returns - Matcher result promise
+   * @example
+   * ProfiledComponent.snapshot();
+   * triggerAsyncUpdate();
+   * await expect(ProfiledComponent).toEventuallyRerender();
+   *
+   * @example
+   * await expect(ProfiledComponent).toEventuallyRerender({ timeout: 5000 });
+   * @since v1.11.0
+   */
+  toEventuallyRerender: (options?: WaitOptions) => Promise<R>;
+
+  /**
+   * Wait for exact number of rerenders after snapshot() (async)
+   *
+   * Resolves when exactly N rerenders occur after the last snapshot.
+   * Fails early if count exceeds expected (doesn't wait for timeout).
+   * Times out if count is not reached within the timeout period.
+   *
+   * @param expected - Expected number of rerenders
+   * @param options - Wait options (timeout)
+   * @returns - Matcher result promise
+   * @example
+   * ProfiledComponent.snapshot();
+   * triggerMultipleAsyncUpdates();
+   * await expect(ProfiledComponent).toEventuallyRerenderTimes(3);
+   *
+   * @example
+   * await expect(ProfiledComponent).toEventuallyRerenderTimes(5, { timeout: 5000 });
+   * @since v1.11.0
+   */
+  toEventuallyRerenderTimes: (
+    expected: number,
+    options?: WaitOptions,
+  ) => Promise<R>;
+
+  /**
    * Assert that component does not have suspicious render loop patterns
    *
    * Detects consecutive same-phase renders that may indicate infinite loops.
@@ -158,6 +201,29 @@ export interface ProfilerMatchers<R = unknown> {
    * @since v1.8.0
    */
   notToHaveRenderLoops: (options?: RenderLoopOptions) => R;
+
+  /**
+   * Assert that component rerendered after snapshot()
+   *
+   * Without argument: checks at least 1 rerender occurred.
+   * With argument: checks exact number of rerenders.
+   *
+   * @param expected - Optional expected count (undefined = at least 1)
+   * @returns - Matcher result
+   * @example
+   * // At least one rerender
+   * ProfiledComponent.snapshot();
+   * triggerAction();
+   * expect(ProfiledComponent).toHaveRerendered();
+   *
+   * @example
+   * // Exact count
+   * ProfiledComponent.snapshot();
+   * triggerMultipleUpdates();
+   * expect(ProfiledComponent).toHaveRerendered(3);
+   * @since v1.11.0
+   */
+  toHaveRerendered: (expected?: number) => R;
 
   /**
    * Assert that component rerendered exactly once since snapshot()

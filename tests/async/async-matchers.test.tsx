@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { describe, expect, it } from "vitest";
 
 import { withProfiler } from "../../src";
@@ -623,6 +623,443 @@ describe("Event-based behavior tests for async matchers", () => {
   });
 });
 
+describe("toEventuallyRerender (v1.11.0)", () => {
+  it("should pass when component rerenders after snapshot", async () => {
+    // eslint-disable-next-line sonarjs/no-identical-functions -- Test isolation requires separate component
+    const Counter = () => {
+      const [count, setCount] = useState(0);
+
+      if (count === 0) {
+        setTimeout(() => {
+          setCount(1);
+        }, 20);
+      }
+
+      return <div>{count}</div>;
+    };
+
+    const ProfiledCounter = withProfiler(Counter);
+
+    render(<ProfiledCounter />);
+
+    ProfiledCounter.snapshot();
+
+    await expect(ProfiledCounter).toEventuallyRerender();
+
+    expect(ProfiledCounter.getRendersSinceSnapshot()).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should pass immediately if already rerendered", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+
+    // Already rerendered once
+    await expect(ProfiledComponent).toEventuallyRerender();
+  });
+
+  it("should fail when no rerender within timeout", async () => {
+    const Static = () => <div>Static</div>;
+    const ProfiledStatic = withProfiler(Static);
+
+    render(<ProfiledStatic />);
+
+    ProfiledStatic.snapshot();
+
+    await expect(
+      expect(ProfiledStatic).toEventuallyRerender({ timeout: 100 }),
+    ).rejects.toThrowError(
+      /Expected component to rerender after snapshot within 100ms, but it did not/,
+    );
+  });
+
+  it("should fail with invalid component", async () => {
+    await expect(
+      expect("not-a-component").toEventuallyRerender(),
+    ).rejects.toThrowError(/Expected a profiled component/);
+  });
+
+  it("should fail with invalid timeout", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerender({ timeout: 0 }),
+    ).rejects.toThrowError(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerender({ timeout: -100 }),
+    ).rejects.toThrowError(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerender({ timeout: Number.NaN }),
+    ).rejects.toThrowError(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerender({ timeout: Infinity }),
+    ).rejects.toThrowError(/positive number/);
+  });
+
+  it("should fail .not assertion when single rerender occurs (singular)", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRerender(),
+    ).rejects.toThrowError(
+      /Expected component not to rerender after snapshot within \d+ms, but it rerendered 1 time/,
+    );
+  });
+
+  it("should fail .not assertion when multiple rerenders occur (plural)", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+    rerender(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRerender(),
+    ).rejects.toThrowError(
+      /Expected component not to rerender after snapshot within \d+ms, but it rerendered 2 times/,
+    );
+  });
+
+  it("should use singular 'time' when exactly 1 rerender (early return path)", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+
+    // Verify singular "time" not "times" for exactly 1 rerender
+    let errorMessage = "";
+
+    try {
+      await expect(ProfiledComponent).not.toEventuallyRerender();
+    } catch (error) {
+      errorMessage = (error as Error).message;
+    }
+
+    // Must contain "1 time" (singular), not "1 times" (plural)
+    expect(errorMessage).toContain("1 time");
+    expect(errorMessage).not.toContain("1 times");
+  });
+
+  it("should fail .not assertion when rerender happens during wait", async () => {
+    const AsyncUpdater = () => {
+      const [count, setCount] = useState(0);
+
+      useEffect(() => {
+        if (count >= 1) {
+          return;
+        }
+
+        const timer = setTimeout(() => {
+          setCount(1);
+        }, 10);
+
+        return () => {
+          clearTimeout(timer);
+        };
+      }, [count]);
+
+      return <div>{count}</div>;
+    };
+
+    const ProfiledComponent = withProfiler(AsyncUpdater);
+
+    render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+
+    // Start waiting with .not - should fail when async update occurs
+    // Note: The callback always reports "1 time" since it only fires once
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRerender({ timeout: 200 }),
+    ).rejects.toThrowError(
+      /Expected component not to rerender after snapshot within 200ms, but it rerendered 1 time/,
+    );
+  });
+});
+
+describe("toEventuallyRerenderTimes (v1.11.0)", () => {
+  it("should pass when exact rerender count is reached", async () => {
+    const Counter = () => {
+      const [count, setCount] = useState(0);
+
+      if (count < 2) {
+        setTimeout(() => {
+          setCount(count + 1);
+        }, 15);
+      }
+
+      return <div>{count}</div>;
+    };
+
+    const ProfiledCounter = withProfiler(Counter);
+
+    render(<ProfiledCounter />);
+
+    ProfiledCounter.snapshot();
+
+    await expect(ProfiledCounter).toEventuallyRerenderTimes(2);
+
+    expect(ProfiledCounter.getRendersSinceSnapshot()).toBe(2);
+  });
+
+  it("should pass immediately if count already met", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+    rerender(<ProfiledComponent />);
+
+    // Already rerendered twice
+    await expect(ProfiledComponent).toEventuallyRerenderTimes(2);
+  });
+
+  it("should pass (not fail) when actual equals expected - boundary test", async () => {
+    // This test ensures that `actual > expected` check does NOT trigger when actual === expected
+    // Mutant changes `>` to `>=` which would cause this to fail
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+    rerender(<ProfiledComponent />);
+    rerender(<ProfiledComponent />);
+
+    // Exactly 3 rerenders, expecting 3 - should pass, not fail with "exceeded"
+    await expect(ProfiledComponent).toEventuallyRerenderTimes(3);
+
+    // Verify it passed without "exceeded" error
+    expect(ProfiledComponent.getRendersSinceSnapshot()).toBe(3);
+  });
+
+  it("should fail early if count exceeded", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+    rerender(<ProfiledComponent />);
+    rerender(<ProfiledComponent />);
+
+    // Already 3 rerenders, but we expect only 2
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(2),
+    ).rejects.toThrowError(/already got 3.*exceeded/);
+  });
+
+  it("should fail when count not reached within timeout", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(3, { timeout: 100 }),
+    ).rejects.toThrowError(
+      /Expected component to rerender 3 times after snapshot within 100ms, but got 0 times/,
+    );
+  });
+
+  it("should fail .not when exact count is reached during wait", async () => {
+    const AsyncUpdater = () => {
+      const [count, setCount] = useState(0);
+
+      useEffect(() => {
+        if (count >= 2) {
+          return;
+        }
+
+        const timer = setTimeout(() => {
+          setCount((c) => c + 1);
+        }, 10);
+
+        return () => {
+          clearTimeout(timer);
+        };
+      }, [count]);
+
+      return <div>{count}</div>;
+    };
+
+    const ProfiledComponent = withProfiler(AsyncUpdater);
+
+    render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+
+    // Component will rerender 2 times, which matches our expected count
+    // With .not, this should fail with a specific message
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRerenderTimes(2, {
+        timeout: 300,
+      }),
+    ).rejects.toThrowError(
+      /Expected component not to rerender 2 times after snapshot within 300ms, but it did/,
+    );
+  });
+
+  it("should use singular 'time' in .not message when expected is 1", async () => {
+    // eslint-disable-next-line sonarjs/no-identical-functions -- Test isolation requires separate component
+    const AsyncUpdater = () => {
+      const [count, setCount] = useState(0);
+
+      useEffect(() => {
+        if (count >= 1) {
+          return;
+        }
+
+        const timer = setTimeout(() => {
+          setCount(1);
+        }, 10);
+
+        return () => {
+          clearTimeout(timer);
+        };
+      }, [count]);
+
+      return <div>{count}</div>;
+    };
+
+    const ProfiledComponent = withProfiler(AsyncUpdater);
+
+    render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRerenderTimes(1, {
+        timeout: 200,
+      }),
+    ).rejects.toThrowError(
+      /Expected component not to rerender 1 time after snapshot within 200ms, but it did/,
+    );
+  });
+
+  it("should fail with invalid component", async () => {
+    await expect(
+      expect("not-a-component").toEventuallyRerenderTimes(1),
+    ).rejects.toThrowError(/Expected a profiled component/);
+  });
+
+  it("should fail with invalid expected count", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(-1),
+    ).rejects.toThrowError(/must be a non-negative integer/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(1.5),
+    ).rejects.toThrowError(/must be a non-negative integer/);
+  });
+
+  it("should fail with invalid timeout", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(1, { timeout: 0 }),
+    ).rejects.toThrowError(/positive number/);
+
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(1, { timeout: -50 }),
+    ).rejects.toThrowError(/positive number/);
+  });
+
+  it("should accept 0 as valid expected count", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+
+    // Expect 0 rerenders
+    await expect(ProfiledComponent).toEventuallyRerenderTimes(0, {
+      timeout: 50,
+    });
+
+    expect(ProfiledComponent.getRendersSinceSnapshot()).toBe(0);
+  });
+
+  it("should fail .not assertion when exact count is reached", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+
+    await expect(
+      expect(ProfiledComponent).not.toEventuallyRerenderTimes(1),
+    ).rejects.toThrowError(
+      /Expected component not to rerender 1 time after snapshot within \d+ms, but it did/,
+    );
+  });
+
+  it("should show render history on timeout failure", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    const { rerender } = render(<ProfiledComponent />);
+
+    ProfiledComponent.snapshot();
+    rerender(<ProfiledComponent />);
+
+    let error: unknown;
+
+    try {
+      await expect(ProfiledComponent).toEventuallyRerenderTimes(5, {
+        timeout: 50,
+      });
+
+      throw new Error("Should have thrown");
+    } catch (error_) {
+      error = error_;
+    }
+
+    expect(error).toMatchObject({
+      message: expect.stringContaining("#"),
+    });
+  });
+});
+
 describe("Real-world async matcher scenarios", () => {
   it("should handle complex async state updates", async () => {
     const AsyncComponent = () => {
@@ -695,6 +1132,7 @@ describe("Real-world async matcher scenarios", () => {
   });
 
   it("should combine with regular matchers", async () => {
+    // eslint-disable-next-line sonarjs/no-identical-functions -- Test isolation requires separate component
     const Counter = () => {
       const [count, setCount] = useState(0);
 

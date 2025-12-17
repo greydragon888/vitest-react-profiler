@@ -123,6 +123,315 @@ describe("Snapshot API Integration", () => {
     });
   });
 
+  describe("toHaveRerendered matcher (v1.11.0)", () => {
+    describe("without argument (at least 1)", () => {
+      it("should pass when component rerendered once", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        expect(ProfiledCounter).toHaveRerendered();
+      });
+
+      it("should pass when component rerendered multiple times", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+        rerender(<ProfiledCounter initialCount={15} />);
+
+        expect(ProfiledCounter).toHaveRerendered();
+      });
+
+      it("should fail when no rerenders", () => {
+        render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered();
+        }).toThrowError(
+          /Expected component to rerender after snapshot, but it did not/,
+        );
+      });
+
+      it("should work with .not modifier", () => {
+        render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+
+        expect(ProfiledCounter).not.toHaveRerendered();
+      });
+
+      it("should fail .not when component rerendered once (singular)", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        expect(() => {
+          expect(ProfiledCounter).not.toHaveRerendered();
+        }).toThrowError(
+          /Expected component not to rerender after snapshot, but it rerendered 1 time/,
+        );
+      });
+
+      it("should use singular 'time' not 'times' for exactly 1 rerender", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        let errorMessage = "";
+
+        try {
+          expect(ProfiledCounter).not.toHaveRerendered();
+        } catch (error) {
+          errorMessage = (error as Error).message;
+        }
+
+        // Must contain "1 time" (singular), not "1 times" (plural)
+        expect(errorMessage).toContain("1 time");
+        expect(errorMessage).not.toContain("1 times");
+      });
+
+      it("should fail .not when component rerendered multiple times (plural)", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+
+        expect(() => {
+          expect(ProfiledCounter).not.toHaveRerendered();
+        }).toThrowError(
+          /Expected component not to rerender after snapshot, but it rerendered 2 times/,
+        );
+      });
+    });
+
+    describe("with argument (exact count)", () => {
+      it("should pass when exact count matches", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+        rerender(<ProfiledCounter initialCount={15} />);
+
+        expect(ProfiledCounter).toHaveRerendered(3);
+      });
+
+      it("should fail when count is less", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(3);
+        }).toThrowError(
+          /Expected component to rerender 3 times after snapshot, but it rerendered 1 time/,
+        );
+      });
+
+      it("should fail when count is more", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+        rerender(<ProfiledCounter initialCount={15} />);
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(2);
+        }).toThrowError(
+          /Expected component to rerender 2 times after snapshot, but it rerendered 3 times/,
+        );
+      });
+
+      it("should accept 0 as valid expected count", () => {
+        render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+
+        expect(ProfiledCounter).toHaveRerendered(0);
+      });
+
+      it("should work with .not modifier", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        expect(ProfiledCounter).not.toHaveRerendered(3);
+      });
+
+      it("should fail .not when exact count matches", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+
+        expect(() => {
+          expect(ProfiledCounter).not.toHaveRerendered(2);
+        }).toThrowError(
+          /Expected component not to rerender 2 times after snapshot, but it did/,
+        );
+      });
+
+      it("should use singular 'time' in .not message when expected is 1", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        expect(() => {
+          expect(ProfiledCounter).not.toHaveRerendered(1);
+        }).toThrowError(
+          /Expected component not to rerender 1 time after snapshot, but it did/,
+        );
+      });
+
+      it("should use singular 'time' in failure message for expectedTimes=1", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(1);
+        }).toThrowError(
+          /Expected component to rerender 1 time after snapshot, but it rerendered 2 times/,
+        );
+      });
+
+      it("should use singular 'time' in failure message for actualTimes=1", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(3);
+        }).toThrowError(
+          /Expected component to rerender 3 times after snapshot, but it rerendered 1 time/,
+        );
+      });
+
+      it("should reject negative numbers", () => {
+        render(<ProfiledCounter />);
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(-1);
+        }).toThrowError(
+          /Invalid expected value: -1. Must be a non-negative integer/,
+        );
+      });
+
+      it("should reject non-integers", () => {
+        render(<ProfiledCounter />);
+
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(1.5);
+        }).toThrowError(
+          /Invalid expected value: 1.5. Must be a non-negative integer/,
+        );
+      });
+
+      it("should reject non-numbers", () => {
+        render(<ProfiledCounter />);
+
+        expect(() => {
+          // @ts-expect-error - Testing invalid parameter
+          expect(ProfiledCounter).toHaveRerendered("three");
+        }).toThrowError(
+          /Invalid expected value: three. Must be a non-negative integer/,
+        );
+      });
+
+      it("should reject null", () => {
+        render(<ProfiledCounter />);
+
+        expect(() => {
+          // @ts-expect-error - Testing invalid parameter
+          expect(ProfiledCounter).toHaveRerendered(null);
+        }).toThrowError(
+          /Invalid expected value: null. Must be a non-negative integer/,
+        );
+      });
+
+      it("should reject undefined when passed explicitly", () => {
+        render(<ProfiledCounter />);
+
+        // When undefined is passed explicitly, it's treated as "at least 1" mode
+        // This is by design - undefined means no exact count check
+        ProfiledCounter.snapshot();
+
+        // Should work like toHaveRerendered() without arg
+        expect(() => {
+          expect(ProfiledCounter).toHaveRerendered(undefined);
+        }).toThrowError(
+          /Expected component to rerender after snapshot, but it did not/,
+        );
+      });
+
+      it("should use singular 'time' in failure message when actual is 1 (explicit check)", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+
+        let errorMessage = "";
+
+        try {
+          expect(ProfiledCounter).toHaveRerendered(3);
+        } catch (error) {
+          errorMessage = (error as Error).message;
+        }
+
+        // Must contain "1 time" for actual, not "1 times"
+        expect(errorMessage).toMatch(/but it rerendered 1 time[^s]/);
+      });
+
+      it("should show render history on failure", () => {
+        const { rerender } = render(<ProfiledCounter />);
+
+        ProfiledCounter.snapshot();
+        rerender(<ProfiledCounter initialCount={5} />);
+        rerender(<ProfiledCounter initialCount={10} />);
+
+        let error: unknown;
+
+        try {
+          expect(ProfiledCounter).toHaveRerendered(5);
+
+          throw new Error("Should have thrown");
+        } catch (error_) {
+          error = error_;
+        }
+
+        expect(error).toMatchObject({
+          message: expect.stringContaining("#"),
+        });
+      });
+    });
+
+    describe("with non-profiled component", () => {
+      it("should fail with appropriate message", () => {
+        expect(() => {
+          expect("not-a-component").toHaveRerendered();
+        }).toThrowError(
+          /Expected a profiled component created with withProfiler/,
+        );
+      });
+    });
+  });
+
   describe("toHaveLastRenderedWithPhase matcher", () => {
     it("should detect mount phase", () => {
       render(<ProfiledCounter />);

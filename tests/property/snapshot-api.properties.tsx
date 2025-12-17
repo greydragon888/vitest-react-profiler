@@ -35,9 +35,25 @@
  * - Invalid phases produce validation error
  * - **Why important:** Fail-fast on incorrect usage
  *
+ * ### INVARIANT 7: toHaveRerendered Logic (v1.11.0)
+ * - `toHaveRerendered()` passes ↔ `getRendersSinceSnapshot() >= 1`
+ * - `toHaveRerendered()` + `.not` passes ↔ `getRendersSinceSnapshot() === 0`
+ * - `toHaveRerendered(n)` passes ↔ `getRendersSinceSnapshot() === n`
+ * - `toHaveRerendered(n)` rejects invalid expected (negative, non-integer)
+ * - **Why important:** Flexible rerender assertion with exact count support
+ *
+ * ### INVARIANT 8: Async Matchers Logic (v1.11.0)
+ * - `toEventuallyRerender()` resolves immediately if already rerendered
+ * - `toEventuallyRerender()` rejects invalid timeout (0, negative, NaN, Infinity)
+ * - `toEventuallyRerenderTimes(n)` resolves immediately if count already met
+ * - `toEventuallyRerenderTimes(n)` fails early (no timeout wait) if exceeded
+ * - `toEventuallyRerenderTimes(n)` rejects invalid expected/timeout
+ * - **Why important:** Event-driven async assertions with proper validation
+ *
  * @see https://fast-check.dev/
  * @see src/profiler/core/ProfilerData.ts - snapshot implementation
  * @see src/matchers/sync/rerender.ts - delta matchers
+ * @see src/matchers/async/rerender.ts - async matchers (v1.11.0)
  * @see src/matchers/sync/phase.ts - phase matchers
  */
 
@@ -679,6 +695,352 @@ describe("Property-Based Tests: Snapshot API - Matcher Logic Invariants", () => 
         }
 
         return Component.getRendersSinceSnapshot() === secondBatch;
+      },
+    );
+  });
+
+  describe("toHaveRerendered Logic (no argument) - v1.11.0", () => {
+    test.prop([fc.nat({ max: 10 })], { numRuns: 500 })(
+      "toHaveRerendered() passes if and only if delta >= 1",
+      (rendersAfterSnapshot) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        for (let i = 0; i < rendersAfterSnapshot; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const delta = Component.getRendersSinceSnapshot();
+        const shouldPass = delta >= 1;
+
+        try {
+          expect(Component).toHaveRerendered();
+
+          return shouldPass;
+        } catch {
+          return !shouldPass;
+        }
+      },
+    );
+
+    test.prop([fc.nat({ max: 10 })], { numRuns: 500 })(
+      "toHaveRerendered() with .not passes if and only if delta === 0",
+      (rendersAfterSnapshot) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        for (let i = 0; i < rendersAfterSnapshot; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const delta = Component.getRendersSinceSnapshot();
+        const shouldPass = delta === 0;
+
+        try {
+          expect(Component).not.toHaveRerendered();
+
+          return shouldPass;
+        } catch {
+          return !shouldPass;
+        }
+      },
+    );
+  });
+
+  describe("toHaveRerendered Logic (with argument) - v1.11.0", () => {
+    test.prop([fc.nat({ max: 10 }), fc.nat({ max: 10 })], { numRuns: 1000 })(
+      "toHaveRerendered(n) passes if and only if delta === n",
+      (rendersAfterSnapshot, expectedCount) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        for (let i = 0; i < rendersAfterSnapshot; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const delta = Component.getRendersSinceSnapshot();
+        const shouldPass = delta === expectedCount;
+
+        try {
+          expect(Component).toHaveRerendered(expectedCount);
+
+          return shouldPass;
+        } catch {
+          return !shouldPass;
+        }
+      },
+    );
+
+    test.prop(
+      [
+        fc.oneof(
+          fc.integer({ min: -100, max: -1 }), // negative
+          fc
+            .float({ min: Math.fround(0.1), max: Math.fround(10), noNaN: true })
+            .filter((n) => !Number.isInteger(n)), // non-integer
+        ),
+      ],
+      { numRuns: 500 },
+    )(
+      "toHaveRerendered(n) rejects invalid expected values (negative or non-integer)",
+      (invalidExpected) => {
+        const Component = createSimpleProfiledComponent();
+
+        render(<Component />);
+
+        try {
+          expect(Component).toHaveRerendered(invalidExpected);
+
+          return false; // Should have thrown
+        } catch (error) {
+          return (error as Error).message.includes("non-negative integer");
+        }
+      },
+    );
+
+    test.prop([fc.nat({ max: 10 })], { numRuns: 500 })(
+      "toHaveRerendered(n) with .not passes if and only if delta !== n",
+      (rendersAfterSnapshot) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        for (let i = 0; i < rendersAfterSnapshot; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const delta = Component.getRendersSinceSnapshot();
+        // Test with a different expected count
+        const testExpected = delta + 1;
+        const shouldPass = delta !== testExpected;
+
+        try {
+          expect(Component).not.toHaveRerendered(testExpected);
+
+          return shouldPass;
+        } catch {
+          return !shouldPass;
+        }
+      },
+    );
+  });
+});
+
+describe("Property-Based Tests: Async Matchers - v1.11.0", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe("toEventuallyRerender Async Logic", () => {
+    test.prop([fc.integer({ min: 1, max: 5 })], { numRuns: 100 })(
+      "toEventuallyRerender resolves immediately if already rerendered",
+      async (rendersAfterSnapshot) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        // Pre-rerender before calling matcher
+        for (let i = 0; i < rendersAfterSnapshot; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const startTime = Date.now();
+
+        await expect(Component).toEventuallyRerender({ timeout: 1000 });
+
+        const elapsed = Date.now() - startTime;
+
+        // Should resolve immediately (< 50ms) since already rerendered
+        return elapsed < 50;
+      },
+    );
+
+    test.prop(
+      [
+        fc.oneof(
+          fc.constant(0),
+          fc.constant(-100),
+          fc.constant(Number.NaN),
+          fc.constant(Number.POSITIVE_INFINITY),
+        ),
+      ],
+      { numRuns: 100 },
+    )(
+      "toEventuallyRerender rejects invalid timeout values",
+      async (invalidTimeout) => {
+        const Component = createSimpleProfiledComponent();
+
+        render(<Component />);
+        Component.snapshot();
+
+        try {
+          await expect(Component).toEventuallyRerender({
+            timeout: invalidTimeout,
+          });
+
+          return false; // Should have thrown
+        } catch (error) {
+          return (
+            (error as Error).message.includes("positive number") ||
+            (error as Error).message.includes("timeout")
+          );
+        }
+      },
+    );
+
+    test.prop([fc.constant(undefined)], { numRuns: 50 })(
+      "toEventuallyRerender times out when no rerender occurs",
+      async () => {
+        const Component = createSimpleProfiledComponent();
+
+        render(<Component />);
+        Component.snapshot();
+
+        const shortTimeout = 50; // Very short timeout
+
+        try {
+          await expect(Component).toEventuallyRerender({
+            timeout: shortTimeout,
+          });
+
+          return false; // Should have timed out
+        } catch (error) {
+          return (error as Error).message.includes("did not");
+        }
+      },
+    );
+  });
+
+  describe("toEventuallyRerenderTimes Async Logic", () => {
+    test.prop([fc.nat({ max: 5 })], { numRuns: 100 })(
+      "toEventuallyRerenderTimes resolves immediately if count already met",
+      async (expectedCount) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        // Pre-rerender to exact count
+        for (let i = 0; i < expectedCount; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const startTime = Date.now();
+
+        await expect(Component).toEventuallyRerenderTimes(expectedCount, {
+          timeout: 1000,
+        });
+
+        const elapsed = Date.now() - startTime;
+
+        // Should resolve immediately
+        return elapsed < 50;
+      },
+    );
+
+    test.prop([fc.nat({ max: 3 }), fc.integer({ min: 1, max: 3 })], {
+      numRuns: 100,
+    })(
+      "toEventuallyRerenderTimes fails early when count exceeded",
+      async (expectedCount, extraRenders) => {
+        const Component = createSimpleProfiledComponent();
+        const { rerender } = render(<Component value={0} />);
+
+        Component.snapshot();
+
+        // Pre-rerender PAST expected count
+        const actualRenders = expectedCount + extraRenders;
+
+        for (let i = 0; i < actualRenders; i++) {
+          rerender(<Component value={i + 1} />);
+        }
+
+        const startTime = Date.now();
+
+        try {
+          await expect(Component).toEventuallyRerenderTimes(expectedCount, {
+            timeout: 1000,
+          });
+
+          return false; // Should have failed
+        } catch (error) {
+          const elapsed = Date.now() - startTime;
+
+          // Should fail immediately (not wait for timeout)
+          return elapsed < 50 && (error as Error).message.includes("exceeded");
+        }
+      },
+    );
+
+    test.prop(
+      [
+        fc.oneof(
+          fc.integer({ min: -100, max: -1 }),
+          fc
+            .float({ min: Math.fround(0.1), max: Math.fround(10), noNaN: true })
+            .filter((n) => !Number.isInteger(n)),
+        ),
+      ],
+      { numRuns: 100 },
+    )(
+      "toEventuallyRerenderTimes rejects invalid expected values",
+      async (invalidExpected) => {
+        const Component = createSimpleProfiledComponent();
+
+        render(<Component />);
+        Component.snapshot();
+
+        try {
+          await expect(Component).toEventuallyRerenderTimes(invalidExpected);
+
+          return false;
+        } catch (error) {
+          return (
+            (error as Error).message.includes("non-negative integer") ||
+            (error as Error).message.includes("Invalid")
+          );
+        }
+      },
+    );
+
+    test.prop(
+      [
+        fc.oneof(
+          fc.constant(0),
+          fc.constant(-100),
+          fc.constant(Number.NaN),
+          fc.constant(Number.POSITIVE_INFINITY),
+        ),
+      ],
+      { numRuns: 100 },
+    )(
+      "toEventuallyRerenderTimes rejects invalid timeout values",
+      async (invalidTimeout) => {
+        const Component = createSimpleProfiledComponent();
+
+        render(<Component />);
+        Component.snapshot();
+
+        try {
+          await expect(Component).toEventuallyRerenderTimes(1, {
+            timeout: invalidTimeout,
+          });
+
+          return false; // Should have thrown
+        } catch (error) {
+          return (
+            (error as Error).message.includes("positive number") ||
+            (error as Error).message.includes("timeout")
+          );
+        }
       },
     );
   });

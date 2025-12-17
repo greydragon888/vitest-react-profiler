@@ -1,6 +1,10 @@
 import { expect } from "vitest";
 
 import { toEventuallyReachPhase } from "@/matchers/async/phase";
+import {
+  toEventuallyRerender,
+  toEventuallyRerenderTimes,
+} from "@/matchers/async/rerender";
 
 import {
   toEventuallyRenderAtLeast,
@@ -16,7 +20,11 @@ import {
 import { toHaveRendered, toHaveRenderedTimes } from "./sync/render-count";
 import { toMeetRenderCountBudget } from "./sync/render-count-budget";
 import { notToHaveRenderLoops } from "./sync/render-loops";
-import { toHaveRerenderedOnce, toNotHaveRerendered } from "./sync/rerender";
+import {
+  toHaveRerendered,
+  toHaveRerenderedOnce,
+  toNotHaveRerendered,
+} from "./sync/rerender";
 
 /**
  * Register all custom Vitest matchers for profiled components
@@ -40,7 +48,8 @@ expect.extend({
   toHaveOnlyMounted,
   toHaveOnlyUpdated,
   toHaveLastRenderedWithPhase,
-  // Snapshot delta matchers (v1.10.0)
+  // Snapshot delta matchers (v1.10.0, v1.11.0)
+  toHaveRerendered,
   toHaveRerenderedOnce,
   toNotHaveRerendered,
   // Render loop detection
@@ -50,4 +59,7 @@ expect.extend({
   toEventuallyRenderAtLeast,
   // Asynchronous phase matchers
   toEventuallyReachPhase,
+  // Asynchronous snapshot delta matchers (v1.11.0)
+  toEventuallyRerender,
+  toEventuallyRerenderTimes,
 });

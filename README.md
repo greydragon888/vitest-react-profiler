@@ -48,7 +48,7 @@
 - 🔍 **Precise Render Tracking** - Count exact number of renders with zero guesswork
 - ⚡ **Performance Monitoring** - Detect unnecessary re-renders and track component behavior
 - 🎯 **Phase Detection** - Distinguish between mount, update, and nested update phases
-- 📸 **Snapshot API** - Create render baselines with `snapshot()` and measure deltas
+- 📸 **Snapshot API** - Create render baselines with `snapshot()` and measure deltas with Extended Matchers
 - 🪝 **Hook Profiling** - Profile custom hooks with full Context support via `wrapper` option
 - ⏱️ **Async Testing** - Subscribe to renders with `onRender()` and wait with `waitForNextRender()`
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
@@ -57,7 +57,7 @@
 - 🚀 **Zero Config** - Works out of the box with Vitest and React Testing Library
 - 🛡️ **Built-in Safety Mechanisms** - Automatic detection of infinite render loops and memory leaks
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
-- 🧬 **Battle-Tested Quality** - 100% mutation score, property-based testing, stress tests, SonarCloud verified
+- 🧬 **Battle-Tested Quality** - 100% mutation score, property-based testing, stress tests, SonarCloud verified.
 - 🔬 **Mathematically Verified** - 266 property tests with 140,000+ randomized scenarios per run
 - 🏋️ **Stress-Tested** - 34 stress tests validate performance on 10,000-render histories
 - 📊 **Performance Baselines** - 46 benchmarks establish regression detection metrics
@@ -79,14 +79,6 @@ Publishing React components? It's critical to **prove your solution is optimized
 - Add performance tests to CI/CD pipelines
 - Showcase performance metrics in documentation
 - Track performance regressions between releases
-
-### 🎯 Tech Leads and Staff Engineers
-
-Making architectural decisions requires **data, not assumptions**. Use the tool to:
-
-- Compare different state management approaches
-- Evaluate architectural changes' performance impact
-- Create performance guidelines for your team
 
 ### 📊 Teams with Strict Performance SLAs
 
@@ -114,7 +106,7 @@ pnpm add -D vitest-react-profiler
 
 ```typescript
 // vitest-setup.ts
-import "vitest-react-profiler";
+import "vitest-react-profiler"; // Auto-registers afterEach cleanup
 ```
 
 Configure Vitest:
@@ -275,14 +267,32 @@ rerender(<ProfiledList items={items} theme="dark" />);
 expect(ProfiledList).toNotHaveRerendered();    // Memo prevented rerender
 ```
 
-### Key Methods
+### Extended Matchers 
 
-- **`snapshot()`** - Mark baseline for render counting
-- **`getRendersSinceSnapshot()`** - Get number of renders since baseline
-- **`toHaveRerenderedOnce()`** - Assert exactly one rerender
-- **`toNotHaveRerendered()`** - Assert no rerenders
+```typescript
+// Sync matchers
+expect(ProfiledComponent).toHaveRerendered();     // At least one rerender
+expect(ProfiledComponent).toHaveRerendered(3);    // Exactly 3 rerenders
 
-📚 **[Read the complete guide →](../../wiki/API-Reference#snapshot-api)**
+// Async matchers - wait for rerenders
+await expect(ProfiledComponent).toEventuallyRerender();
+await expect(ProfiledComponent).toEventuallyRerenderTimes(2, { timeout: 2000 });
+```
+
+### Key Methods & Matchers
+
+| Method/Matcher | Description |
+|----------------|-------------|
+| `snapshot()` | Mark baseline for render counting |
+| `getRendersSinceSnapshot()` | Get number of renders since baseline |
+| `toHaveRerenderedOnce()` | Assert exactly one rerender |
+| `toNotHaveRerendered()` | Assert no rerenders |
+| `toHaveRerendered()` | Assert at least one rerender |
+| `toHaveRerendered(n)` | Assert exactly n rerenders |
+| `toEventuallyRerender()` | Wait for rerender |
+| `toEventuallyRerenderTimes(n)` | Wait for exact count |
+
+📚 **[Read the complete guide →](../../wiki/Snapshot-API)**
 
 ---
 
@@ -295,6 +305,7 @@ expect(ProfiledList).toNotHaveRerendered();    // Memo prevented rerender
 - **[Architecture Documentation](ARCHITECTURE.md)** - 📐 Complete technical architecture (15 sections, ~14,000 lines)
 - **[Getting Started Guide](../../wiki/Getting-Started)** - Installation and configuration
 - **[API Reference](../../wiki/API-Reference)** - Complete API documentation
+- **[Snapshot API](../../wiki/Snapshot-API)** - Extended matchers for optimization testing
 - **[Hook Profiling](../../wiki/Hook-Profiling)** - Testing React hooks
 - **[React 18+ Concurrent Features](../../wiki/React-18-Concurrent-Features)** - useTransition & useDeferredValue
 - **[Examples](../../wiki/Examples)** - Real-world usage patterns

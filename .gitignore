@@ -99,3 +99,5 @@ stryker*.config.mjs.map
 *-mutation*.log
 .scannerwork
 .sonarlint
+
+ARCHITECTURE
