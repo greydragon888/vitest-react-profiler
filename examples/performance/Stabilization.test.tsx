@@ -65,7 +65,7 @@ function AnimatedCounter({ targetValue }: { targetValue: number }) {
  * Component with cascading updates
  */
 function CascadingUpdates({ initialValue }: { initialValue: number }) {
-  const [value1, setValue1] = useState(initialValue);
+  const [value1] = useState(initialValue);
   const [value2, setValue2] = useState(0);
   const [value3, setValue3] = useState(0);
 
@@ -114,7 +114,9 @@ describe("Performance Testing with Stabilization API", () => {
       expect(result.renderCount).toBeGreaterThan(0);
       expect(result.lastPhase).toBe("update");
 
-      console.log(`Animation completed in ${elapsed.toFixed(0)}ms with ${result.renderCount} frames`);
+      console.log(
+        `Animation completed in ${elapsed.toFixed(0)}ms with ${result.renderCount} frames`,
+      );
     });
 
     /**
@@ -165,7 +167,9 @@ describe("Performance Testing with Stabilization API", () => {
       expect(result.renderCount).toBeGreaterThanOrEqual(scrollPositions.length);
       expect(result.lastPhase).toBe("update");
 
-      console.log(`Virtual list stabilized after ${result.renderCount} scroll updates`);
+      console.log(
+        `Virtual list stabilized after ${result.renderCount} scroll updates`,
+      );
     });
 
     /**
@@ -200,7 +204,10 @@ describe("Performance Testing with Stabilization API", () => {
      * Test cascading effects stabilize quickly
      */
     it("should stabilize cascading updates within reasonable time", async () => {
-      const ProfiledCascade = withProfiler(CascadingUpdates, "CascadingUpdates");
+      const ProfiledCascade = withProfiler(
+        CascadingUpdates,
+        "CascadingUpdates",
+      );
       const { rerender } = render(<ProfiledCascade initialValue={1} />);
 
       const startTime = performance.now();
