@@ -1,0 +1,14 @@
+{
+  "name": "snapshot-examples",
+  "version": "1.0.0",
+  "description": "Snapshot API testing examples for vitest-react-profiler",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "test:run": "vitest --run"
+  },
+  "author": "GreyDragon888",
+  "license": "MIT"
+}

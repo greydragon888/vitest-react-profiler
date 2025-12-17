@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2025-12-01
+
+### Added
+
+- **Snapshot API** - Create render baselines and measure deltas for optimization testing
+  - **`snapshot()`** - Mark a baseline point for render counting
+  - **`getRendersSinceSnapshot()`** - Get number of renders since last snapshot
+  - **`toHaveRerenderedOnce()`** - Assert exactly one rerender after snapshot
+  - **`toNotHaveRerendered()`** - Assert no rerenders after snapshot
+
+  ```typescript
+  const ProfiledCounter = withProfiler(Counter);
+  render(<ProfiledCounter />);
+
+  ProfiledCounter.snapshot();                    // Create baseline
+  fireEvent.click(screen.getByText('Increment'));
+  expect(ProfiledCounter).toHaveRerenderedOnce(); // Verify single rerender
+  ```
+
+  **Key Use Cases:**
+  - Testing single render per user action
+  - Testing `React.memo` effectiveness
+  - Testing `useCallback`/`useMemo` stability
+  - Performance budget testing for complex operations
+
+- **Snapshot API property-based tests** (`tests/property/snapshot.properties.tsx`)
+  - 6 invariants testing snapshot behavior under randomized conditions
+  - Validates snapshot/delta consistency, reset behavior, and timing invariants
+
+- **Snapshot API stress tests** (`tests/stress/snapshot.stress.tsx`)
+  - Tests for snapshot behavior under extreme load (10,000+ renders)
+  - Memory and performance validation
+
+### Changed
+
+- **CI/CD workflow optimizations** - Removed duplicate checks, saving ~25-30 seconds per run
+  - `release.yml`: Removed explicit `typecheck`, `test`, `build` steps (already run by `prepublishOnly` hook)
+  - `ci.yml`: `test-examples` job now downloads build artifacts instead of rebuilding
+
+- **Bump size-limit to v12.0.0** - Bundle size monitoring dependency upgrade
+  - Breaking changes in v12: Node.js 18 dropped (project uses Node.js 24), chokidar replaced with native fs.watch
+  - No configuration changes required
+
 ## [1.9.0] - 2025-11-30
 
 ### Added
@@ -857,6 +900,7 @@ This version removes the need for manual cleanup code in tests by introducing an
 - tsup for optimized build output (CJS + ESM)
 - GitHub Actions CI/CD pipeline ready
 
+[1.10.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.10.0
 [1.9.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.9.0
 [1.8.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.8.0
 [1.7.0]: https://github.com/greydragon888/vitest-react-profiler/releases/tag/v1.7.0

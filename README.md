@@ -48,6 +48,7 @@
 - 🔍 **Precise Render Tracking** - Count exact number of renders with zero guesswork
 - ⚡ **Performance Monitoring** - Detect unnecessary re-renders and track component behavior
 - 🎯 **Phase Detection** - Distinguish between mount, update, and nested update phases
+- 📸 **Snapshot API** - Create render baselines with `snapshot()` and measure deltas
 - 🪝 **Hook Profiling** - Profile custom hooks with full Context support via `wrapper` option
 - ⏱️ **Async Testing** - Subscribe to renders with `onRender()` and wait with `waitForNextRender()`
 - 🔔 **Real-Time Notifications** - React to renders immediately with event-based subscriptions
@@ -57,8 +58,8 @@
 - 🛡️ **Built-in Safety Mechanisms** - Automatic detection of infinite render loops and memory leaks
 - 💪 **Full TypeScript Support** - Complete type safety with custom Vitest matchers
 - 🧬 **Battle-Tested Quality** - 100% mutation score, property-based testing, stress tests, SonarCloud verified
-- 🔬 **Mathematically Verified** - 244 property tests with 130,000+ randomized scenarios per run
-- 🏋️ **Stress-Tested** - 21 stress tests validate performance on 10,000-render histories
+- 🔬 **Mathematically Verified** - 266 property tests with 140,000+ randomized scenarios per run
+- 🏋️ **Stress-Tested** - 34 stress tests validate performance on 10,000-render histories
 - 📊 **Performance Baselines** - 46 benchmarks establish regression detection metrics
 
 ## 👥 Who Is This For?
@@ -148,6 +149,76 @@ it('should render only once on mount', () => {
 
 ---
 
+## ⏱️ Async Testing
+
+Test components with asynchronous state updates using event-based utilities.
+
+```typescript
+const AsyncComponent = () => {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    fetchData().then(setData);
+  }, []);
+  return <div>{data ?? "Loading..."}</div>;
+};
+
+it('should handle async updates', async () => {
+  const Profiled = withProfiler(AsyncComponent);
+  render(<Profiled />);
+
+  // Wait for mount + async update
+  await expect(Profiled).toEventuallyRenderTimes(2);
+});
+```
+
+### Key Matchers
+
+- **`toEventuallyRenderTimes(n)`** - Wait for exact render count
+- **`toEventuallyRenderAtLeast(n)`** - Wait for minimum renders
+- **`toEventuallyReachPhase(phase)`** - Wait for specific phase
+
+📚 **[Read the complete guide →](../../wiki/API-Reference#async-matchers)**
+
+---
+
+## 🪝 Hook Profiling
+
+Profile custom hooks with full Context support.
+
+```typescript
+import { profileHook } from 'vitest-react-profiler';
+
+const useCounter = (initial: number) => {
+  const [count, setCount] = useState(initial);
+  return { count, increment: () => setCount(c => c + 1) };
+};
+
+it('should track hook renders', () => {
+  const { result, profiler } = profileHook(() => useCounter(0));
+
+  expect(profiler).toHaveRenderedTimes(1);
+
+  act(() => result.current.increment());
+
+  expect(profiler).toHaveRenderedTimes(2);
+  expect(result.current.count).toBe(1);
+});
+```
+
+### With Context Support
+
+```typescript
+const { result, profiler } = profileHook(() => useTheme(), {
+  wrapper: ({ children }) => (
+    <ThemeProvider theme="dark">{children}</ThemeProvider>
+  ),
+});
+```
+
+📚 **[Read the complete guide →](../../wiki/Hook-Profiling)**
+
+---
+
 ## ⚛️ React 18+ Concurrent Features
 
 **Full support for React 18+ Concurrent rendering features** - no special configuration needed!
@@ -178,6 +249,43 @@ Concurrent Features work transparently - your tests verify component behavior, n
 
 ---
 
+## 📸 Snapshot API
+
+Create render baselines and measure deltas for optimization testing.
+
+### Testing Single Render Per Action
+
+```typescript
+const ProfiledCounter = withProfiler(Counter);
+render(<ProfiledCounter />);
+
+ProfiledCounter.snapshot();                    // Create baseline
+fireEvent.click(screen.getByText('Increment'));
+expect(ProfiledCounter).toHaveRerenderedOnce(); // Verify single rerender
+```
+
+### Testing React.memo Effectiveness
+
+```typescript
+const ProfiledList = withProfiler(MemoizedList);
+const { rerender } = render(<ProfiledList items={items} theme="light" />);
+
+ProfiledList.snapshot();
+rerender(<ProfiledList items={items} theme="dark" />);
+expect(ProfiledList).toNotHaveRerendered();    // Memo prevented rerender
+```
+
+### Key Methods
+
+- **`snapshot()`** - Mark baseline for render counting
+- **`getRendersSinceSnapshot()`** - Get number of renders since baseline
+- **`toHaveRerenderedOnce()`** - Assert exactly one rerender
+- **`toNotHaveRerendered()`** - Assert no rerenders
+
+📚 **[Read the complete guide →](../../wiki/API-Reference#snapshot-api)**
+
+---
+
 ## Documentation
 
 📖 **Full documentation is available in the [Wiki](../../wiki)**
@@ -201,9 +309,9 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 
 ```bash
 # Run tests
-npm test                    # Unit/integration tests (736 tests)
-npm run test:properties     # Property-based tests (244 tests, 130k+ checks)
-npm run test:stress         # Stress tests (21 tests, large histories)
+npm test                    # Unit/integration tests (811 tests)
+npm run test:properties     # Property-based tests (266 tests, 140k+ checks)
+npm run test:stress         # Stress tests (34 tests, large histories)
 npm run test:bench          # Performance benchmarks (46 benchmarks)
 npm run test:mutation       # Mutation testing (100% score)
 

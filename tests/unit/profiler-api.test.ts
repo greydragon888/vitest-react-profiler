@@ -359,8 +359,171 @@ describe("ProfilerAPI", () => {
     });
   });
 
+  describe("createSnapshot", () => {
+    it("should not throw when no data exists", () => {
+      const Component = createComponent("TestComponent");
+      const snapshot = api.createSnapshot(Component);
+
+      expect(() => {
+        snapshot();
+      }).not.toThrowError();
+    });
+
+    it("should set snapshot index when data exists", () => {
+      const Component = createComponent("TestComponent");
+      const data = storage.getOrCreate(Component);
+
+      data.addRender("mount");
+      data.addRender("update");
+
+      const snapshot = api.createSnapshot(Component);
+
+      snapshot();
+
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+    });
+
+    it("should allow measuring delta after snapshot", () => {
+      const Component = createComponent("TestComponent");
+      const data = storage.getOrCreate(Component);
+      const snapshot = api.createSnapshot(Component);
+
+      data.addRender("mount");
+      snapshot();
+      data.addRender("update");
+
+      expect(data.getRendersSinceSnapshot()).toBe(1);
+    });
+
+    it("should NOT record hit if cachedData is undefined (first call)", () => {
+      const Component = createComponent("TestComponent");
+      const snapshot = api.createSnapshot(Component);
+
+      cacheMetrics.reset();
+
+      // This is the first call, cachedData === undefined
+      // Mutant: if (true) would ALWAYS go to miss branch
+      // Correct: if (cachedData === undefined) goes to miss branch
+      snapshot();
+
+      const metrics = cacheMetrics.getMetrics();
+
+      // Should be miss, NOT hit
+      expect(metrics.closureCache.misses).toBe(1);
+      expect(metrics.closureCache.hits).toBe(0);
+    });
+
+    it("should record hit when cachedData is already set (second call)", () => {
+      const Component = createComponent("TestComponent");
+
+      // Pre-create ProfilerData (side effect for testing cache behavior)
+      storage.getOrCreate(Component);
+
+      const snapshot = api.createSnapshot(Component);
+
+      // First call sets cachedData
+      snapshot();
+
+      cacheMetrics.reset();
+
+      // Second call - cachedData !== undefined, should go to else branch
+      // Mutant: else {} would NOT record hit
+      // Correct: else { recordHit() } records hit
+      snapshot();
+
+      const metrics = cacheMetrics.getMetrics();
+
+      // Second call should be a hit
+      expect(metrics.closureCache.hits).toBe(1);
+      expect(metrics.closureCache.misses).toBe(0);
+    });
+  });
+
+  describe("createGetRendersSinceSnapshot", () => {
+    it("should return 0 when no data exists", () => {
+      const Component = createComponent("TestComponent");
+      const getRendersSinceSnapshot =
+        api.createGetRendersSinceSnapshot(Component);
+
+      expect(getRendersSinceSnapshot()).toBe(0);
+    });
+
+    it("should return total count when snapshot not called", () => {
+      const Component = createComponent("TestComponent");
+      const data = storage.getOrCreate(Component);
+
+      data.addRender("mount");
+      data.addRender("update");
+
+      const getRendersSinceSnapshot =
+        api.createGetRendersSinceSnapshot(Component);
+
+      expect(getRendersSinceSnapshot()).toBe(2);
+    });
+
+    it("should return delta after snapshot", () => {
+      const Component = createComponent("TestComponent");
+      const data = storage.getOrCreate(Component);
+      const snapshot = api.createSnapshot(Component);
+      const getRendersSinceSnapshot =
+        api.createGetRendersSinceSnapshot(Component);
+
+      data.addRender("mount");
+      snapshot();
+      data.addRender("update");
+      data.addRender("update");
+
+      expect(getRendersSinceSnapshot()).toBe(2);
+    });
+
+    it("should NOT record hit if cachedData is undefined (first call)", () => {
+      const Component = createComponent("TestComponent");
+      const getRendersSinceSnapshot =
+        api.createGetRendersSinceSnapshot(Component);
+
+      cacheMetrics.reset();
+
+      // This is the first call, cachedData === undefined
+      // Mutant: if (true) would ALWAYS go to miss branch
+      // Correct: if (cachedData === undefined) goes to miss branch
+      getRendersSinceSnapshot();
+
+      const metrics = cacheMetrics.getMetrics();
+
+      // Should be miss, NOT hit
+      expect(metrics.closureCache.misses).toBe(1);
+      expect(metrics.closureCache.hits).toBe(0);
+    });
+
+    it("should record hit when cachedData is already set (second call)", () => {
+      const Component = createComponent("TestComponent");
+
+      // Pre-create ProfilerData (side effect for testing cache behavior)
+      storage.getOrCreate(Component);
+
+      const getRendersSinceSnapshot =
+        api.createGetRendersSinceSnapshot(Component);
+
+      // First call sets cachedData
+      getRendersSinceSnapshot();
+
+      cacheMetrics.reset();
+
+      // Second call - cachedData !== undefined, should go to else branch
+      // Mutant: else {} would NOT record hit
+      // Correct: else { recordHit() } records hit
+      getRendersSinceSnapshot();
+
+      const metrics = cacheMetrics.getMetrics();
+
+      // Second call should be a hit
+      expect(metrics.closureCache.hits).toBe(1);
+      expect(metrics.closureCache.misses).toBe(0);
+    });
+  });
+
   describe("createAllMethods", () => {
-    it("should create all 6 API methods", () => {
+    it("should create all API methods including snapshot", () => {
       const Component = createComponent("TestComponent");
       const methods = api.createAllMethods(Component);
 
@@ -370,6 +533,8 @@ describe("ProfilerAPI", () => {
       expect(methods).toHaveProperty("getRenderAt");
       expect(methods).toHaveProperty("getRendersByPhase");
       expect(methods).toHaveProperty("hasMounted");
+      expect(methods).toHaveProperty("snapshot");
+      expect(methods).toHaveProperty("getRendersSinceSnapshot");
 
       expectTypeOf(methods.getRenderCount).toBeFunction();
       expectTypeOf(methods.getRenderHistory).toBeFunction();
@@ -377,6 +542,8 @@ describe("ProfilerAPI", () => {
       expectTypeOf(methods.getRenderAt).toBeFunction();
       expectTypeOf(methods.getRendersByPhase).toBeFunction();
       expectTypeOf(methods.hasMounted).toBeFunction();
+      expectTypeOf(methods.snapshot).toBeFunction();
+      expectTypeOf(methods.getRendersSinceSnapshot).toBeFunction();
     });
 
     it("should create working methods with default values", () => {
@@ -389,6 +556,10 @@ describe("ProfilerAPI", () => {
       expect(methods.getRenderAt(0)).toBeUndefined();
       expect(methods.getRendersByPhase("mount")).toStrictEqual([]);
       expect(methods.hasMounted()).toBe(false);
+      expect(methods.getRendersSinceSnapshot()).toBe(0);
+      expect(() => {
+        methods.snapshot();
+      }).not.toThrowError();
     });
 
     it("should create working methods with data", () => {

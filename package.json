@@ -1,6 +1,6 @@
 {
   "name": "vitest-react-profiler",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Performance testing utilities for React components and hooks with sync/async update tracking in Vitest",
   "keywords": [
     "vitest",
@@ -99,8 +99,8 @@
     "@commitlint/config-conventional": "20.0.0",
     "@eslint/js": "9.39.1",
     "@fast-check/vitest": "0.2.3",
-    "@size-limit/file": "11.2.0",
-    "@size-limit/preset-small-lib": "11.2.0",
+    "@size-limit/file": "^12.0.0",
+    "@size-limit/preset-small-lib": "^12.0.0",
     "@stryker-mutator/core": "9.4.0",
     "@stryker-mutator/typescript-checker": "9.4.0",
     "@stryker-mutator/vitest-runner": "9.4.0",
@@ -135,7 +135,7 @@
     "publint": "0.3.15",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "size-limit": "11.2.0",
+    "size-limit": "^12.0.0",
     "sonarqube-scanner": "4.3.2",
     "terser": "5.44.1",
     "tsup": "8.5.1",

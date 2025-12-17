@@ -159,6 +159,50 @@ export class ProfilerAPI {
   }
 
   /**
+   * Create snapshot method for component
+   *
+   * Creates a snapshot point for measuring render deltas.
+   *
+   * @since v1.10.0
+   */
+  createSnapshot(component: AnyComponentType): () => void {
+    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+
+    return () => {
+      if (cachedData === undefined) {
+        cacheMetrics.recordMiss("closureCache");
+        cachedData = this.storage.get(component);
+      } else {
+        cacheMetrics.recordHit("closureCache");
+      }
+
+      cachedData?.snapshot();
+    };
+  }
+
+  /**
+   * Create getRendersSinceSnapshot method for component
+   *
+   * Returns number of renders since last snapshot.
+   *
+   * @since v1.10.0
+   */
+  createGetRendersSinceSnapshot(component: AnyComponentType): () => number {
+    let cachedData: ReturnType<typeof this.storage.get> | undefined;
+
+    return () => {
+      if (cachedData === undefined) {
+        cacheMetrics.recordMiss("closureCache");
+        cachedData = this.storage.get(component);
+      } else {
+        cacheMetrics.recordHit("closureCache");
+      }
+
+      return cachedData?.getRendersSinceSnapshot() ?? 0;
+    };
+  }
+
+  /**
    * Create onRender method for component
    *
    * Subscribes to render events and returns unsubscribe function.
@@ -278,6 +322,8 @@ export class ProfilerAPI {
     | "hasMounted"
     | "onRender"
     | "waitForNextRender"
+    | "snapshot"
+    | "getRendersSinceSnapshot"
   > {
     return {
       getRenderCount: this.createGetRenderCount(component),
@@ -288,6 +334,8 @@ export class ProfilerAPI {
       hasMounted: this.createHasMounted(component),
       onRender: this.createOnRender(component),
       waitForNextRender: this.createWaitForNextRender(component),
+      snapshot: this.createSnapshot(component),
+      getRendersSinceSnapshot: this.createGetRendersSinceSnapshot(component),
     };
   }
 }

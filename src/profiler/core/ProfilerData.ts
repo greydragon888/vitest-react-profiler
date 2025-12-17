@@ -26,6 +26,7 @@ export class ProfilerData {
   private readonly cache: ProfilerCacheInterface;
   private events?: ProfilerEventsInterface;
   private readonly eventsFactory: () => ProfilerEventsInterface;
+  private snapshotIndex = 0;
 
   /**
    * @param cache - Cache implementation for optimizing data access (default: ProfilerCache)
@@ -205,5 +206,43 @@ export class ProfilerData {
     this.renderHistory = [];
     this.cache.clear();
     this.events?.clear();
+    this.snapshotIndex = 0;
+  }
+
+  /**
+   * Create a snapshot point for measuring render deltas
+   *
+   * Saves current position in render history as a baseline.
+   * Does not clear history - only marks current position.
+   *
+   * @since v1.10.0
+   *
+   * @example
+   * data.addRender('mount');
+   * data.addRender('update');
+   * data.snapshot(); // snapshotIndex = 2
+   * data.addRender('update');
+   * data.getRendersSinceSnapshot(); // returns 1
+   */
+  snapshot(): void {
+    this.snapshotIndex = this.renderHistory.length;
+  }
+
+  /**
+   * Get number of renders since last snapshot
+   *
+   * Returns total render count if snapshot() was never called.
+   *
+   * @returns Number of renders since snapshot (always >= 0)
+   * @since v1.10.0
+   *
+   * @example
+   * data.snapshot();
+   * data.addRender('update');
+   * data.addRender('update');
+   * data.getRendersSinceSnapshot(); // returns 2
+   */
+  getRendersSinceSnapshot(): number {
+    return this.renderHistory.length - this.snapshotIndex;
   }
 }

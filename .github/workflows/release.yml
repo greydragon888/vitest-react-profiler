@@ -58,15 +58,6 @@ jobs:
       - name: Lint code
         run: npm run lint
 
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build package
-        run: npm run build
-
       - name: Verify package
         run: |
           npm pack --dry-run

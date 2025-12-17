@@ -347,13 +347,15 @@ describe("ProfilerData", () => {
       // Simulate bug: first render is "update" instead of "mount"
       data.addRender("update");
 
-      expect(() => data.hasMounted()).toThrow(Error);
-      expect(() => data.hasMounted()).toThrow(/Invariant violation/);
-      expect(() => data.hasMounted()).toThrow(/First render must be "mount"/);
-      expect(() => data.hasMounted()).toThrow(/got "update"/);
+      expect(() => data.hasMounted()).toThrowError(Error);
+      expect(() => data.hasMounted()).toThrowError(/Invariant violation/);
+      expect(() => data.hasMounted()).toThrowError(
+        /First render must be "mount"/,
+      );
+      expect(() => data.hasMounted()).toThrowError(/got "update"/);
 
       // Verify exact error explanation (kills StringLiteral mutation)
-      expect(() => data.hasMounted()).toThrow(
+      expect(() => data.hasMounted()).toThrowError(
         /This indicates a bug in React Profiler or library integration\./,
       );
     });
@@ -552,7 +554,7 @@ describe("ProfilerData", () => {
       expect(() => {
         data.addRender("mount");
         data.addRender("update");
-      }).not.toThrow();
+      }).not.toThrowError();
 
       expect(data.getRenderCount()).toBe(2);
     });
@@ -592,6 +594,138 @@ describe("ProfilerData", () => {
     });
   });
 
+  describe("snapshot", () => {
+    it("should set snapshot index to current history length", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.addRender("update");
+
+      data.snapshot();
+
+      // After snapshot, getRendersSinceSnapshot should return 0
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+    });
+
+    it("should allow measuring delta after snapshot", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.snapshot();
+      data.addRender("update");
+      data.addRender("update");
+
+      expect(data.getRendersSinceSnapshot()).toBe(2);
+    });
+
+    it("should allow multiple snapshots", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.snapshot();
+      data.addRender("update");
+
+      expect(data.getRendersSinceSnapshot()).toBe(1);
+
+      data.snapshot();
+
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+
+      data.addRender("update");
+      data.addRender("update");
+      data.addRender("update");
+
+      expect(data.getRendersSinceSnapshot()).toBe(3);
+    });
+
+    it("should work with empty history", () => {
+      const data = new ProfilerData();
+
+      data.snapshot();
+
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+
+      data.addRender("mount");
+
+      expect(data.getRendersSinceSnapshot()).toBe(1);
+    });
+
+    it("should be reset by clear()", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.addRender("update");
+      data.snapshot();
+
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+
+      data.clear();
+      data.addRender("mount");
+
+      // After clear, snapshot is reset to 0, so all renders count
+      expect(data.getRendersSinceSnapshot()).toBe(1);
+    });
+  });
+
+  describe("getRendersSinceSnapshot", () => {
+    it("should return total count when snapshot not called", () => {
+      const data = new ProfilerData();
+
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+
+      data.addRender("mount");
+
+      expect(data.getRendersSinceSnapshot()).toBe(1);
+
+      data.addRender("update");
+
+      expect(data.getRendersSinceSnapshot()).toBe(2);
+    });
+
+    it("should return 0 immediately after snapshot", () => {
+      const data = new ProfilerData();
+
+      data.addRender("mount");
+      data.addRender("update");
+      data.addRender("update");
+      data.snapshot();
+
+      expect(data.getRendersSinceSnapshot()).toBe(0);
+    });
+
+    it("should be O(1) operation", () => {
+      const data = new ProfilerData();
+
+      // Add many renders
+      data.addRender("mount");
+
+      for (let i = 1; i < 1000; i++) {
+        data.addRender("update");
+      }
+
+      data.snapshot();
+
+      // Add more renders
+      for (let i = 0; i < 500; i++) {
+        data.addRender("update");
+      }
+
+      // This should be O(1) - just subtracting two numbers
+      const start = performance.now();
+
+      for (let i = 0; i < 10_000; i++) {
+        data.getRendersSinceSnapshot();
+      }
+
+      const end = performance.now();
+
+      // Should complete 10,000 calls in under 100ms (very conservative)
+      expect(end - start).toBeLessThan(100);
+
+      expect(data.getRendersSinceSnapshot()).toBe(500);
+    });
+  });
+
   describe("Circuit Breaker (Infinite Loop Detection)", () => {
     it("should allow renders up to 10,000", () => {
       const data = new ProfilerData();
@@ -601,7 +735,7 @@ describe("ProfilerData", () => {
         for (let i = 0; i < 10_000; i++) {
           data.addRender(i === 0 ? "mount" : "update");
         }
-      }).not.toThrow();
+      }).not.toThrowError();
 
       expect(data.getRenderCount()).toBe(10_000);
     });
@@ -617,7 +751,7 @@ describe("ProfilerData", () => {
       // 10,001st render should throw
       expect(() => {
         data.addRender("update");
-      }).toThrow(/Infinite render loop detected/);
+      }).toThrowError(/Infinite render loop detected/);
     });
 
     it("should include render count in error message", () => {
@@ -629,7 +763,7 @@ describe("ProfilerData", () => {
 
       expect(() => {
         data.addRender("update");
-      }).toThrow(/Component rendered 10000 times/);
+      }).toThrowError(/Component rendered 10000 times/);
     });
 
     it("should include last 10 phases in error message", () => {
@@ -786,7 +920,7 @@ describe("ProfilerData", () => {
       // Trigger circuit breaker
       expect(() => {
         data.addRender("update");
-      }).toThrow();
+      }).toThrowError();
 
       // Can still read data
       expect(data.getRenderCount()).toBe(10_000);
@@ -801,7 +935,7 @@ describe("ProfilerData", () => {
       // Can add renders again after clear
       expect(() => {
         data.addRender("mount");
-      }).not.toThrow();
+      }).not.toThrowError();
 
       expect(data.getRenderCount()).toBe(1);
     });

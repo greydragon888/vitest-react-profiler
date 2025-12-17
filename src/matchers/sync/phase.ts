@@ -2,6 +2,10 @@ import { isProfiledComponent } from "@/matchers/type-guards";
 import { formatRenderHistory } from "@/utils/formatRenderHistory";
 
 import type { MatcherResult } from "@/matchers/types";
+import type { PhaseType } from "@/types";
+
+/** Valid phase types for validation */
+const VALID_PHASES: readonly PhaseType[] = ["mount", "update", "nested-update"];
 
 /**
  * Assert that component mounted exactly once
@@ -151,5 +155,72 @@ export function toHaveOnlyUpdated(received: unknown): MatcherResult {
 
       return `Expected component not to have only updates, but it did`;
     },
+  };
+}
+
+/**
+ * Assert that last render was of specific phase
+ *
+ * @param received - The component to check
+ * @param expectedPhase - Expected render phase ('mount', 'update', or 'nested-update')
+ * @returns Matcher result
+ * @example
+ * expect(ProfiledComponent).toHaveLastRenderedWithPhase('update')
+ * expect(ProfiledComponent).toHaveLastRenderedWithPhase('mount')
+ * @since v1.10.0
+ */
+export function toHaveLastRenderedWithPhase(
+  received: unknown,
+  expectedPhase: PhaseType,
+): MatcherResult {
+  if (!isProfiledComponent(received)) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected a profiled component created with withProfiler(), received ${typeof received}`,
+    };
+  }
+
+  // Validate phase parameter
+  if (!VALID_PHASES.includes(expectedPhase)) {
+    const validPhasesStr = VALID_PHASES.map((p) => `'${p}'`).join(", ");
+
+    return {
+      pass: false,
+      message: () =>
+        `Expected phase must be one of: ${validPhasesStr}, received '${expectedPhase}'`,
+    };
+  }
+
+  const lastRender = received.getLastRender();
+
+  // Handle case when component has not rendered
+  if (lastRender === undefined) {
+    return {
+      pass: false,
+      message: () =>
+        `Expected last render to be '${expectedPhase}', but component has not rendered yet`,
+      actual: undefined,
+      expected: expectedPhase,
+    };
+  }
+
+  const pass = lastRender === expectedPhase;
+
+  return {
+    pass,
+    message: () => {
+      if (pass) {
+        return `Expected last render not to be '${expectedPhase}', but it was`;
+      }
+
+      // Show render history for context
+      const history = received.getRenderHistory();
+      const details = formatRenderHistory(history, 10);
+
+      return `Expected last render to be '${expectedPhase}', but it was '${lastRender}'\n\n${details}`;
+    },
+    actual: lastRender,
+    expected: expectedPhase,
   };
 }

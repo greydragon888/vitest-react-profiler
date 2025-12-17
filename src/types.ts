@@ -158,6 +158,46 @@ export interface ProfilerMatchers<R = unknown> {
    * @since v1.8.0
    */
   notToHaveRenderLoops: (options?: RenderLoopOptions) => R;
+
+  /**
+   * Assert that component rerendered exactly once since snapshot()
+   *
+   * Use after calling snapshot() to verify exactly one rerender occurred.
+   *
+   * @returns - Matcher result
+   * @example
+   * ProfiledComponent.snapshot();
+   * rerender(<ProfiledComponent newProp={value} />);
+   * expect(ProfiledComponent).toHaveRerenderedOnce();
+   * @since v1.10.0
+   */
+  toHaveRerenderedOnce: () => R;
+
+  /**
+   * Assert that component did not rerender since snapshot()
+   *
+   * Use after calling snapshot() to verify no rerenders occurred.
+   * Useful for testing optimization - ensuring actions don't cause unnecessary rerenders.
+   *
+   * @returns - Matcher result
+   * @example
+   * ProfiledComponent.snapshot();
+   * updateUnrelatedState();
+   * expect(ProfiledComponent).toNotHaveRerendered();
+   * @since v1.10.0
+   */
+  toNotHaveRerendered: () => R;
+
+  /**
+   * Assert that last render was of specific phase
+   *
+   * @param phase - Expected render phase ('mount', 'update', or 'nested-update')
+   * @returns - Matcher result
+   * @example expect(ProfiledComponent).toHaveLastRenderedWithPhase('update')
+   * @example expect(ProfiledComponent).toHaveLastRenderedWithPhase('mount')
+   * @since v1.10.0
+   */
+  toHaveLastRenderedWithPhase: (phase: PhaseType) => R;
 }
 
 /**
@@ -375,6 +415,43 @@ export interface ProfiledComponent<P> {
    * expect(info.phase).toBe('update');
    */
   waitForNextRender: (options?: WaitOptions) => Promise<RenderEventInfo>;
+
+  /**
+   * Create a snapshot point for measuring render deltas
+   *
+   * Saves current position in render history as a baseline.
+   * Does not clear history - only marks current position.
+   * Use with getRendersSinceSnapshot() or delta matchers.
+   *
+   * @since v1.10.0
+   *
+   * @example
+   * ProfiledComponent.snapshot();
+   * rerender(<ProfiledComponent newProp={value} />);
+   * expect(ProfiledComponent).toHaveRerenderedOnce();
+   *
+   * @example
+   * ProfiledComponent.snapshot();
+   * updateUnrelatedState();
+   * expect(ProfiledComponent).toNotHaveRerendered();
+   */
+  snapshot: () => void;
+
+  /**
+   * Get number of renders since last snapshot
+   *
+   * Returns total render count if snapshot() was never called.
+   *
+   * @returns Number of renders since snapshot (always >= 0)
+   * @since v1.10.0
+   *
+   * @example
+   * ProfiledComponent.snapshot();
+   * rerender(<ProfiledComponent />);
+   * rerender(<ProfiledComponent />);
+   * console.log(ProfiledComponent.getRendersSinceSnapshot()); // 2
+   */
+  getRendersSinceSnapshot: () => number;
 
   /** Original component for reference */
   OriginalComponent: ComponentType<P>;
