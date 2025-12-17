@@ -17,11 +17,8 @@ concurrency:
 jobs:
   claude-review:
     name: AI Code Review
-    # Optional: Filter by PR author - uncomment to run only for specific users
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
+    # Skip for Dependabot PRs (no access to secrets)
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read

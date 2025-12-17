@@ -14,6 +14,8 @@ concurrency:
 jobs:
   sonarcloud:
     name: SonarCloud Code Analysis
+    # Skip for Dependabot PRs (no access to SONAR_TOKEN secret)
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
 
     steps:
