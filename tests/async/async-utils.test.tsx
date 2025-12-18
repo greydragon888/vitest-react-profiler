@@ -414,6 +414,15 @@ describe("Parameter Validation", () => {
       );
     });
 
+    it("should include parameter name 'count' in error message", async () => {
+      render(<ProfiledCounter />);
+
+      // This test kills StringLiteral mutant that replaces "count" with ""
+      await expect(waitForRenders(ProfiledCounter, -1)).rejects.toThrowError(
+        /Expected count to be/,
+      );
+    });
+
     it("should throw TypeError for NaN count", async () => {
       render(<ProfiledCounter />);
 
@@ -496,6 +505,15 @@ describe("Parameter Validation", () => {
       await expect(
         waitForMinimumRenders(ProfiledCounter, -5),
       ).rejects.toThrowError(/non-negative integer/);
+    });
+
+    it("should include parameter name 'minCount' in error message", async () => {
+      render(<ProfiledCounter />);
+
+      // This test kills StringLiteral mutant that replaces "minCount" with ""
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, -5),
+      ).rejects.toThrowError(/Expected minCount to be/);
     });
 
     it("should throw TypeError for NaN minCount", async () => {

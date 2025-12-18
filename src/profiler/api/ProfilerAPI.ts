@@ -54,6 +54,7 @@ export class ProfilerAPI {
 
     return () => {
       /* v8 ignore next -- @preserve */
+      // Stryker disable next-line ConditionalExpression: __DEV__ check for cache metrics is dev-only instrumentation
       if (__DEV__) {
         if (cachedData === undefined) {
           cacheMetrics.recordMiss("closureCache");

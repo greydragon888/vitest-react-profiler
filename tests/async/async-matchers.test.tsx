@@ -64,6 +64,18 @@ describe("toEventuallyRenderTimes", () => {
     ).rejects.toThrowError(/must be a non-negative integer/);
   });
 
+  it("should include parameter name 'Expected render count' in error message", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    // This test kills StringLiteral mutant that replaces "Expected render count" with ""
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderTimes(-1),
+    ).rejects.toThrowError(/Expected render count must be/);
+  });
+
   it("should fail with invalid timeout", async () => {
     const Component = () => <div>test</div>;
     const ProfiledComponent = withProfiler(Component);
@@ -223,6 +235,18 @@ describe("toEventuallyRenderAtLeast", () => {
     await expect(
       expect(ProfiledComponent).toEventuallyRenderAtLeast(-1),
     ).rejects.toThrowError(/must be a non-negative integer/);
+  });
+
+  it("should include parameter name 'Minimum render count' in error message", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    // This test kills StringLiteral mutant that replaces "Minimum render count" with ""
+    await expect(
+      expect(ProfiledComponent).toEventuallyRenderAtLeast(-1),
+    ).rejects.toThrowError(/Minimum render count must be/);
   });
 
   it("should fail with invalid timeout", async () => {
@@ -984,6 +1008,18 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(1.5),
     ).rejects.toThrowError(/must be a non-negative integer/);
+  });
+
+  it("should include parameter name 'Expected rerender count' in error message", async () => {
+    const Component = () => <div>test</div>;
+    const ProfiledComponent = withProfiler(Component);
+
+    render(<ProfiledComponent />);
+
+    // This test kills StringLiteral mutant that replaces "Expected rerender count" with ""
+    await expect(
+      expect(ProfiledComponent).toEventuallyRerenderTimes(-1),
+    ).rejects.toThrowError(/Expected rerender count must be/);
   });
 
   it("should fail with invalid timeout", async () => {
