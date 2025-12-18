@@ -229,6 +229,7 @@ export default tsEslint.config(
           allowNumber: true,
         },
       ],
+      "@typescript-eslint/no-useless-default-assignment": "warn",
     },
   },
 
@@ -309,6 +310,8 @@ export default tsEslint.config(
         mode: "typescript",
         tagNamePreference: {
           returns: "returns",
+          // Prefer @template over @typeParam (new in v61.5.0)
+          typeParam: "template",
         },
       },
     },

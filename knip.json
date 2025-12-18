@@ -1,21 +1,42 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": [
-    "src/auto-setup.ts",
-    "tests/**/*.test.{ts,tsx}",
-    "tests/**/*.bench.{ts,tsx}",
-    "tests/**/*.properties.tsx"
-  ],
-  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreWorkspaces": ["examples/*"],
   "ignore": [
-    "examples/**",
     "dist/**",
     "coverage/**",
     "reports/**",
     "**/*.config.{ts,mts,mjs,js}",
     "**/*.d.ts"
   ],
-  "ignoreDependencies": ["husky", "terser", "fast-check"],
+  "ignoreDependencies": [
+    "husky",
+    "terser",
+    "fast-check",
+    "@testing-library/user-event"
+  ],
   "ignoreBinaries": ["open"],
-  "ignoreExportsUsedInFile": true
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/auto-setup.ts",
+        "tests/**/*.test.{ts,tsx}",
+        "tests/**/*.bench.{ts,tsx}",
+        "tests/**/*.properties.tsx",
+        "tests/**/*.stress.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "vitest": {
+        "config": [
+          "vitest.config.mts",
+          "vitest.config.unit.mts",
+          "vitest.config.common.mts",
+          "vitest.config.properties.mts",
+          "vitest.config.bench.mts",
+          "vitest.config.stress.mts",
+          "vitest.stryker.config.mts"
+        ]
+      }
+    }
+  }
 }
