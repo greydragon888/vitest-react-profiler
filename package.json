@@ -143,7 +143,7 @@
     "terser": "5.44.1",
     "tsup": "8.5.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.50.1",
+    "typescript-eslint": "8.51.0",
     "vitest": "4.0.16"
   },
   "workspaces": [
