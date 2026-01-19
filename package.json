@@ -112,8 +112,8 @@
     "@types/node": "25.0.3",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "@vitest/coverage-v8": "4.0.16",
-    "@vitest/eslint-plugin": "1.5.4",
+    "@vitest/coverage-v8": "4.0.17",
+    "@vitest/eslint-plugin": "1.6.6",
     "dotenv-cli": "11.0.0",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
@@ -130,7 +130,7 @@
     "fast-check": "4.4.0",
     "husky": "9.1.7",
     "jscpd": "4.0.5",
-    "jsdom": "27.3.0",
+    "jsdom": "27.4.0",
     "knip": "5.75.1",
     "lint-staged": "16.2.7",
     "markdownlint-cli": "0.47.0",
@@ -144,7 +144,7 @@
     "tsup": "8.5.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.50.1",
-    "vitest": "4.0.16"
+    "vitest": "4.0.17"
   },
   "workspaces": [
     "examples/*"
