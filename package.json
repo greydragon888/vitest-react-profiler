@@ -109,7 +109,7 @@
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.1",
     "@testing-library/user-event": "14.6.1",
-    "@types/node": "25.0.3",
+    "@types/node": "25.5.0",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitest/coverage-v8": "4.0.16",
@@ -142,7 +142,7 @@
     "sonarqube-scanner": "4.3.2",
     "terser": "5.44.1",
     "tsup": "8.5.1",
-    "typescript": "5.9.3",
+    "typescript": "6.0.2",
     "typescript-eslint": "8.50.1",
     "vitest": "4.0.16"
   },
