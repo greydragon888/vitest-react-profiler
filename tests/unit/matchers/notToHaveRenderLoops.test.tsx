@@ -1411,9 +1411,9 @@ describe("notToHaveRenderLoops", () => {
         // Total would be 17 if no reset, but each segment is only 8
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 8 }).fill("update") as PhaseType[]),
+          ...Array.from({ length: 8 }, (): PhaseType => "update"),
           "mount",
-          ...(Array.from({ length: 8 }).fill("update") as PhaseType[]),
+          ...Array.from({ length: 8 }, (): PhaseType => "update"),
         ];
 
         const MockComponent = createMockProfiledComponent(history);
@@ -1478,7 +1478,7 @@ describe("notToHaveRenderLoops", () => {
         // Loop detected at 11th update (threshold 10 + 1)
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 11 }).fill("update") as PhaseType[]), // 11 consecutive updates
+          ...Array.from({ length: 11 }, (): PhaseType => "update"), // 11 consecutive updates
         ];
 
         const MockComponent = createMockProfiledComponent(history);
@@ -1512,7 +1512,7 @@ describe("notToHaveRenderLoops", () => {
         // Instead: use threshold=10, create 15 updates, loop at 11
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 15 }).fill("update") as PhaseType[]), // 15 updates, but loop at 11
+          ...Array.from({ length: 15 }, (): PhaseType => "update"), // 15 updates, but loop at 11
         ];
 
         const MockComponent = createMockProfiledComponent(history);
@@ -1660,7 +1660,7 @@ describe("notToHaveRenderLoops", () => {
         // MUTATED (true): would show 2 (last run)
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 9 }).fill("update") as PhaseType[]), // 9 updates - run 1 (max)
+          ...Array.from({ length: 9 }, (): PhaseType => "update"), // 9 updates - run 1 (max)
           "nested-update",
           "update",
           "update", // 2 updates - run 2 (smaller)
@@ -1689,7 +1689,7 @@ describe("notToHaveRenderLoops", () => {
         // Pattern: 8 nested-updates, update, 3 nested-updates
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 8 }).fill("nested-update") as PhaseType[]), // 8 nested - run 1
+          ...Array.from({ length: 8 }, (): PhaseType => "nested-update"), // 8 nested - run 1
           "update",
           "nested-update",
           "nested-update",
@@ -1788,9 +1788,9 @@ describe("notToHaveRenderLoops", () => {
         // MUTANT: first run (6) would be recorded
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 6 }).fill("nested-update") as PhaseType[]), // 6 nested - NOT recorded
+          ...Array.from({ length: 6 }, (): PhaseType => "nested-update"), // 6 nested - NOT recorded
           "mount",
-          ...(Array.from({ length: 4 }).fill("nested-update") as PhaseType[]), // 4 nested - recorded at end
+          ...Array.from({ length: 4 }, (): PhaseType => "nested-update"), // 4 nested - recorded at end
         ];
 
         const MockComponent = createMockProfiledComponent(history);
@@ -1864,9 +1864,9 @@ describe("notToHaveRenderLoops", () => {
         // Second cycle: 11 updates (loop)
         const history: PhaseType[] = [
           "mount",
-          ...(Array.from({ length: 5 }).fill("update") as PhaseType[]),
+          ...Array.from({ length: 5 }, (): PhaseType => "update"),
           "mount",
-          ...(Array.from({ length: 11 }).fill("update") as PhaseType[]), // loop here
+          ...Array.from({ length: 11 }, (): PhaseType => "update"), // loop here
         ];
 
         const MockComponent = createMockProfiledComponent(history);

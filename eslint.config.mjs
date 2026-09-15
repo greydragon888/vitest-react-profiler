@@ -7,7 +7,7 @@ import stylistic from "@stylistic/eslint-plugin";
 import vitestPlugin from "@vitest/eslint-plugin";
 import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import { importX } from "eslint-plugin-import-x";
-import jsdoc from "eslint-plugin-jsdoc";
+import jsdocPlugin from "eslint-plugin-jsdoc";
 // @ts-expect-error - no type definitions available for this package
 import noOnlyTests from "eslint-plugin-no-only-tests";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
@@ -243,6 +243,27 @@ export default tsEslint.config(
       "import-x": importX,
     },
     settings: {
+      // Graph-building rules (no-cycle, no-named-as-default-member, export, …) silently
+      // no-op without these three: import-x defaults valid extensions to
+      // ['.js','.mjs','.cjs'], so every `.ts` import target failed the extension check
+      // and no module graph was ever built. Verbatim from importX.flatConfigs.typescript.
+      "import-x/extensions": [
+        ".ts",
+        ".tsx",
+        ".cts",
+        ".mts",
+        ".js",
+        ".jsx",
+        ".cjs",
+        ".mjs",
+      ],
+      "import-x/parsers": {
+        "@typescript-eslint/parser": [".ts", ".tsx", ".cts", ".mts"],
+      },
+      "import-x/external-module-folders": [
+        "node_modules",
+        "node_modules/@types",
+      ],
       "import-x/resolver-next": [
         createTypeScriptImportResolver({
           alwaysTryTypes: true,
@@ -305,7 +326,7 @@ export default tsEslint.config(
       "!src/**/*.spec.ts?(x)",
     ],
     plugins: {
-      jsdoc,
+      jsdoc: jsdocPlugin,
     },
     settings: {
       jsdoc: {
@@ -480,44 +501,56 @@ export default tsEslint.config(
   },
 
   // ============================================
-  // 12b. RULES NEW IN UNICORN 63–74 / SONARJS 4 — DISABLED FOR NOW
-  // Not auto-fixable, or the fix would change behavior / public-facing names.
-  // Kept off pending a dedicated refactor: see docs/reports/devdeps-update-2026-09.md
-  // (must stay after sections 7 and 11 so these overrides win over "recommended")
+  // 12b. RULES NEW IN UNICORN 63–74 / SONARJS 4
+  // Shipped src adopts the new recommended rules; the ones below are declined for the
+  // stated reason. Tests keep the older surface (second block): modernizing test code
+  // is churn with no shipped value. Must stay after sections 7 and 11 so these
+  // overrides win over "recommended".
   // ============================================
   {
     files: ["**/*.ts?(x)"],
     rules: {
-      // `pass` is the Vitest matcher-result contract name used across src/matchers
+      // Naming opinion: would rename `pass` (the Vitest matcher-result contract name)
+      // and other internal booleans — auto-renaming risks touching the API surface
       "unicorn/consistent-boolean-name": "off",
-      // Number.isSafeInteger() rejects integers above 2^53 that Number.isInteger() accepts
+      // Number.isSafeInteger() rejects integers above 2^53 that Number.isInteger()
+      // accepts — a behavior change, not a lint fix
       "unicorn/prefer-number-is-safe-integer": "off",
-      // Would require restructuring the loops in src/utils/formatRenderHistory.ts
-      "unicorn/no-break-in-nested-loop": "off",
       // Module-level instance counter in ProfiledComponent is intentional
       "unicorn/no-top-level-assignment-in-function": "off",
+      // The autofix relocates code across `/* v8 ignore … */` boundaries, silently
+      // mis-targeting coverage annotations under the 100% gate
+      "unicorn/prefer-early-return": "off",
+      // Style only: `Number.NaN` / `Number.POSITIVE_INFINITY` stay as written
+      "unicorn/prefer-global-number-constants": "off",
       // Conflicts with the project's single-line JSDoc convention; its autofix produces
       // malformed JSDoc (content line without the leading `*`)
       "unicorn/single-line-block-comment-style": "off",
     },
   },
   {
-    // Violations exist only in tests — src keeps these rules enabled
+    // Non-shipped code: idiomatic test patterns (callback `push`, deeply nested
+    // `expect()`, literal floats, loop style) where modernizing is pure churn
     files: ["**/tests/**/*.ts?(x)"],
     rules: {
       "unicorn/max-nested-calls": "off",
-      "unicorn/no-array-from-fill": "off",
       "unicorn/no-return-array-push": "off",
+      "unicorn/no-break-in-nested-loop": "off",
       "unicorn/no-global-object-property-assignment": "off",
-      "unicorn/prefer-math-constants": "off",
       "unicorn/no-computed-property-existence-check": "off",
       "unicorn/no-declarations-before-early-exit": "off",
+      "unicorn/no-useless-else": "off",
       "unicorn/no-useless-template-literals": "off",
-      "unicorn/prefer-number-coercion": "off",
-      "unicorn/consistent-compound-words": "off",
       "unicorn/no-non-function-verb-prefix": "off",
-      "sonarjs/prefer-specific-assertions": "off",
+      "unicorn/prefer-number-coercion": "off",
+      "unicorn/prefer-object-define-properties": "off",
+      "unicorn/prefer-continue": "off",
+      "unicorn/consistent-conditional-object-spread": "off",
+      // Tests use literal floats (3.14 ≠ Math.PI) intentionally
+      "unicorn/prefer-math-constants": "off",
+      // Opinionated: converting explicit it() blocks to it.each obscures failure sites
       "sonarjs/parameterized-tests": "off",
+      // Intentional reach markers (`expect(true).toBe(true)`) in stress/property tests
       "sonarjs/no-trivial-assertions": "off",
     },
   },
@@ -714,6 +747,9 @@ export default tsEslint.config(
     },
     rules: {
       "import-x/no-default-export": "off",
+      // Default imports are the documented flat-config entry points of these plugins
+      // (typescript-eslint, sonarjs, regexp) — the member caution is noise here
+      "import-x/no-named-as-default-member": "off",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/require-await": "off",

@@ -60,19 +60,17 @@ class GCObserver {
       const entries = list.getEntries();
 
       for (const entry of entries) {
-        if (entry.entryType !== "gc") {
-          continue;
+        if (entry.entryType === "gc") {
+          const gcEntry = entry as any;
+
+          this.events.push({
+            kind: gcEntry.detail?.kind ?? 0,
+            kindName: GC_KINDS[gcEntry.detail?.kind ?? 0] ?? "Unknown",
+            startTime: entry.startTime,
+            duration: entry.duration,
+            flags: gcEntry.detail?.flags ?? 0,
+          });
         }
-
-        const gcEntry = entry as any;
-
-        this.events.push({
-          kind: gcEntry.detail?.kind ?? 0,
-          kindName: GC_KINDS[gcEntry.detail?.kind ?? 0] ?? "Unknown",
-          startTime: entry.startTime,
-          duration: entry.duration,
-          flags: gcEntry.detail?.flags ?? 0,
-        });
       }
     });
 
@@ -236,7 +234,7 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
 
     // Verify correctness
     expect(ProfiledComponent.getRenderCount()).toBe(9999);
-    expect(ProfiledComponent.getRenderHistory().length).toBe(9999);
+    expect(ProfiledComponent.getRenderHistory()).toHaveLength(9999);
 
     // Performance assertion
     expect(totalTime).toBeLessThan(5000); // < 5 seconds for 9999 renders
@@ -414,7 +412,7 @@ describe("Edge Cases - Large History Performance", () => {
 
       // Verify frozen
       expect(Object.isFrozen(history)).toBe(true);
-      expect(history.length).toBe(5000);
+      expect(history).toHaveLength(5000);
     }
 
     const endTime = performance.now();
@@ -470,7 +468,7 @@ describe("Edge Cases - Large History Performance", () => {
       const history = ProfiledComponent.getRenderHistory();
 
       expect(count).toBe(5000);
-      expect(history.length).toBe(5000);
+      expect(history).toHaveLength(5000);
       expect(Object.isFrozen(history)).toBe(true);
     }
 

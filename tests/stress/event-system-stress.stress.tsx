@@ -66,19 +66,17 @@ class GCObserver {
       const entries = list.getEntries();
 
       for (const entry of entries) {
-        if (entry.entryType !== "gc") {
-          continue;
+        if (entry.entryType === "gc") {
+          const gcEntry = entry as any;
+
+          this.events.push({
+            kind: gcEntry.detail?.kind ?? 0,
+            kindName: GC_KINDS[gcEntry.detail?.kind ?? 0] ?? "Unknown",
+            startTime: entry.startTime,
+            duration: entry.duration,
+            flags: gcEntry.detail?.flags ?? 0,
+          });
         }
-
-        const gcEntry = entry as any;
-
-        this.events.push({
-          kind: gcEntry.detail?.kind ?? 0,
-          kindName: GC_KINDS[gcEntry.detail?.kind ?? 0] ?? "Unknown",
-          startTime: entry.startTime,
-          duration: entry.duration,
-          flags: gcEntry.detail?.flags ?? 0,
-        });
       }
     });
 

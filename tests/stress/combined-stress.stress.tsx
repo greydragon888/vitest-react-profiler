@@ -69,20 +69,18 @@ class GCObserver {
       const entries = list.getEntries();
 
       for (const entry of entries) {
-        if (entry.entryType !== "gc") {
-          continue;
+        if (entry.entryType === "gc") {
+          const gcEntry = entry as GCPerformanceEntry;
+          const kind = gcEntry.detail?.kind ?? 0;
+
+          this.events.push({
+            kind,
+            kindName: GC_KINDS[kind] ?? "Unknown",
+            startTime: entry.startTime,
+            duration: entry.duration,
+            flags: gcEntry.detail?.flags ?? 0,
+          });
         }
-
-        const gcEntry = entry as GCPerformanceEntry;
-        const kind = gcEntry.detail?.kind ?? 0;
-
-        this.events.push({
-          kind,
-          kindName: GC_KINDS[kind] ?? "Unknown",
-          startTime: entry.startTime,
-          duration: entry.duration,
-          flags: gcEntry.detail?.flags ?? 0,
-        });
       }
     });
 

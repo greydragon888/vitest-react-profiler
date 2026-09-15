@@ -51,10 +51,8 @@ describe("withProfiler", () => {
       const AnonymousComp: FC = () => <div>test</div>;
 
       // Force empty name (simulates IIFE or minified code)
-      Object.defineProperties(AnonymousComp, {
-        name: { value: "" },
-        displayName: { value: undefined },
-      });
+      Object.defineProperty(AnonymousComp, "name", { value: "" });
+      Object.defineProperty(AnonymousComp, "displayName", { value: undefined });
 
       const ProfiledAnon = withProfiler(AnonymousComp);
 

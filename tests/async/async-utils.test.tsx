@@ -426,10 +426,10 @@ describe("Parameter Validation", () => {
     it("should throw TypeError for NaN count", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForRenders(ProfiledCounter, NaN)).rejects.toThrow(
+      await expect(waitForRenders(ProfiledCounter, Number.NaN)).rejects.toThrow(
         TypeError,
       );
-      await expect(waitForRenders(ProfiledCounter, NaN)).rejects.toThrow(
+      await expect(waitForRenders(ProfiledCounter, Number.NaN)).rejects.toThrow(
         /non-negative integer/,
       );
     });
@@ -473,7 +473,7 @@ describe("Parameter Validation", () => {
       render(<ProfiledCounter />);
 
       await expect(
-        waitForRenders(ProfiledCounter, 3, { timeout: NaN }),
+        waitForRenders(ProfiledCounter, 3, { timeout: Number.NaN }),
       ).rejects.toThrow(TypeError);
     });
 
@@ -519,9 +519,9 @@ describe("Parameter Validation", () => {
     it("should throw TypeError for NaN minCount", async () => {
       render(<ProfiledCounter />);
 
-      await expect(waitForMinimumRenders(ProfiledCounter, NaN)).rejects.toThrow(
-        TypeError,
-      );
+      await expect(
+        waitForMinimumRenders(ProfiledCounter, Number.NaN),
+      ).rejects.toThrow(TypeError);
     });
 
     it("should throw TypeError for zero timeout", async () => {

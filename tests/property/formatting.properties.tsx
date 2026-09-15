@@ -231,7 +231,6 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
   describe("High Volume Formatting", () => {
     test.prop([fc.integer({ min: 1000, max: 5000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "formatRenderHistory handles very long histories efficiently",
       (numRenders) => {
@@ -254,7 +253,6 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
 
     test.prop([fc.integer({ min: 1000, max: 5000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })("formatRenderSummary handles very long histories", (numRenders) => {
       const renders = Array.from({ length: numRenders }, (_, i) =>
         i === 0 ? "mount" : "update",
@@ -355,7 +353,6 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
   describe("Output Size Bounds", () => {
     test.prop([fc.integer({ min: 1000, max: 5000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "formatted output size is bounded regardless of history length",
       (numRenders) => {

@@ -325,12 +325,10 @@ describe("Stabilization API - Integration Tests", () => {
           let currentFrame = 0;
 
           const animate = () => {
-            if (currentFrame >= frames) {
-              return;
+            if (currentFrame < frames) {
+              setFrame(currentFrame++);
+              requestAnimationFrame(animate);
             }
-
-            setFrame(currentFrame++);
-            requestAnimationFrame(animate);
           };
 
           requestAnimationFrame(animate);

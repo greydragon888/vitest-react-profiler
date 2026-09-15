@@ -92,7 +92,7 @@ describe("toEventuallyRenderTimes", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(3, {
-        timeout: NaN,
+        timeout: Number.NaN,
       }),
     ).rejects.toThrow(/positive number/);
 
@@ -716,7 +716,7 @@ describe("toEventuallyRerender (v1.11.0)", () => {
     ).rejects.toThrow(/positive number/);
 
     await expect(
-      expect(ProfiledComponent).toEventuallyRerender({ timeout: NaN }),
+      expect(ProfiledComponent).toEventuallyRerender({ timeout: Number.NaN }),
     ).rejects.toThrow(/positive number/);
 
     await expect(
