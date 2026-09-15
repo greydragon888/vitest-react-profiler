@@ -64,7 +64,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "test": "vitest run --config vitest.config.unit.mts",
     "test:coverage": "vitest run --coverage --config vitest.config.unit.mts",
     "test:mutation": "stryker run",
@@ -140,8 +140,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "size-limit": "13.1.1",
-    "terser": "5.51.2",
-    "tsup": "8.5.1",
+    "tsdown": "0.23.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.0",
     "vitest": "4.1.11"

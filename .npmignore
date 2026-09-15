@@ -40,7 +40,7 @@ prettier.config.*
 .npmrc
 tsconfig.json
 tsconfig.*.json
-tsup.config.*
+tsdown.config.*
 rollup.config.*
 webpack.config.*
 

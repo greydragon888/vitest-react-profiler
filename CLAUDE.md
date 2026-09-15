@@ -175,7 +175,7 @@ Runtime: Node.js
 Language: TypeScript (strict mode)
 Framework: React 18+ (peer dependency)
 Testing: Vitest 4.0+
-Build: tsup (ESM + CJS bundles)
+Build: tsdown (ESM + CJS bundles)
 CI/CD: GitHub Actions
 Quality: SonarCloud, Codecov
 ```
@@ -217,7 +217,7 @@ vitest-react-profiler/
 | `vitest.stress.config.mts`     | Stress tests           | Extends common, memory/load testing                                 |
 | `eslint.config.mjs`            | ESLint rules           | Flat config format                                                  |
 | `tsconfig.json`                | TypeScript             | Path aliases (`@/` → `src/`)                                        |
-| `tsup.config.ts`               | Build config           | ESM + CJS bundles                                                   |
+| `tsdown.config.ts`             | Build config           | ESM + CJS bundles                                                   |
 | `codecov.yml`                  | Codecov config         | 100% target, bundle analysis                                        |
 | `sonar-project.properties`     | SonarCloud             | Quality gates, version must match `package.json`                    |
 
