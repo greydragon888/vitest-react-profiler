@@ -83,8 +83,8 @@
     "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
     "lint:md:fix": "markdownlint \"**/*.md\" --ignore node_modules --fix",
     "bundle:analyze": "npm run build && npx @codecov/bundle-analyzer ./dist --bundle-name=vitest-react-profiler",
-    "sonar": "dotenv -- sonar-scanner-npm -Dsonar.login=$SONAR_TOKEN",
-    "sonar:debug": "dotenv -- sonar-scanner-npm -Dsonar.login=$SONAR_TOKEN -Dsonar.log.level=DEBUG -Dsonar.verbose=true",
+    "sonar": "dotenv -- sonar-scanner-npm",
+    "sonar:debug": "dotenv -- sonar-scanner-npm -Dsonar.log.level=DEBUG -Dsonar.verbose=true",
     "sonar:local": "npm run typecheck && npm run test:coverage && npm run sonar",
     "prepare": "node -e \"try { require('husky') } catch (e) {}\"",
     "prepublishOnly": "npm run typecheck && npm run test:coverage && npm run build && npm run lint:types && npm run lint:package && npm run lint:unused"
@@ -102,6 +102,7 @@
     "@fast-check/vitest": "0.5.0",
     "@size-limit/file": "13.1.1",
     "@size-limit/preset-small-lib": "13.1.1",
+    "@sonar/scan": "5.0.0",
     "@stryker-mutator/core": "10.0.0",
     "@stryker-mutator/typescript-checker": "10.0.0",
     "@stryker-mutator/vitest-runner": "10.0.0",
@@ -139,7 +140,6 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "size-limit": "13.1.1",
-    "sonarqube-scanner": "5.0.0",
     "terser": "5.51.2",
     "tsup": "8.5.1",
     "typescript": "6.0.3",
@@ -148,5 +148,13 @@
   },
   "workspaces": [
     "examples/*"
-  ]
+  ],
+  "overrides": {
+    "qs": ">=6.16.0"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "fsevents": true,
+    "unrs-resolver": true
+  }
 }

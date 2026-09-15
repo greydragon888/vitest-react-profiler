@@ -1,20 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignoreWorkspaces": ["examples/*"],
-  "ignore": [
-    "dist/**",
-    "coverage/**",
-    "reports/**",
-    "**/*.config.{ts,mts,mjs,js}",
-    "**/*.d.ts"
-  ],
+  "ignore": ["**/*.config.{ts,mts,mjs,js}"],
   "ignoreDependencies": [
     "husky",
     "terser",
     "fast-check",
     "@testing-library/user-event"
   ],
-  "ignoreBinaries": ["open"],
   "ignoreExportsUsedInFile": true,
   "workspaces": {
     ".": {
