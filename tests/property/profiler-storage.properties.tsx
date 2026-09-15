@@ -457,7 +457,7 @@ describe("Property-Based Tests: ProfilerStorage (WeakMap)", () => {
           }
 
           // All accesses to same component should return same reference
-          if (!references.every((ref) => ref === references[0])) {
+          if (references.some((ref) => ref !== references[0])) {
             return false;
           }
         }

@@ -520,15 +520,16 @@ describe("Stress Tests - Combined Sync/Async Rerender Matchers", () => {
           expect(C).toHaveRerendered();
 
           return Promise.resolve();
-        } else if (i % 3 === 1) {
+        }
+        if (i % 3 === 1) {
           // Sync: toHaveRerendered(1)
           expect(C).toHaveRerendered(1);
 
           return Promise.resolve();
-        } else {
-          // Async: toEventuallyRerender
-          return expect(C).toEventuallyRerender({ timeout: 100 });
         }
+
+        // Async: toEventuallyRerender
+        return expect(C).toEventuallyRerender({ timeout: 100 });
       });
 
       await Promise.all(assertions);

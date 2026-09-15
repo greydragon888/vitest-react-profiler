@@ -33,7 +33,7 @@ function checkConstraint(
 
   return {
     check: `  ${label}: ${actual} (budget: ${max}) ${status}`,
-    ...(pass ? {} : { violation: `${violationMsg}: ${actual} > ${max}` }),
+    ...(!pass && { violation: `${violationMsg}: ${actual} > ${max}` }),
   };
 }
 

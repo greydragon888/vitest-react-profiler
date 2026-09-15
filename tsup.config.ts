@@ -12,6 +12,13 @@ export default defineConfig({
     resolve: true,
     // Entry point for types
     entry: "./src/index.ts",
+    // tsup injects `baseUrl: "."` into the DTS compiler options, which TypeScript 6
+    // reports as deprecated (TS5101) and fails the DTS build. Our tsconfig no longer
+    // uses baseUrl — this only silences the option tsup adds itself.
+    // See https://github.com/egoist/tsup/issues/1388
+    compilerOptions: {
+      ignoreDeprecations: "6.0",
+    },
   },
 
   // Split output into chunks for better tree-shaking

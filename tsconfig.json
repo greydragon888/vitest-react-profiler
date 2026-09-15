@@ -15,12 +15,11 @@
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@test-utils": ["src/test-utils"],
-      "@test-utils/*": ["src/test-utils/*"],
-      "@components/*": ["src/components/*"]
+      "@/*": ["./src/*"],
+      "@test-utils": ["./src/test-utils"],
+      "@test-utils/*": ["./src/test-utils/*"],
+      "@components/*": ["./src/components/*"]
     },
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,

@@ -45,9 +45,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(regularComponent).notToHaveRenderLoops();
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should reject negative maxConsecutiveUpdates", () => {
@@ -57,7 +55,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveUpdates: -1,
         });
-      }).toThrowError(/maxConsecutiveUpdates must be a positive integer/);
+      }).toThrow(/maxConsecutiveUpdates must be a positive integer/);
     });
 
     it("should reject zero maxConsecutiveUpdates", () => {
@@ -67,7 +65,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveUpdates: 0,
         });
-      }).toThrowError(/maxConsecutiveUpdates must be a positive integer/);
+      }).toThrow(/maxConsecutiveUpdates must be a positive integer/);
     });
 
     it("should reject float maxConsecutiveUpdates", () => {
@@ -77,7 +75,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveUpdates: 3.5,
         });
-      }).toThrowError(/maxConsecutiveUpdates must be a positive integer/);
+      }).toThrow(/maxConsecutiveUpdates must be a positive integer/);
     });
 
     it("should reject negative maxConsecutiveNested", () => {
@@ -87,7 +85,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveNested: -1,
         });
-      }).toThrowError(/maxConsecutiveNested must be a positive integer/);
+      }).toThrow(/maxConsecutiveNested must be a positive integer/);
     });
 
     it("should reject float maxConsecutiveNested", () => {
@@ -97,7 +95,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveNested: 2.5,
         });
-      }).toThrowError(/maxConsecutiveNested must be a positive integer/);
+      }).toThrow(/maxConsecutiveNested must be a positive integer/);
     });
 
     it("should reject negative ignoreInitialUpdates", () => {
@@ -107,7 +105,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           ignoreInitialUpdates: -1,
         });
-      }).toThrowError(/ignoreInitialUpdates must be a non-negative integer/);
+      }).toThrow(/ignoreInitialUpdates must be a non-negative integer/);
     });
 
     it("should reject float ignoreInitialUpdates", () => {
@@ -117,7 +115,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           ignoreInitialUpdates: 1.5,
         });
-      }).toThrowError(/ignoreInitialUpdates must be a non-negative integer/);
+      }).toThrow(/ignoreInitialUpdates must be a non-negative integer/);
     });
   });
 
@@ -151,7 +149,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern: \d+ consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: \d+ consecutive 'update' phases/);
     });
 
     it("should fail when exactly at threshold consecutive updates", () => {
@@ -161,7 +159,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern: 11 consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: 11 consecutive 'update' phases/);
     });
   });
 
@@ -179,7 +177,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveUpdates: 5,
         });
-      }).toThrowError(/Suspicious pattern: 6 consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: 6 consecutive 'update' phases/);
     });
 
     it("should use maxConsecutiveUpdates as fallback for nested-update", () => {
@@ -218,9 +216,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveNested: 3,
         });
-      }).toThrowError(
-        /Suspicious pattern: \d+ consecutive 'nested-update' phases/,
-      );
+      }).toThrow(/Suspicious pattern: \d+ consecutive 'nested-update' phases/);
     });
   });
 
@@ -233,7 +229,7 @@ describe("notToHaveRenderLoops", () => {
       // Without ignoring - should fail (12 > 10)
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern/);
+      }).toThrow(/Suspicious pattern/);
 
       // Ignoring first 3 updates - should pass (effective: 9 consecutive)
       expect(ProfiledComponent).notToHaveRenderLoops({
@@ -252,7 +248,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           ignoreInitialUpdates: 2,
         });
-      }).toThrowError(/Suspicious pattern: 11 consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: 11 consecutive 'update' phases/);
     });
 
     it("should work with ignoreInitialUpdates = 0", () => {
@@ -285,7 +281,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Loop sequence \(renders #\d+-#\d+\):/);
+      }).toThrow(/Loop sequence \(renders #\d+-#\d+\):/);
     });
 
     it("should include potential causes in error message", () => {
@@ -295,10 +291,10 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Potential causes:/);
+      }).toThrow(/Potential causes:/);
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/useEffect with missing\/incorrect dependencies/);
+      }).toThrow(/useEffect with missing\/incorrect dependencies/);
     });
 
     it("should include helpful tip in error message", () => {
@@ -308,7 +304,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/💡 Tip: Use .* to inspect full history/);
+      }).toThrow(/💡 Tip: Use .* to inspect full history/);
     });
 
     it("should use componentName in error messages", () => {
@@ -320,7 +316,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           componentName: "Header",
         });
-      }).toThrowError(/Expected Header not to have render loops/);
+      }).toThrow(/Expected Header not to have render loops/);
     });
 
     it("should show full history when showFullHistory is true", () => {
@@ -332,7 +328,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           showFullHistory: true,
         });
-      }).toThrowError(/Full render history:/);
+      }).toThrow(/Full render history:/);
     });
 
     it("should not show full history by default", () => {
@@ -384,7 +380,7 @@ describe("notToHaveRenderLoops", () => {
       // Should detect loop (12 consecutive updates > 10)
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern/);
+      }).toThrow(/Suspicious pattern/);
     });
 
     it("should detect loop at end of history", () => {
@@ -395,7 +391,7 @@ describe("notToHaveRenderLoops", () => {
       // Loop is at the end (11 consecutive updates)
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern: 11 consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: 11 consecutive 'update' phases/);
     });
 
     it("should detect loop in middle of history", () => {
@@ -412,7 +408,7 @@ describe("notToHaveRenderLoops", () => {
       // Should still detect the loop that occurred in the middle
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern/);
+      }).toThrow(/Suspicious pattern/);
     });
   });
 
@@ -424,9 +420,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
-        /Expected .* to have render loops, but none were detected/,
-      );
+      }).toThrow(/Expected .* to have render loops, but none were detected/);
     });
 
     it("should pass when using .not and loops detected", () => {
@@ -489,7 +483,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveUpdates: 1,
         });
-      }).toThrowError(/Suspicious pattern: 2 consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: 2 consecutive 'update' phases/);
     });
 
     it("should handle very high threshold", () => {
@@ -546,9 +540,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
-        /All consecutive 'update' runs: <= \d+ \(threshold: 10\)/,
-      );
+      }).toThrow(/All consecutive 'update' runs: <= \d+ \(threshold: 10\)/);
     });
 
     it("should show nested-update stats in success message", () => {
@@ -558,7 +550,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
+      }).toThrow(
         /All consecutive 'nested-update' runs: <= \d+ \(threshold: 10\)/,
       );
     });
@@ -586,9 +578,7 @@ describe("notToHaveRenderLoops", () => {
       // Should track max consecutive updates and show stats in error message
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
-        /All consecutive 'update' runs: <= \d+ \(threshold: 10\)/,
-      );
+      }).toThrow(/All consecutive 'update' runs: <= \d+ \(threshold: 10\)/);
     });
 
     it("should correctly track final sequence as maximum", () => {
@@ -607,7 +597,7 @@ describe("notToHaveRenderLoops", () => {
       // Should track max consecutive updates from final sequence
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 7 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 7 \(threshold: 10\)/);
     });
 
     it("should handle phase transitions and track max runs correctly", () => {
@@ -640,9 +630,7 @@ describe("notToHaveRenderLoops", () => {
       // Should track the maximum of 3 from the first cycle
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
-        /All consecutive 'update' runs: <= \d+ \(threshold: 10\)/,
-      );
+      }).toThrow(/All consecutive 'update' runs: <= \d+ \(threshold: 10\)/);
     });
 
     it("should track maximum nested-update runs across multiple sequences", () => {
@@ -661,7 +649,7 @@ describe("notToHaveRenderLoops", () => {
       // Should track max consecutive nested-updates and show in success message
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
+      }).toThrow(
         /All consecutive 'nested-update' runs: <= \d+ \(threshold: 10\)/,
       );
     });
@@ -675,7 +663,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Expected Component not to have render loops/);
+      }).toThrow(/Expected Component not to have render loops/);
     });
 
     it("should use custom component name from options", () => {
@@ -687,7 +675,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           componentName: "MyCustomComponent",
         });
-      }).toThrowError(/Expected MyCustomComponent not to have render loops/);
+      }).toThrow(/Expected MyCustomComponent not to have render loops/);
     });
   });
 
@@ -709,7 +697,7 @@ describe("notToHaveRenderLoops", () => {
       // 11 consecutive updates - should fail (> 10)
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/Suspicious pattern: 11 consecutive 'update' phases/);
+      }).toThrow(/Suspicious pattern: 11 consecutive 'update' phases/);
     });
   });
 
@@ -724,7 +712,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveNested: 10,
         });
-      }).toThrowError(/Suspicious pattern/);
+      }).toThrow(/Suspicious pattern/);
 
       // Should pass after ignoring first 3 nested-updates (effective: 9 < 10)
       expect(ProfiledComponent).notToHaveRenderLoops({
@@ -852,7 +840,7 @@ describe("notToHaveRenderLoops", () => {
 
       expect(() => {
         expect(ProfiledComponent).notToHaveRenderLoops();
-      }).toThrowError(/11 consecutive 'update' phases \(threshold: 10\)/);
+      }).toThrow(/11 consecutive 'update' phases \(threshold: 10\)/);
     });
 
     it("should show correct label for nested-update loops", () => {
@@ -864,9 +852,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveNested: 10,
         });
-      }).toThrowError(
-        /11 consecutive 'nested-update' phases \(threshold: 10\)/,
-      );
+      }).toThrow(/11 consecutive 'nested-update' phases \(threshold: 10\)/);
     });
 
     it("should show correct threshold for custom update limits", () => {
@@ -878,7 +864,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveUpdates: 5,
         });
-      }).toThrowError(/6 consecutive 'update' phases \(threshold: 5\)/);
+      }).toThrow(/6 consecutive 'update' phases \(threshold: 5\)/);
     });
 
     it("should show correct threshold for custom nested limits", () => {
@@ -890,7 +876,7 @@ describe("notToHaveRenderLoops", () => {
         expect(ProfiledComponent).notToHaveRenderLoops({
           maxConsecutiveNested: 3,
         });
-      }).toThrowError(/4 consecutive 'nested-update' phases \(threshold: 3\)/);
+      }).toThrow(/4 consecutive 'nested-update' phases \(threshold: 3\)/);
     });
   });
 
@@ -952,7 +938,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should be 5, not incremented
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 5 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 5 \(threshold: 10\)/);
     });
 
     it("should track maximum nested-update run correctly", () => {
@@ -971,7 +957,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should be 7 (from second cycle)
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
+      }).toThrow(
         /All consecutive 'nested-update' runs: <= 7 \(threshold: 10\)/,
       );
     });
@@ -985,7 +971,7 @@ describe("notToHaveRenderLoops", () => {
       // Should show max consecutive updates = 5 (not including mount)
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 5 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 5 \(threshold: 10\)/);
     });
 
     it("should handle mount phase resetting consecutive counter in detectRenderLoops", () => {
@@ -1021,7 +1007,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should be 6 (second cycle), mount should have reset counter
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 6 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 6 \(threshold: 10\)/);
     });
   });
 
@@ -1115,7 +1101,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should still be 7 (not updated because 7 is not > 7)
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 7 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 7 \(threshold: 10\)/);
     });
 
     it("should NOT update maxNestedRun when currentRun equals maxNestedRun", () => {
@@ -1134,7 +1120,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should still be 5 (not updated because 5 is not > 5)
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
+      }).toThrow(
         /All consecutive 'nested-update' runs: <= 5 \(threshold: 10\)/,
       );
     });
@@ -1162,7 +1148,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should be 6 (updated from 4 because 6 > 4)
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 6 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 6 \(threshold: 10\)/);
     });
 
     it("should update maxNestedRun only when strictly greater (not equal)", () => {
@@ -1188,7 +1174,7 @@ describe("notToHaveRenderLoops", () => {
       // Max should be 8 (updated from 3 because 8 > 3)
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
+      }).toThrow(
         /All consecutive 'nested-update' runs: <= 8 \(threshold: 10\)/,
       );
     });
@@ -1209,7 +1195,7 @@ describe("notToHaveRenderLoops", () => {
       // Success message should show max consecutive = 7
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(/All consecutive 'update' runs: <= 7 \(threshold: 10\)/);
+      }).toThrow(/All consecutive 'update' runs: <= 7 \(threshold: 10\)/);
     });
 
     it("should handle phase change from nested-update to mount correctly", () => {
@@ -1222,7 +1208,7 @@ describe("notToHaveRenderLoops", () => {
       // Success message should show max consecutive = 6
       expect(() => {
         expect(ProfiledComponent).not.notToHaveRenderLoops();
-      }).toThrowError(
+      }).toThrow(
         /All consecutive 'nested-update' runs: <= 6 \(threshold: 10\)/,
       );
     });
@@ -1887,7 +1873,7 @@ describe("notToHaveRenderLoops", () => {
 
         expect(() => {
           expect(MockComponent).notToHaveRenderLoops();
-        }).toThrowError(/11 consecutive 'update' phases/);
+        }).toThrow(/11 consecutive 'update' phases/);
       });
     });
   });

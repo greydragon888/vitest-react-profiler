@@ -868,8 +868,8 @@ describe("Property-Based Tests: Async Matchers - v1.11.0", () => {
         fc.oneof(
           fc.constant(0),
           fc.constant(-100),
-          fc.constant(Number.NaN),
-          fc.constant(Number.POSITIVE_INFINITY),
+          fc.constant(NaN),
+          fc.constant(Infinity),
         ),
       ],
       { numRuns: 100 },
@@ -1016,8 +1016,8 @@ describe("Property-Based Tests: Async Matchers - v1.11.0", () => {
         fc.oneof(
           fc.constant(0),
           fc.constant(-100),
-          fc.constant(Number.NaN),
-          fc.constant(Number.POSITIVE_INFINITY),
+          fc.constant(NaN),
+          fc.constant(Infinity),
         ),
       ],
       { numRuns: 100 },

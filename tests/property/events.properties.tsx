@@ -83,13 +83,11 @@ const renderEventInfoArbitrary = fc
     phaseArbitrary,
     fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 }),
   )
-  .map(
-    ([count, phase, history]): RenderEventInfo => ({
-      count,
-      phase,
-      history: Object.freeze(history),
-    }),
-  );
+  .map(([count, phase, history]): RenderEventInfo => ({
+    count,
+    phase,
+    history: Object.freeze(history),
+  }));
 
 describe("Property-Based Tests: Event System", () => {
   describe("Emit and Subscribe Invariants", () => {

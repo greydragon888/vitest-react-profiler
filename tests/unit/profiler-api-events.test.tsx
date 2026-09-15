@@ -175,10 +175,10 @@ describe("ProfilerAPI - Event Methods", () => {
       // Should not throw
       expect(() => {
         unsubscribe();
-      }).not.toThrowError();
+      }).not.toThrow();
       expect(() => {
         unsubscribe();
-      }).not.toThrowError(); // Multiple calls safe
+      }).not.toThrow(); // Multiple calls safe
 
       // Render after subscribing
       const { rerender } = render(<ProfiledComponent value={1} />);
@@ -271,7 +271,7 @@ describe("ProfilerAPI - Event Methods", () => {
       // Wait without triggering new render
       const promise = ProfiledComponent.waitForNextRender({ timeout: 100 });
 
-      await expect(promise).rejects.toThrowError(
+      await expect(promise).rejects.toThrow(
         "Timeout: No render occurred within 100ms",
       );
     });
@@ -340,9 +340,7 @@ describe("ProfilerAPI - Event Methods", () => {
       const promise = ProfiledComponent.waitForNextRender({ timeout: 100 });
 
       // Promise should reject immediately with appropriate error
-      await expect(promise).rejects.toThrowError(
-        "Component has no profiler data",
-      );
+      await expect(promise).rejects.toThrow("Component has no profiler data");
     });
 
     it("should work correctly after several renders", async () => {
@@ -412,7 +410,7 @@ describe("ProfilerAPI - Event Methods", () => {
       // Don't trigger render - let it timeout
       const promise = ProfiledComponent.waitForNextRender({ timeout: 50 });
 
-      await expect(promise).rejects.toThrowError();
+      await expect(promise).rejects.toThrow();
 
       // Listener should be cleaned up - check that no listeners remain
       // by verifying subsequent renders don't cause issues

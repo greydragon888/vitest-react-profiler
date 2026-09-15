@@ -409,6 +409,7 @@ describe("Event System - Performance Benchmarks", () => {
 
         // Subscribe listener that accesses history (lazy evaluation)
         const unsubscribe = ProfiledComponent.onRender((info) => {
+          // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- intentional getter access: triggers lazy history evaluation being benchmarked
           void info.history; // Access history (triggers lazy evaluation)
         });
 
@@ -435,6 +436,7 @@ describe("Event System - Performance Benchmarks", () => {
         // Subscribe 10 listeners that access history
         const unsubscribes = Array.from({ length: 10 }, () =>
           ProfiledComponent.onRender((info) => {
+            // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- intentional getter access: triggers lazy history evaluation being benchmarked
             void info.history; // Access history
           }),
         );

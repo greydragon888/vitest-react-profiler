@@ -347,7 +347,7 @@ describe("Property-Based Tests: Formatting Stress & Edge Cases", () => {
           return false;
         }
 
-        return !(nested > 0 && !summary.includes("nested"));
+        return nested <= 0 || summary.includes("nested");
       },
     );
   });

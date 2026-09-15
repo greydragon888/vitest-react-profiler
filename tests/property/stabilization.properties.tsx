@@ -218,7 +218,7 @@ describe("Property-Based Tests: Stabilization API", () => {
     });
 
     test.prop(
-      [fc.constantFrom(Number.NaN, Infinity, -Infinity)], // special values
+      [fc.constantFrom(NaN, Infinity, -Infinity)], // special values
       { numRuns: 6 },
     )(
       "should reject special numeric values for debounceMs",
@@ -238,7 +238,7 @@ describe("Property-Based Tests: Stabilization API", () => {
     );
 
     test.prop(
-      [fc.constantFrom(Number.NaN, Infinity, -Infinity)], // special values
+      [fc.constantFrom(NaN, Infinity, -Infinity)], // special values
       { numRuns: 6 },
     )(
       "should reject special numeric values for timeout",

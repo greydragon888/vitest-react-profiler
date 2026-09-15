@@ -153,10 +153,10 @@ describe("Mock utilities", () => {
       // Should not throw
       expect(() => {
         noOpCache.invalidate("mount");
-      }).not.toThrowError();
+      }).not.toThrow();
       expect(() => {
         noOpCache.clear();
-      }).not.toThrowError();
+      }).not.toThrow();
     });
   });
 
@@ -196,7 +196,7 @@ describe("Mock utilities", () => {
       // Should not throw
       expect(() => {
         unsubscribe();
-      }).not.toThrowError();
+      }).not.toThrow();
     });
 
     it("should allow spying on emit calls", () => {

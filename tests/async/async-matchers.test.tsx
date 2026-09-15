@@ -38,7 +38,7 @@ describe("toEventuallyRenderTimes", () => {
 
     await expect(
       expect(ProfiledStatic).toEventuallyRenderTimes(5, { timeout: 100 }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component to eventually render 5 times within 100ms, but got 1/,
     );
   });
@@ -46,7 +46,7 @@ describe("toEventuallyRenderTimes", () => {
   it("should fail with invalid component", async () => {
     await expect(
       expect("not-a-component").toEventuallyRenderTimes(1),
-    ).rejects.toThrowError(/Expected a profiled component/);
+    ).rejects.toThrow(/Expected a profiled component/);
   });
 
   it("should fail with invalid render count", async () => {
@@ -57,11 +57,11 @@ describe("toEventuallyRenderTimes", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(-1),
-    ).rejects.toThrowError(/must be a non-negative integer/);
+    ).rejects.toThrow(/must be a non-negative integer/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(1.5),
-    ).rejects.toThrowError(/must be a non-negative integer/);
+    ).rejects.toThrow(/must be a non-negative integer/);
   });
 
   it("should include parameter name 'Expected render count' in error message", async () => {
@@ -73,7 +73,7 @@ describe("toEventuallyRenderTimes", () => {
     // This test kills StringLiteral mutant that replaces "Expected render count" with ""
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(-1),
-    ).rejects.toThrowError(/Expected render count must be/);
+    ).rejects.toThrow(/Expected render count must be/);
   });
 
   it("should fail with invalid timeout", async () => {
@@ -84,23 +84,23 @@ describe("toEventuallyRenderTimes", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(3, { timeout: 0 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(3, { timeout: -100 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(3, {
-        timeout: Number.NaN,
+        timeout: NaN,
       }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderTimes(3, {
         timeout: Infinity,
       }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should accept 0 as valid expected count", async () => {
@@ -148,7 +148,7 @@ describe("toEventuallyRenderTimes", () => {
 
     await expect(
       expect(ProfiledComponent).not.toEventuallyRenderTimes(1),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to eventually render 1 times within \d+ms, but it did/,
     );
   });
@@ -168,7 +168,7 @@ describe("toEventuallyRenderTimes", () => {
     rerender(<ProfiledCounter />);
 
     // The promise should reject with the appropriate message
-    await expect(promise).rejects.toThrowError(
+    await expect(promise).rejects.toThrow(
       /Expected component not to eventually render 2 times within \d+ms, but it did/,
     );
   });
@@ -215,7 +215,7 @@ describe("toEventuallyRenderAtLeast", () => {
 
     await expect(
       expect(ProfiledStatic).toEventuallyRenderAtLeast(3, { timeout: 100 }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component to eventually render at least 3 times within 100ms, but got 1/,
     );
   });
@@ -223,7 +223,7 @@ describe("toEventuallyRenderAtLeast", () => {
   it("should fail with invalid component", async () => {
     await expect(
       expect("not-a-component").toEventuallyRenderAtLeast(1),
-    ).rejects.toThrowError(/Expected a profiled component/);
+    ).rejects.toThrow(/Expected a profiled component/);
   });
 
   it("should fail with invalid minimum count", async () => {
@@ -234,7 +234,7 @@ describe("toEventuallyRenderAtLeast", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderAtLeast(-1),
-    ).rejects.toThrowError(/must be a non-negative integer/);
+    ).rejects.toThrow(/must be a non-negative integer/);
   });
 
   it("should include parameter name 'Minimum render count' in error message", async () => {
@@ -246,7 +246,7 @@ describe("toEventuallyRenderAtLeast", () => {
     // This test kills StringLiteral mutant that replaces "Minimum render count" with ""
     await expect(
       expect(ProfiledComponent).toEventuallyRenderAtLeast(-1),
-    ).rejects.toThrowError(/Minimum render count must be/);
+    ).rejects.toThrow(/Minimum render count must be/);
   });
 
   it("should fail with invalid timeout", async () => {
@@ -257,11 +257,11 @@ describe("toEventuallyRenderAtLeast", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: -50 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRenderAtLeast(3, { timeout: 0 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should accept 0 as valid minimum count", async () => {
@@ -284,7 +284,7 @@ describe("toEventuallyRenderAtLeast", () => {
 
     await expect(
       expect(ProfiledCounter).not.toEventuallyRenderAtLeast(2),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to eventually render at least 2 times within \d+ms, but it rendered \d+ times/,
     );
   });
@@ -307,7 +307,7 @@ describe("toEventuallyRenderAtLeast", () => {
     // Now check .not assertion - should fail immediately (early return)
     await expect(
       expect(ProfiledCounter).not.toEventuallyRenderAtLeast(2),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to eventually render at least 2 times within \d+ms, but it rendered 3 times/,
     );
   });
@@ -355,9 +355,7 @@ describe("toEventuallyReachPhase", () => {
 
     await expect(
       expect(ProfiledStatic).toEventuallyReachPhase("update", { timeout: 100 }),
-    ).rejects.toThrowError(
-      /Expected component to eventually reach phase "update"/,
-    );
+    ).rejects.toThrow(/Expected component to eventually reach phase "update"/);
   });
 
   it("should NOT resolve on wrong phase (only timeout on correct phase)", async () => {
@@ -375,9 +373,7 @@ describe("toEventuallyReachPhase", () => {
       expect(ProfiledComponent).toEventuallyReachPhase("update", {
         timeout: 100,
       }),
-    ).rejects.toThrowError(
-      /Expected component to eventually reach phase "update"/,
-    );
+    ).rejects.toThrow(/Expected component to eventually reach phase "update"/);
 
     // Verify it only has mount phase
     const history = ProfiledComponent.getRenderHistory();
@@ -432,7 +428,7 @@ describe("toEventuallyReachPhase", () => {
   it("should fail with invalid component", async () => {
     await expect(
       expect("not-a-component").toEventuallyReachPhase("mount"),
-    ).rejects.toThrowError(/Expected a profiled component/);
+    ).rejects.toThrow(/Expected a profiled component/);
   });
 
   it("should fail with invalid phase", async () => {
@@ -444,9 +440,7 @@ describe("toEventuallyReachPhase", () => {
     await expect(
       // @ts-expect-error - Testing invalid phase
       expect(ProfiledComponent).toEventuallyReachPhase("invalid"),
-    ).rejects.toThrowError(
-      /Phase must be one of: mount, update, nested-update/,
-    );
+    ).rejects.toThrow(/Phase must be one of: mount, update, nested-update/);
   });
 
   it("should fail with invalid timeout", async () => {
@@ -459,19 +453,19 @@ describe("toEventuallyReachPhase", () => {
       expect(ProfiledComponent).toEventuallyReachPhase("update", {
         timeout: 0,
       }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyReachPhase("update", {
         timeout: -50,
       }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyReachPhase("update", {
         timeout: Infinity,
       }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should show helpful error message with current phases", async () => {
@@ -560,7 +554,7 @@ describe("toEventuallyReachPhase", () => {
 
     await expect(
       expect(ProfiledComponent).not.toEventuallyReachPhase("mount"),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to eventually reach phase "mount" within \d+ms, but it did/,
     );
   });
@@ -581,7 +575,7 @@ describe("toEventuallyReachPhase", () => {
     rerender(<ProfiledCounter />);
 
     // The promise should reject with the appropriate message
-    await expect(promise).rejects.toThrowError(
+    await expect(promise).rejects.toThrow(
       /Expected component not to eventually reach phase "update" within \d+ms, but it did/,
     );
   });
@@ -696,7 +690,7 @@ describe("toEventuallyRerender (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledStatic).toEventuallyRerender({ timeout: 100 }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component to rerender after snapshot within 100ms, but it did not/,
     );
   });
@@ -704,7 +698,7 @@ describe("toEventuallyRerender (v1.11.0)", () => {
   it("should fail with invalid component", async () => {
     await expect(
       expect("not-a-component").toEventuallyRerender(),
-    ).rejects.toThrowError(/Expected a profiled component/);
+    ).rejects.toThrow(/Expected a profiled component/);
   });
 
   it("should fail with invalid timeout", async () => {
@@ -715,19 +709,19 @@ describe("toEventuallyRerender (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerender({ timeout: 0 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerender({ timeout: -100 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
-      expect(ProfiledComponent).toEventuallyRerender({ timeout: Number.NaN }),
-    ).rejects.toThrowError(/positive number/);
+      expect(ProfiledComponent).toEventuallyRerender({ timeout: NaN }),
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerender({ timeout: Infinity }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should fail .not assertion when single rerender occurs (singular)", async () => {
@@ -741,7 +735,7 @@ describe("toEventuallyRerender (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).not.toEventuallyRerender(),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to rerender after snapshot within \d+ms, but it rerendered 1 time/,
     );
   });
@@ -758,7 +752,7 @@ describe("toEventuallyRerender (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).not.toEventuallyRerender(),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to rerender after snapshot within \d+ms, but it rerendered 2 times/,
     );
   });
@@ -817,7 +811,7 @@ describe("toEventuallyRerender (v1.11.0)", () => {
     // Note: The callback always reports "1 time" since it only fires once
     await expect(
       expect(ProfiledComponent).not.toEventuallyRerender({ timeout: 200 }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to rerender after snapshot within 200ms, but it rerendered 1 time/,
     );
   });
@@ -896,7 +890,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
     // Already 3 rerenders, but we expect only 2
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(2),
-    ).rejects.toThrowError(/already got 3.*exceeded/);
+    ).rejects.toThrow(/already got 3.*exceeded/);
   });
 
   it("should fail when count not reached within timeout", async () => {
@@ -909,7 +903,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(3, { timeout: 100 }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component to rerender 3 times after snapshot within 100ms, but got 0 times/,
     );
   });
@@ -947,7 +941,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
       expect(ProfiledComponent).not.toEventuallyRerenderTimes(2, {
         timeout: 300,
       }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to rerender 2 times after snapshot within 300ms, but it did/,
     );
   });
@@ -984,7 +978,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
       expect(ProfiledComponent).not.toEventuallyRerenderTimes(1, {
         timeout: 200,
       }),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to rerender 1 time after snapshot within 200ms, but it did/,
     );
   });
@@ -992,7 +986,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
   it("should fail with invalid component", async () => {
     await expect(
       expect("not-a-component").toEventuallyRerenderTimes(1),
-    ).rejects.toThrowError(/Expected a profiled component/);
+    ).rejects.toThrow(/Expected a profiled component/);
   });
 
   it("should fail with invalid expected count", async () => {
@@ -1003,11 +997,11 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(-1),
-    ).rejects.toThrowError(/must be a non-negative integer/);
+    ).rejects.toThrow(/must be a non-negative integer/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(1.5),
-    ).rejects.toThrowError(/must be a non-negative integer/);
+    ).rejects.toThrow(/must be a non-negative integer/);
   });
 
   it("should include parameter name 'Expected rerender count' in error message", async () => {
@@ -1019,7 +1013,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
     // This test kills StringLiteral mutant that replaces "Expected rerender count" with ""
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(-1),
-    ).rejects.toThrowError(/Expected rerender count must be/);
+    ).rejects.toThrow(/Expected rerender count must be/);
   });
 
   it("should fail with invalid timeout", async () => {
@@ -1030,11 +1024,11 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(1, { timeout: 0 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
 
     await expect(
       expect(ProfiledComponent).toEventuallyRerenderTimes(1, { timeout: -50 }),
-    ).rejects.toThrowError(/positive number/);
+    ).rejects.toThrow(/positive number/);
   });
 
   it("should accept 0 as valid expected count", async () => {
@@ -1064,7 +1058,7 @@ describe("toEventuallyRerenderTimes (v1.11.0)", () => {
 
     await expect(
       expect(ProfiledComponent).not.toEventuallyRerenderTimes(1),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       /Expected component not to rerender 1 time after snapshot within \d+ms, but it did/,
     );
   });

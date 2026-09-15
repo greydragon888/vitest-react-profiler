@@ -24,15 +24,13 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toHaveMountedOnce();
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should fail when not mounted", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveMountedOnce();
-      }).toThrowError(/Expected component to mount once, but it never mounted/);
+      }).toThrow(/Expected component to mount once, but it never mounted/);
     });
 
     it("should fail when mounted multiple times", () => {
@@ -41,9 +39,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveMountedOnce();
-      }).toThrowError(
-        /Expected component to mount once, but it mounted 2 times/,
-      );
+      }).toThrow(/Expected component to mount once, but it mounted 2 times/);
     });
 
     it("should provide correct negative message when mounted once", () => {
@@ -55,7 +51,7 @@ describe("Custom Matchers", () => {
       // Test the negative case
       expect(() => {
         expect(ProfiledComponent).not.toHaveMountedOnce();
-      }).toThrowError(/Expected component not to mount, but it mounted once/);
+      }).toThrow(/Expected component not to mount, but it mounted once/);
     });
 
     it("should only count mount phases", () => {

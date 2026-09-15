@@ -168,7 +168,7 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
 
 We test against:
 
-- Node.js: 18.x, 20.x, 22.x
+- Node.js: 22.x, 24.x
 - React: 16.x, 17.x, 18.x
 - Vitest: 1.x, 2.x
 - Operating Systems: Ubuntu, macOS, Windows

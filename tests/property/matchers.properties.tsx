@@ -115,19 +115,19 @@ describe("Property-Based Tests: Matcher Parameter Validation", () => {
               "Expected render count must be a non-negative integer",
             );
           }
-        } else {
-          // Should throw validation error
-          try {
-            expect(Component).toHaveRenderedTimes(value);
+        }
 
-            return false; // Should have thrown
-          } catch (error) {
-            const message = (error as Error).message;
+        // Should throw validation error
+        try {
+          expect(Component).toHaveRenderedTimes(value);
 
-            return message.includes(
-              "Expected render count must be a non-negative integer",
-            );
-          }
+          return false; // Should have thrown
+        } catch (error) {
+          const message = (error as Error).message;
+
+          return message.includes(
+            "Expected render count must be a non-negative integer",
+          );
         }
       },
     );
@@ -158,7 +158,7 @@ describe("Property-Based Tests: Matcher Parameter Validation", () => {
       },
     );
 
-    test.prop([fc.constantFrom(Number.NaN, Infinity, -Infinity)], {
+    test.prop([fc.constantFrom(NaN, Infinity, -Infinity)], {
       numRuns: 100,
     })("toHaveRenderedTimes rejects special numeric values", (value) => {
       const Component = createSimpleProfiledComponent();
@@ -202,21 +202,21 @@ describe("Property-Based Tests: Matcher Parameter Validation", () => {
               "Expected render count must be a non-negative integer",
             );
           }
-        } else {
-          // Invalid parameter
-          try {
-            await expect(Component).toEventuallyRenderTimes(value, {
-              timeout: 100,
-            });
+        }
 
-            return false;
-          } catch (error) {
-            const message = (error as Error).message;
+        // Invalid parameter
+        try {
+          await expect(Component).toEventuallyRenderTimes(value, {
+            timeout: 100,
+          });
 
-            return message.includes(
-              "Expected render count must be a non-negative integer",
-            );
-          }
+          return false;
+        } catch (error) {
+          const message = (error as Error).message;
+
+          return message.includes(
+            "Expected render count must be a non-negative integer",
+          );
         }
       },
     );
@@ -242,20 +242,20 @@ describe("Property-Based Tests: Matcher Parameter Validation", () => {
               "Minimum render count must be a non-negative integer",
             );
           }
-        } else {
-          try {
-            await expect(Component).toEventuallyRenderAtLeast(value, {
-              timeout: 100,
-            });
+        }
 
-            return false;
-          } catch (error) {
-            const message = (error as Error).message;
+        try {
+          await expect(Component).toEventuallyRenderAtLeast(value, {
+            timeout: 100,
+          });
 
-            return message.includes(
-              "Minimum render count must be a non-negative integer",
-            );
-          }
+          return false;
+        } catch (error) {
+          const message = (error as Error).message;
+
+          return message.includes(
+            "Minimum render count must be a non-negative integer",
+          );
         }
       },
     );
@@ -283,19 +283,19 @@ describe("Property-Based Tests: Matcher Parameter Validation", () => {
 
             return !message.includes("Phase must be one of:");
           }
-        } else {
-          try {
-            await expect(Component).toEventuallyReachPhase(
-              phase as "mount" | "update" | "nested-update",
-              { timeout: 100 },
-            );
+        }
 
-            return false;
-          } catch (error) {
-            const message = (error as Error).message;
+        try {
+          await expect(Component).toEventuallyReachPhase(
+            phase as "mount" | "update" | "nested-update",
+            { timeout: 100 },
+          );
 
-            return message.includes("Phase must be one of:");
-          }
+          return false;
+        } catch (error) {
+          const message = (error as Error).message;
+
+          return message.includes("Phase must be one of:");
         }
       },
     );
@@ -1355,7 +1355,7 @@ describe("Property-Based Tests: notToHaveRenderLoops Invariants", () => {
       [fc.oneof(fc.constant(null), fc.constant(undefined), fc.string())],
       { numRuns: 200 },
     )("rejects non-profiled components with clear error", (invalidInput) => {
-      const result = notToHaveRenderLoops(invalidInput as any, {
+      const result = notToHaveRenderLoops(invalidInput, {
         maxConsecutiveUpdates: 10,
       });
 

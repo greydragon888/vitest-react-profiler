@@ -30,9 +30,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toHaveRenderedTimes(1);
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should fail with incorrect render count", () => {
@@ -40,21 +38,21 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes(2);
-      }).toThrowError(/Expected 2 renders, but got 1/);
+      }).toThrow(/Expected 2 renders, but got 1/);
     });
 
     it("should validate expected parameter", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes(-1);
-      }).toThrowError(/Expected render count must be a non-negative integer/);
+      }).toThrow(/Expected render count must be a non-negative integer/);
 
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes(1.5);
-      }).toThrowError(/Expected render count must be a non-negative integer/);
+      }).toThrow(/Expected render count must be a non-negative integer/);
 
       expect(() => {
         expect(ProfiledComponent).toHaveRenderedTimes("invalid" as any);
-      }).toThrowError(/Expected render count must be a non-negative integer/);
+      }).toThrow(/Expected render count must be a non-negative integer/);
     });
 
     it("should work with 0 renders", () => {

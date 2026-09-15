@@ -51,8 +51,10 @@ describe("withProfiler", () => {
       const AnonymousComp: FC = () => <div>test</div>;
 
       // Force empty name (simulates IIFE or minified code)
-      Object.defineProperty(AnonymousComp, "name", { value: "" });
-      Object.defineProperty(AnonymousComp, "displayName", { value: undefined });
+      Object.defineProperties(AnonymousComp, {
+        name: { value: "" },
+        displayName: { value: undefined },
+      });
 
       const ProfiledAnon = withProfiler(AnonymousComp);
 
@@ -409,7 +411,7 @@ describe("withProfiler", () => {
       // Attempting to mutate should fail silently or throw in strict mode
       expect(() => {
         (history as any).push({} as any);
-      }).toThrowError();
+      }).toThrow();
     });
 
     it("should handle conditional rendering", () => {

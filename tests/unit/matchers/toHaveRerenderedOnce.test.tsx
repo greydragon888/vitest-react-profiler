@@ -20,7 +20,7 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(ProfiledComponent).toHaveRerenderedOnce();
-    }).not.toThrowError();
+    }).not.toThrow();
   });
 
   it("should fail when no rerenders after snapshot", () => {
@@ -29,7 +29,7 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(ProfiledComponent).toHaveRerenderedOnce();
-    }).toThrowError(
+    }).toThrow(
       /Expected component to rerender once after snapshot, but it did not rerender/,
     );
   });
@@ -44,7 +44,7 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(ProfiledComponent).toHaveRerenderedOnce();
-    }).toThrowError(
+    }).toThrow(
       /Expected component to rerender once after snapshot, but it rerendered 3 times/,
     );
   });
@@ -54,7 +54,7 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(regularComponent).toHaveRerenderedOnce();
-    }).toThrowError(/Expected a profiled component created with withProfiler/);
+    }).toThrow(/Expected a profiled component created with withProfiler/);
   });
 
   it("should provide correct message for .not when passed", () => {
@@ -65,7 +65,7 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(ProfiledComponent).not.toHaveRerenderedOnce();
-    }).toThrowError(
+    }).toThrow(
       /Expected component not to rerender after snapshot, but it rerendered once/,
     );
   });
@@ -76,7 +76,7 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(ProfiledComponent).toHaveRerenderedOnce();
-    }).not.toThrowError();
+    }).not.toThrow();
   });
 
   it("should work with multiple snapshots", () => {
@@ -89,7 +89,7 @@ describe("toHaveRerenderedOnce", () => {
     // First snapshot: 2 rerenders
     expect(() => {
       expect(ProfiledComponent).toHaveRerenderedOnce();
-    }).toThrowError();
+    }).toThrow();
 
     // New snapshot resets count
     ProfiledComponent.snapshot();
@@ -97,6 +97,6 @@ describe("toHaveRerenderedOnce", () => {
 
     expect(() => {
       expect(ProfiledComponent).toHaveRerenderedOnce();
-    }).not.toThrowError();
+    }).not.toThrow();
   });
 });

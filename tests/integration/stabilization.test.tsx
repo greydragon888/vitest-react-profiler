@@ -164,7 +164,7 @@ describe("Stabilization API - Integration Tests", () => {
           debounceMs: 50,
           timeout: 100,
         }),
-      ).rejects.toThrowError(/StabilizationTimeoutError/);
+      ).rejects.toThrow(/StabilizationTimeoutError/);
     });
 
     it("should reject with validation error when debounceMs >= timeout", async () => {
@@ -178,14 +178,14 @@ describe("Stabilization API - Integration Tests", () => {
           debounceMs: 100,
           timeout: 100,
         }),
-      ).rejects.toThrowError(/ValidationError/);
+      ).rejects.toThrow(/ValidationError/);
 
       await expect(
         ProfiledComponent.waitForStabilization({
           debounceMs: 200,
           timeout: 100,
         }),
-      ).rejects.toThrowError(/ValidationError/);
+      ).rejects.toThrow(/ValidationError/);
     });
 
     it("should track lastPhase correctly through multiple render phases", async () => {
@@ -240,7 +240,7 @@ describe("Stabilization API - Integration Tests", () => {
           debounceMs: 30,
           timeout: 80,
         }),
-      ).rejects.toThrowError();
+      ).rejects.toThrow();
     });
 
     it("should fail with validation error message for invalid options", async () => {
@@ -325,10 +325,12 @@ describe("Stabilization API - Integration Tests", () => {
           let currentFrame = 0;
 
           const animate = () => {
-            if (currentFrame < frames) {
-              setFrame(currentFrame++);
-              requestAnimationFrame(animate);
+            if (currentFrame >= frames) {
+              return;
             }
+
+            setFrame(currentFrame++);
+            requestAnimationFrame(animate);
           };
 
           requestAnimationFrame(animate);

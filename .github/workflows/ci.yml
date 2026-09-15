@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22]
+        node: [22, 24]
         react: [18, 19]
     steps:
       - name: Checkout repo
@@ -78,7 +78,7 @@ jobs:
         run: npm run test:coverage -- --reporter=default --reporter=junit --outputFile.junit=test-report.junit.xml
 
       - name: Upload coverage to Codecov
-        if: matrix.node == 20 && matrix.react == 19
+        if: matrix.node == 24 && matrix.react == 19
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -125,7 +125,7 @@ jobs:
         if: steps.changes.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -181,7 +181,7 @@ jobs:
         if: steps.changes.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -243,7 +243,7 @@ jobs:
         if: steps.changes.outputs.source_changed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -281,7 +281,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install dependencies
@@ -322,7 +322,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: "npm"
 
       - name: Install root dependencies
@@ -363,8 +363,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
+          node-version-file: .nvmrc
       - name: Download build artifacts
         uses: actions/download-artifact@v7
         with:
@@ -394,7 +393,7 @@ jobs:
       - name: Test TypeScript definitions
         run: |
           cd test-project
-          npm install -D typescript @types/react
+          npm install -D typescript @types/react @types/react-dom
           cat > test.ts << 'EOF'
           import { withProfiler, ProfiledComponent } from 'vitest-react-profiler';
           import * as React from 'react';
@@ -402,4 +401,4 @@ jobs:
           const profiled: ProfiledComponent<{}> & React.ComponentType<{}> = withProfiler(Component);
           console.log('✅ TypeScript definitions work');
           EOF
-          npx tsc test.ts --noEmit --esModuleInterop --jsx react --moduleResolution node --lib ES2022,DOM,DOM.Iterable
+          npx tsc test.ts --noEmit --esModuleInterop --jsx react --module esnext --moduleResolution bundler --lib ES2022,DOM,DOM.Iterable

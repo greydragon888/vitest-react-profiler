@@ -11,6 +11,7 @@ import type { FC } from "react";
 export function createSimpleProfiledComponent(): ProfiledComponentType<{
   value?: number;
 }> {
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- each call must create a distinct component type (isolation tests rely on it)
   const Component: FC<{ value?: number }> = ({ value = 0 }) => (
     <div>Value: {value}</div>
   );

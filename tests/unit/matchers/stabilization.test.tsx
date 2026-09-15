@@ -115,7 +115,7 @@ describe("toEventuallyStabilize matcher", () => {
       render(<ProfiledComponent />);
 
       const result = await toEventuallyStabilize(ProfiledComponent, {
-        debounceMs: Number.NaN,
+        debounceMs: NaN,
         timeout: 100,
       });
 

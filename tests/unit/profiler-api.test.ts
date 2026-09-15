@@ -366,7 +366,7 @@ describe("ProfilerAPI", () => {
 
       expect(() => {
         snapshot();
-      }).not.toThrowError();
+      }).not.toThrow();
     });
 
     it("should set snapshot index when data exists", () => {
@@ -559,7 +559,7 @@ describe("ProfilerAPI", () => {
       expect(methods.getRendersSinceSnapshot()).toBe(0);
       expect(() => {
         methods.snapshot();
-      }).not.toThrowError();
+      }).not.toThrow();
     });
 
     it("should create working methods with data", () => {
