@@ -401,4 +401,8 @@ jobs:
           const profiled: ProfiledComponent<{}> & React.ComponentType<{}> = withProfiler(Component);
           console.log('✅ TypeScript definitions work');
           EOF
-          npx tsc test.ts --noEmit --esModuleInterop --jsx react --module esnext --moduleResolution bundler --lib ES2022,DOM,DOM.Iterable
+          # test-project sits inside the checkout, so tsc walks up and finds the
+          # repository tsconfig.json, which TypeScript >= 6 rejects with TS5112
+          # when files are passed on the command line. Every option this check
+          # needs is given explicitly, so skipping the config is what we want.
+          npx tsc test.ts --noEmit --ignoreConfig --esModuleInterop --jsx react --module esnext --moduleResolution bundler --lib ES2022,DOM,DOM.Iterable
