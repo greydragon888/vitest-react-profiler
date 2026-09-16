@@ -16,7 +16,7 @@
  */
 
 import { render, cleanup } from "@testing-library/react";
-import { bench, describe, afterEach } from "vitest";
+import { bench, describe, afterEach, expect } from "vitest";
 
 import { clearProfilerData, clearRegistry, withProfiler } from "../../src";
 import {
@@ -36,9 +36,15 @@ describe("Event System - Performance Benchmarks", () => {
   });
 
   describe("1. Success scenarios - async operations (< 20ms target)", () => {
-    // NOTE: These benchmarks often show NaN results because operations complete
-    // in < 1ms (too fast to measure accurately). This is EXPECTED and GOOD -
-    // it confirms that immediate success cases are extremely fast (< 20ms goal).
+    // NOTE: These benchmarks used to report NaN, which was never a sign of
+    // speed. The bench config sets `globals: false` and `expect` was not
+    // imported, so every assertion threw ReferenceError and the task died
+    // before producing a single sample - hence samples=0 and NaN ratios. With
+    // the import they measure: ~7-8ms per call for the two matcher benches
+    // above, ~30-37ms for the three below, over 27-136 samples.
+    //
+    // Each body loops 50 (or 20) times, so a figure here is per call, not per
+    // operation - divide before comparing it with the 20ms goal in the title.
     //
     // What we measure: event subscription/unsubscription overhead
     // What we DON'T measure: actual async waiting time (already immediate)
@@ -409,6 +415,7 @@ describe("Event System - Performance Benchmarks", () => {
 
         // Subscribe listener that accesses history (lazy evaluation)
         const unsubscribe = ProfiledComponent.onRender((info) => {
+          // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- intentional getter access: triggers lazy history evaluation being benchmarked
           void info.history; // Access history (triggers lazy evaluation)
         });
 
@@ -435,6 +442,7 @@ describe("Event System - Performance Benchmarks", () => {
         // Subscribe 10 listeners that access history
         const unsubscribes = Array.from({ length: 10 }, () =>
           ProfiledComponent.onRender((info) => {
+            // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator -- intentional getter access: triggers lazy history evaluation being benchmarked
             void info.history; // Access history
           }),
         );

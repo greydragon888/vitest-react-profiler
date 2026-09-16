@@ -170,6 +170,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Concurrent Features Stress Tests - startTransition", () => {
   let gcObserver: GCObserver;
 
@@ -204,6 +216,7 @@ describe("Concurrent Features Stress Tests - startTransition", () => {
     const ProfiledComponent = withProfiler(RapidTransitionComponent);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -233,6 +246,8 @@ describe("Concurrent Features Stress Tests - startTransition", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -267,7 +282,7 @@ describe("Concurrent Features Stress Tests - startTransition", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB for 500 transitions
+      expect(heapDeltaMB).toBeLessThan(4); // < 4 MB for 500 transitions (measured 1.5 MB)
     }
 
     // Cleanup
@@ -358,6 +373,7 @@ describe("Concurrent Features Stress Tests - useDeferredValue", () => {
     const ProfiledComponent = withProfiler(DeferredStressComponent);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -387,6 +403,8 @@ describe("Concurrent Features Stress Tests - useDeferredValue", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
+
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -415,7 +433,7 @@ describe("Concurrent Features Stress Tests - useDeferredValue", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(30); // < 30 MB for 1000 updates
+      expect(heapDeltaMB).toBeLessThan(1); // < 1 MB for 1000 updates (measured 0.32 MB)
     }
 
     // Cleanup

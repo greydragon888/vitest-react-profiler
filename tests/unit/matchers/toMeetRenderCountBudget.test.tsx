@@ -40,7 +40,7 @@ describe("Custom Matchers", () => {
       // 1 mount + 2 updates = 3 total (exceeds budget of 2)
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({ maxRenders: 2 });
-      }).toThrowError(/Total renders: 3 \(budget: 2\) ❌/);
+      }).toThrow(/Total renders: 3 \(budget: 2\) ❌/);
     });
 
     it("should include actual render summary in failure message", () => {
@@ -51,7 +51,7 @@ describe("Custom Matchers", () => {
       // Verify "Actual:" line is included in failure message
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({ maxRenders: 1 });
-      }).toThrowError(/Actual:/);
+      }).toThrow(/Actual:/);
     });
 
     it("should pass when mounts within budget", () => {
@@ -68,7 +68,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({ maxMounts: 1 });
-      }).toThrowError(/Mounts: 2 \(budget: 1\) ❌/);
+      }).toThrow(/Mounts: 2 \(budget: 1\) ❌/);
     });
 
     it("should pass when updates within budget", () => {
@@ -90,7 +90,7 @@ describe("Custom Matchers", () => {
       // 3 updates (exceeds budget of 2)
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({ maxUpdates: 2 });
-      }).toThrowError(/Updates: 3 \(budget: 2\) ❌/);
+      }).toThrow(/Updates: 3 \(budget: 2\) ❌/);
     });
 
     it("should check multiple constraints together", () => {
@@ -120,7 +120,7 @@ describe("Custom Matchers", () => {
           maxMounts: 0,
           maxUpdates: 1,
         });
-      }).toThrowError(/Total renders: 4 \(budget: 2\) ❌/);
+      }).toThrow(/Total renders: 4 \(budget: 2\) ❌/);
     });
 
     it("should use componentName in error messages", () => {
@@ -134,7 +134,7 @@ describe("Custom Matchers", () => {
           maxRenders: 1,
           componentName: "Header",
         });
-      }).toThrowError(/Expected Header to meet render count budget/);
+      }).toThrow(/Expected Header to meet render count budget/);
     });
 
     it("should fail when budget is empty object", () => {
@@ -142,7 +142,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({});
-      }).toThrowError(/Budget must specify at least one constraint/);
+      }).toThrow(/Budget must specify at least one constraint/);
     });
 
     it("should fail with negative budget value", () => {
@@ -150,7 +150,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({ maxRenders: -1 });
-      }).toThrowError(/Budget.maxRenders must be a non-negative integer/);
+      }).toThrow(/Budget.maxRenders must be a non-negative integer/);
     });
 
     it("should fail with non-integer budget value", () => {
@@ -158,7 +158,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toMeetRenderCountBudget({ maxRenders: 1.5 });
-      }).toThrowError(/Budget.maxRenders must be a non-negative integer/);
+      }).toThrow(/Budget.maxRenders must be a non-negative integer/);
     });
 
     it("should fail with object budget value", () => {
@@ -168,7 +168,7 @@ describe("Custom Matchers", () => {
         expect(ProfiledComponent).toMeetRenderCountBudget({
           maxRenders: { invalid: "object" } as any,
         });
-      }).toThrowError(/Budget.maxRenders must not be object or null/);
+      }).toThrow(/Budget.maxRenders must not be object or null/);
     });
 
     it("should fail with non-profiled component", () => {
@@ -176,9 +176,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toMeetRenderCountBudget({ maxRenders: 1 });
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should work with .not modifier when budget exceeded", () => {
@@ -202,7 +200,7 @@ describe("Custom Matchers", () => {
         expect(ProfiledComponent).not.toMeetRenderCountBudget({
           maxRenders: 5,
         });
-      }).toThrowError(
+      }).toThrow(
         /Expected Component NOT to meet render count budget, but it did/,
       );
     });
@@ -286,7 +284,7 @@ describe("Custom Matchers", () => {
         expect(ProfiledComponent).toMeetRenderCountBudget({
           maxRenders: null as any,
         });
-      }).toThrowError(/Budget.maxRenders must not be object or null/);
+      }).toThrow(/Budget.maxRenders must not be object or null/);
     });
 
     it("should include constraint names in violation messages", () => {
@@ -473,8 +471,8 @@ describe("Custom Matchers", () => {
 
         // Verify violations are separated by "\n  " (newline + indent)
         const violationsSection = message
-          .split("Violations:")[1]
-          .split("Actual:")[0];
+          .split("Violations:", 2)[1]
+          .split("Actual:", 1)[0];
 
         expect(violationsSection).toContain("\n  Total renders exceeded");
         expect(violationsSection).toContain("\n  Mount count exceeded");
@@ -607,7 +605,7 @@ describe("Custom Matchers", () => {
       // Test with number primitive
       try {
         expect(ProfiledComponent).toMeetRenderCountBudget({
-          maxMounts: 3.14 as any,
+          maxMounts: 3.14,
         });
 
         throw new Error("Should have thrown");

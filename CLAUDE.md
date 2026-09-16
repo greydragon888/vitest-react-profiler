@@ -67,10 +67,12 @@ function process(data: unknown) {
 
 **Version numbers MUST match between:**
 
-- `package.json` (line 3: `"version"`)
-- `sonar-project.properties` (line 4: `sonar.projectVersion`)
+- `package.json` (`"version"`)
+- `sonar-project.properties` (`sonar.projectVersion`)
+- `.release-please-manifest.json` and the **Current Version** line below
 
-Always update both when changing version.
+Never bump them by hand: release-please updates all of them in the release PR (see
+[Release Workflow](#release-workflow)). `tests/unit/release-config.test.ts` fails when they drift apart.
 
 ### Rule 5: Frozen Arrays
 
@@ -157,7 +159,7 @@ To prevent context pollution, follow these file access rules:
 
 **Name**: `vitest-react-profiler`
 **Type**: NPM Package / Testing Utility Library
-**Current Version**: 1.9.0
+**Current Version**: 1.12.0 <!-- x-release-please-version -->
 
 **Purpose**: Performance testing utility for React components and hooks with sync/async update tracking in Vitest.
 
@@ -175,7 +177,7 @@ Runtime: Node.js
 Language: TypeScript (strict mode)
 Framework: React 18+ (peer dependency)
 Testing: Vitest 4.0+
-Build: tsup (ESM + CJS bundles)
+Build: tsdown (ESM + CJS bundles)
 CI/CD: GitHub Actions
 Quality: SonarCloud, Codecov
 ```
@@ -214,10 +216,10 @@ vitest-react-profiler/
 | `vitest.config.properties.mts` | Property tests         | Extends common, coverage disabled, 30s timeout                      |
 | `vitest.config.bench.mts`      | Benchmarks             | Extends common, forks pool, 600s timeout                            |
 | `vitest.stryker.config.mts`    | Mutation testing       | Extends common, forks pool, 5s timeout                              |
-| `vitest.stress.config.mts`     | Stress tests           | Extends common, memory/load testing                                 |
+| `vitest.config.stress.mts`     | Stress tests           | Extends common, memory/load testing                                 |
 | `eslint.config.mjs`            | ESLint rules           | Flat config format                                                  |
 | `tsconfig.json`                | TypeScript             | Path aliases (`@/` → `src/`)                                        |
-| `tsup.config.ts`               | Build config           | ESM + CJS bundles                                                   |
+| `tsdown.config.ts`             | Build config           | ESM + CJS bundles                                                   |
 | `codecov.yml`                  | Codecov config         | 100% target, bundle analysis                                        |
 | `sonar-project.properties`     | SonarCloud             | Quality gates, version must match `package.json`                    |
 
@@ -350,10 +352,9 @@ Run: `npm run test:mutation`
 
 When introducing breaking changes:
 
-1. Update `package.json` version (major bump)
-2. Update `sonar-project.properties` version (must match)
-3. Update README.md with migration guide
-4. Update examples in `examples/`
+1. Mark the commit as breaking (`feat!: …` or a `BREAKING CHANGE:` footer) — release-please bumps the major version
+2. Update README.md with migration guide
+3. Update examples in `examples/`
 
 ### Commit Format
 
@@ -361,9 +362,23 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 - `feat` - New feature | `fix` - Bug fix | `perf` - Performance
 - `refactor` - Code restructuring | `test` - Tests | `docs` - Documentation
-- `chore` - Maintenance | `breaking` - Breaking change
+- `build` - Build system / published bundle | `ci` - CI | `chore` - Maintenance
+- Breaking change: `feat!: …` / `fix!: …` or a `BREAKING CHANGE:` footer
 
 Format: `type(scope): description`
+
+The type decides the release: `feat` → minor, `fix` / `perf` / `build` / `revert` → patch, breaking → major;
+`chore`, `ci`, `docs`, `test`, `refactor`, `style` are not released. Dev-only dependency updates are `chore(deps-dev)`.
+
+### Release Workflow
+
+Automated with release-please (`release-please-config.json`, `.github/workflows/release.yml`):
+
+1. Every push to `master` opens or updates the `release: vX.Y.Z` PR (version bumps + `CHANGELOG.md`)
+2. Merging it tags `vX.Y.Z`, creates the GitHub Release and publishes to npm via Trusted Publishing (OIDC)
+3. Every run publishes a tagged version missing from npm, so a failed publish is fixed by re-running the workflow
+
+npm Trusted Publishing is bound to the file name `release.yml` — do not rename it or add an `environment:`.
 
 ### npm Scripts
 

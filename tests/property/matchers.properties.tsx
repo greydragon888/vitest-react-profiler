@@ -1355,7 +1355,7 @@ describe("Property-Based Tests: notToHaveRenderLoops Invariants", () => {
       [fc.oneof(fc.constant(null), fc.constant(undefined), fc.string())],
       { numRuns: 200 },
     )("rejects non-profiled components with clear error", (invalidInput) => {
-      const result = notToHaveRenderLoops(invalidInput as any, {
+      const result = notToHaveRenderLoops(invalidInput, {
         maxConsecutiveUpdates: 10,
       });
 

@@ -194,7 +194,7 @@ describe("Property-Based Tests: renderProfiled", () => {
       const count = component.getRenderCount();
       const history = component.getRenderHistory();
 
-      expect(history.length).toBe(count);
+      expect(history).toHaveLength(count);
       expect(count).toBe(values.length + 1); // +1 for initial render
     });
   });
@@ -298,7 +298,7 @@ describe("Property-Based Tests: renderProfiled", () => {
         const updatedHistory = component.getRenderHistory();
 
         expect(updatedHistory[0]).toBe("mount");
-        expect(updatedHistory.length).toBe(rerenderCount + 1);
+        expect(updatedHistory).toHaveLength(rerenderCount + 1);
       },
     );
 
@@ -319,7 +319,7 @@ describe("Property-Based Tests: renderProfiled", () => {
         const mounts = history.filter((r) => r === "mount");
 
         // Should have exactly 1 mount
-        expect(mounts.length).toBe(1);
+        expect(mounts).toHaveLength(1);
 
         // Should have at least some updates (since rerenderCount >= 1)
         expect(updates.length).toBeGreaterThan(0);
@@ -386,7 +386,7 @@ describe("Property-Based Tests: renderProfiled", () => {
       expect(component.getRenderCount()).toBe(2);
 
       // History should match
-      expect(component.getRenderHistory().length).toBe(2);
+      expect(component.getRenderHistory()).toHaveLength(2);
     });
   });
 });

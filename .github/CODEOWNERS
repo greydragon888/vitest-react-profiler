@@ -26,4 +26,6 @@
 /examples/ @greydragon888
 
 # Build configuration
-/tsup.config.ts @greydragon888
+/tsdown.config.ts @greydragon888
+/release-please-config.json @greydragon888
+/.release-please-manifest.json @greydragon888

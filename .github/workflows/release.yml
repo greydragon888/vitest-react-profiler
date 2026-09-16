@@ -1,121 +1,166 @@
 name: Release
 
+# Release automation: release-please + npm Trusted Publishing (OIDC)
+#
+# 1. Every push to master: release-please opens or updates the "release: vX.Y.Z" PR from
+#    Conventional Commits (feat → minor; fix / perf / build / revert → patch; `!` → major).
+# 2. Merging that PR: release-please tags vX.Y.Z and creates the GitHub Release.
+# 3. Every run then reconciles npm: a tagged version that is missing from npm is published
+#    from its tag. A failed publish is therefore retried by the next run or by "Run workflow".
+#
+# npm Trusted Publishing is bound to THIS file name (release.yml) with no environment:
+# renaming the file or adding `environment:` breaks publishing until the Trusted Publisher
+# on npmjs.com is updated. No NPM_TOKEN is used.
+#
+# Requires the RELEASE_PLEASE_TOKEN secret: a fine-grained PAT for this repository with
+# Contents + Pull requests: read and write. GITHUB_TOKEN cannot be used here: Actions may
+# not create pull requests in this repository, and PRs it creates would not trigger CI.
+
 on:
   push:
-    tags:
-      - "v*"
+    branches: [master]
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Release version (e.g., 1.0.0)"
-        required: true
-        type: string
 
-# NOTE: This workflow uses npm Trusted Publishing with OIDC (OpenID Connect)
-# No NPM_TOKEN secret is required - authentication is handled via GitHub's OIDC tokens
-#
-# Prerequisites:
-# 1. npm CLI >= 11.5.1 (included with Node.js 24+)
-# 2. Package must be configured with Trusted Publisher on npmjs.com:
-#    - Go to: https://www.npmjs.com/package/vitest-react-profiler/access
-#    - Add Trusted Publisher with these settings:
-#      * Provider: GitHub Actions
-#      * Organization/User: greydragon888
-#      * Repository: vitest-react-profiler
-#      * Workflow: release.yml
-#      * Environment: (leave empty)
-#
-# Documentation: https://docs.npmjs.com/trusted-publishers/
+permissions: {}
 
-permissions:
-  contents: write
-  packages: write
-  id-token: write # Required for OIDC Trusted Publishing
+concurrency:
+  group: release
+  # Never cancel a run between tagging and `npm publish`
+  cancel-in-progress: false
 
 jobs:
   release:
-    name: Release to NPM
+    name: Release
+    # npm Trusted Publishing requires a GitHub-hosted runner
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write # npm Trusted Publishing (OIDC) + provenance
     steps:
+      - name: Check release token
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_PLEASE_TOKEN" ]; then
+            echo "::error::Secret RELEASE_PLEASE_TOKEN is not set: a fine-grained PAT for this repository with Contents + Pull requests read/write (see CONTRIBUTING.md, Versioning and Releases)."
+            exit 1
+          fi
+
+      - name: Release PR / GitHub Release
+        id: release-please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # After release-please, so a tag it has just created is fetched too
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: "npm"
-          # NOTE: Do NOT use registry-url here!
-          # It creates .npmrc with ${NODE_AUTH_TOKEN} which conflicts with OIDC Trusted Publishing.
-          # npm CLI v11.5.1+ automatically detects OIDC and uses it for authentication.
-          # Node.js 24 includes npm 11.6.2 which supports OIDC Trusted Publishing.
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint code
-        run: npm run lint
-
-      - name: Verify package
+      - name: Check npm state
+        id: npm
         run: |
-          npm pack --dry-run
-          echo "Package contents:"
-          npm pack --json | node -e "const data=JSON.parse(require('fs').readFileSync(0,'utf8')); data[0].files.forEach(f=>console.log(f.path))" || true
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          {
+            echo "name=$NAME"
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Set version from input
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          npm version ${{ github.event.inputs.version }} --no-git-tag-version --allow-same-version
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-
-      - name: Set version from tag
-        if: github.event_name == 'push'
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          npm version "$VERSION" --no-git-tag-version --allow-same-version
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-
-      - name: Debug OIDC environment
-        run: |
-          echo "=== GitHub Context ==="
-          echo "Event: ${{ github.event_name }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Workflow: ${{ github.workflow }}"
-          echo ""
-          echo "=== OIDC Environment Variables ==="
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL: ${ACTIONS_ID_TOKEN_REQUEST_URL:-NOT SET}"
-          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+SET (${#ACTIONS_ID_TOKEN_REQUEST_TOKEN} chars)}"
-          echo ""
-          echo "=== npm Configuration ==="
-          echo "npm version: $(npm --version)"
-          echo "node version: $(node --version)"
-          echo ""
-          echo "=== .npmrc files ==="
-          echo "~/.npmrc:"
-          cat ~/.npmrc 2>/dev/null || echo "(not found)"
-          echo ""
-          echo "NPM_CONFIG_USERCONFIG: ${NPM_CONFIG_USERCONFIG:-NOT SET}"
-          if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
-            echo "Content of $NPM_CONFIG_USERCONFIG:"
-            cat "$NPM_CONFIG_USERCONFIG" | sed 's/=.*/=***MASKED***/'
+          if ! git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "status=$TAG is not tagged yet — nothing to publish" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-      - name: Publish to NPM (via OIDC Trusted Publishing)
-        run: npm publish --provenance --access public --registry https://registry.npmjs.org
-        # Note: No NODE_AUTH_TOKEN needed - npm CLI uses OIDC token automatically
-        # The CLI exchanges the workflow's OIDC ID token for publish credentials
-        # Requires: npm CLI >= 11.5.1 (included with Node.js 22+)
+          # Only E404 means "not published"; any other registry error fails the run
+          if npm view "$NAME@$VERSION" version > /dev/null 2> "$RUNNER_TEMP/npm-view.err"; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "status=$NAME@$VERSION is already on npm" >> "$GITHUB_OUTPUT"
+          elif grep -q "E404" "$RUNNER_TEMP/npm-view.err"; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "status=$TAG is tagged but missing on npm — publishing" >> "$GITHUB_OUTPUT"
+          else
+            cat "$RUNNER_TEMP/npm-view.err"
+            echo "::error::Could not query npm for $NAME@$VERSION"
+            exit 1
+          fi
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      # Publish exactly what was tagged, never a later master commit
+      - name: Checkout release tag
+        if: steps.npm.outputs.publish == 'true'
+        env:
+          TAG: ${{ steps.npm.outputs.tag }}
+        run: git checkout --detach "refs/tags/$TAG"
+
+      - name: Setup Node.js
+        if: steps.npm.outputs.publish == 'true'
+        uses: actions/setup-node@v4
         with:
-          name: v${{ env.VERSION }}
-          tag_name: v${{ env.VERSION }}
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(env.VERSION, '-') }}
-          files: |
-            vitest-react-profiler-*.tgz
+          node-version-file: .nvmrc
+          cache: "npm"
+          # No registry-url: the .npmrc it writes (NODE_AUTH_TOKEN) conflicts with OIDC.
+          # npm >= 11.5.1 (bundled with Node 24) exchanges the OIDC token itself.
+
+      - name: Install dependencies
+        if: steps.npm.outputs.publish == 'true'
+        # No lifecycle scripts in a job that can mint an OIDC token
+        run: npm ci --ignore-scripts
+
+      - name: Publish to npm
+        if: steps.npm.outputs.publish == 'true'
+        # prepublishOnly runs typecheck, tests with coverage, build, attw, publint and knip first
+        run: npm publish --provenance --access public
+
+      - name: Verify publication
+        if: steps.npm.outputs.publish == 'true'
+        env:
+          SPEC: ${{ steps.npm.outputs.name }}@${{ steps.npm.outputs.version }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if npm view "$SPEC" version > /dev/null 2>&1; then
+              PROVENANCE=$(npm view "$SPEC" dist.attestations.provenance.predicateType)
+              echo "$SPEC is on npm (provenance: ${PROVENANCE:-none})"
+              if [ -z "$PROVENANCE" ]; then
+                echo "::warning::$SPEC has no provenance attestation"
+              fi
+              exit 0
+            fi
+            echo "Attempt $attempt: $SPEC not visible yet"
+            sleep 10
+          done
+          echo "::error::$SPEC was published but is not visible on npm after 60s"
+          exit 1
+
+      - name: Summary
+        if: always()
+        env:
+          PRS_CREATED: ${{ steps.release-please.outputs.prs_created }}
+          PR: ${{ steps.release-please.outputs.pr }}
+          RELEASE_CREATED: ${{ steps.release-please.outputs.release_created }}
+          TAG_NAME: ${{ steps.release-please.outputs.tag_name }}
+          NPM_STATUS: ${{ steps.npm.outputs.status }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          PR_URL=$(printf '%s' "${PR:-}" | jq -r '.url // empty' 2> /dev/null || true)
+          {
+            echo "## Release"
+            echo ""
+            echo "| Step | Result |"
+            echo "| --- | --- |"
+            echo "| Release PR created or updated | ${PRS_CREATED:-false}${PR_URL:+ ($PR_URL)} |"
+            echo "| GitHub Release created | ${RELEASE_CREATED:-false}${TAG_NAME:+ ($TAG_NAME)} |"
+            echo "| npm | ${NPM_STATUS:-not checked} |"
+            echo "| Job status | $JOB_STATUS |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$JOB_STATUS" != "success" ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Fix the cause, then re-run: **Actions → Release → Run workflow** publishes any tagged version missing from npm." >> "$GITHUB_STEP_SUMMARY"
+          fi

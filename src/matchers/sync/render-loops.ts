@@ -94,7 +94,7 @@ function detectLoop(
   const { maxConsecutiveUpdates, maxConsecutiveNested, ignoreInitialUpdates } =
     options;
 
-  let currentPhase: PhaseType | undefined = undefined;
+  let currentPhase: PhaseType | undefined;
   let consecutiveCount = 0;
   let startIndex = 0;
   let updatesSeen = 0;
@@ -166,7 +166,7 @@ function recordMaxRun(
  */
 function computeRunStats(history: readonly PhaseType[]): RunStats {
   const stats: RunStats = { maxUpdateRun: 0, maxNestedRun: 0 };
-  let currentPhase: PhaseType | undefined = undefined;
+  let currentPhase: PhaseType | undefined;
   let currentRun = 0;
 
   for (const phase of history) {

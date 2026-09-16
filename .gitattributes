@@ -97,7 +97,7 @@ prettier.config.* export-ignore
 commitlint.config.* export-ignore
 vitest.config.* export-ignore
 tsconfig.*.json export-ignore
-tsup.config.* export-ignore
+tsdown.config.* export-ignore
 *.test.ts export-ignore
 *.test.tsx export-ignore
 *.spec.ts export-ignore

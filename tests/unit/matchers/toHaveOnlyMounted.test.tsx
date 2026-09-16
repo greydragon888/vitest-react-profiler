@@ -24,15 +24,13 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toHaveOnlyMounted();
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should fail when component never rendered", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveOnlyMounted();
-      }).toThrowError(
+      }).toThrow(
         /Expected component to have only mounts, but it never rendered/,
       );
     });
@@ -47,9 +45,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(TestProfiledComponent).toHaveOnlyMounted();
-      }).toThrowError(
-        /Expected component to have only mounts, but it also updated/,
-      );
+      }).toThrow(/Expected component to have only mounts, but it also updated/);
     });
 
     it("should fail when component only updated (edge case)", () => {
@@ -66,9 +62,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(TestProfiledComponent).toHaveOnlyMounted();
-      }).toThrowError(
-        /Expected component to have only mounts, but it only updated/,
-      );
+      }).toThrow(/Expected component to have only mounts, but it only updated/);
 
       // Restore the mock
       vi.restoreAllMocks();
@@ -83,7 +77,7 @@ describe("Custom Matchers", () => {
       // Test the negative case
       expect(() => {
         expect(ProfiledComponent).not.toHaveOnlyMounted();
-      }).toThrowError(/Expected component not to have only mounts, but it did/);
+      }).toThrow(/Expected component not to have only mounts, but it did/);
     });
 
     it("should only check for mount phases (ignore updates)", () => {
@@ -99,9 +93,7 @@ describe("Custom Matchers", () => {
       // Despite 3 renders (1 mount + 2 updates), should fail because has updates
       expect(() => {
         expect(TestProfiledComponent).toHaveOnlyMounted();
-      }).toThrowError(
-        /Expected component to have only mounts, but it also updated/,
-      );
+      }).toThrow(/Expected component to have only mounts, but it also updated/);
     });
 
     it("should distinguish 'only updated' vs 'also updated' error messages", () => {
@@ -125,7 +117,7 @@ describe("Custom Matchers", () => {
       // First verify it throws
       expect(() => {
         expect(TestProfiledComponent1).toHaveOnlyMounted();
-      }).toThrowError();
+      }).toThrow();
 
       // Capture error message
       let message1 = "";
@@ -154,7 +146,7 @@ describe("Custom Matchers", () => {
       // First verify it throws
       expect(() => {
         expect(TestProfiledComponent2).toHaveOnlyMounted();
-      }).toThrowError();
+      }).toThrow();
 
       // Capture error message
       let message2 = "";

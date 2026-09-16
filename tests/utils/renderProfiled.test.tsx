@@ -242,7 +242,7 @@ describe("renderProfiled", () => {
       // debug should not throw
       expect(() => {
         debug();
-      }).not.toThrowError();
+      }).not.toThrow();
       expect(component).toHaveRenderedTimes(1);
     });
   });

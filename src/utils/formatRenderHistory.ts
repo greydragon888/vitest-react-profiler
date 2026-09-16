@@ -67,31 +67,17 @@ export function formatRenderSummary(history: readonly PhaseType[]): string {
     return "0 renders";
   }
 
-  let mounts = 0;
-  let updates = 0;
-  let nested = 0;
+  const counts: Record<PhaseType, number> = {
+    mount: 0,
+    update: 0,
+    "nested-update": 0,
+  };
 
   for (const phase of history) {
-    switch (phase) {
-      case "mount": {
-        mounts++;
-
-        break;
-      }
-      case "update": {
-        updates++;
-
-        break;
-      }
-      case "nested-update": {
-        nested++;
-
-        break;
-      }
-      // No default - all possible PhaseType values are handled
-    }
+    counts[phase]++;
   }
 
+  const { mount: mounts, update: updates, "nested-update": nested } = counts;
   const parts: string[] = [];
 
   if (mounts > 0) {

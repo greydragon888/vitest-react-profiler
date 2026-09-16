@@ -88,7 +88,7 @@ describe("Snapshot API Integration", () => {
 
       expect(() => {
         expect(ProfiledCounter).toHaveRerenderedOnce();
-      }).toThrowError(/rerendered 2 times/);
+      }).toThrow(/rerendered 2 times/);
     });
 
     it("should work with state-triggered rerenders", () => {
@@ -119,7 +119,7 @@ describe("Snapshot API Integration", () => {
 
       expect(() => {
         expect(ProfiledCounter).toNotHaveRerendered();
-      }).toThrowError(/rerendered 1 time/);
+      }).toThrow(/rerendered 1 time/);
     });
   });
 
@@ -152,7 +152,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered();
-        }).toThrowError(
+        }).toThrow(
           /Expected component to rerender after snapshot, but it did not/,
         );
       });
@@ -173,7 +173,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).not.toHaveRerendered();
-        }).toThrowError(
+        }).toThrow(
           /Expected component not to rerender after snapshot, but it rerendered 1 time/,
         );
       });
@@ -206,7 +206,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).not.toHaveRerendered();
-        }).toThrowError(
+        }).toThrow(
           /Expected component not to rerender after snapshot, but it rerendered 2 times/,
         );
       });
@@ -232,7 +232,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(3);
-        }).toThrowError(
+        }).toThrow(
           /Expected component to rerender 3 times after snapshot, but it rerendered 1 time/,
         );
       });
@@ -247,7 +247,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(2);
-        }).toThrowError(
+        }).toThrow(
           /Expected component to rerender 2 times after snapshot, but it rerendered 3 times/,
         );
       });
@@ -278,7 +278,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).not.toHaveRerendered(2);
-        }).toThrowError(
+        }).toThrow(
           /Expected component not to rerender 2 times after snapshot, but it did/,
         );
       });
@@ -291,7 +291,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).not.toHaveRerendered(1);
-        }).toThrowError(
+        }).toThrow(
           /Expected component not to rerender 1 time after snapshot, but it did/,
         );
       });
@@ -305,7 +305,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(1);
-        }).toThrowError(
+        }).toThrow(
           /Expected component to rerender 1 time after snapshot, but it rerendered 2 times/,
         );
       });
@@ -318,7 +318,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(3);
-        }).toThrowError(
+        }).toThrow(
           /Expected component to rerender 3 times after snapshot, but it rerendered 1 time/,
         );
       });
@@ -328,7 +328,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(-1);
-        }).toThrowError(
+        }).toThrow(
           /Invalid expected value: -1. Must be a non-negative integer/,
         );
       });
@@ -338,7 +338,7 @@ describe("Snapshot API Integration", () => {
 
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(1.5);
-        }).toThrowError(
+        }).toThrow(
           /Invalid expected value: 1.5. Must be a non-negative integer/,
         );
       });
@@ -349,7 +349,7 @@ describe("Snapshot API Integration", () => {
         expect(() => {
           // @ts-expect-error - Testing invalid parameter
           expect(ProfiledCounter).toHaveRerendered("three");
-        }).toThrowError(
+        }).toThrow(
           /Invalid expected value: three. Must be a non-negative integer/,
         );
       });
@@ -360,7 +360,7 @@ describe("Snapshot API Integration", () => {
         expect(() => {
           // @ts-expect-error - Testing invalid parameter
           expect(ProfiledCounter).toHaveRerendered(null);
-        }).toThrowError(
+        }).toThrow(
           /Invalid expected value: null. Must be a non-negative integer/,
         );
       });
@@ -375,7 +375,7 @@ describe("Snapshot API Integration", () => {
         // Should work like toHaveRerendered() without arg
         expect(() => {
           expect(ProfiledCounter).toHaveRerendered(undefined);
-        }).toThrowError(
+        }).toThrow(
           /Expected component to rerender after snapshot, but it did not/,
         );
       });
@@ -425,9 +425,7 @@ describe("Snapshot API Integration", () => {
       it("should fail with appropriate message", () => {
         expect(() => {
           expect("not-a-component").toHaveRerendered();
-        }).toThrowError(
-          /Expected a profiled component created with withProfiler/,
-        );
+        }).toThrow(/Expected a profiled component created with withProfiler/);
       });
     });
   });

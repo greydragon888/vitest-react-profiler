@@ -25,7 +25,7 @@
   <!-- Code Quality Tools -->
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Built with tsup](https://img.shields.io/badge/built%20with-tsup-blue?style=flat-square)](https://tsup.egoist.dev)
+[![Built with tsdown](https://img.shields.io/badge/built%20with-tsdown-blue?style=flat-square)](https://tsdown.dev)
 [![ESLint](https://img.shields.io/badge/eslint-9.39-4B32C3?style=flat-square&logo=eslint)](https://eslint.org/)
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 

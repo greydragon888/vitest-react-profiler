@@ -83,13 +83,11 @@ const renderEventInfoArbitrary = fc
     phaseArbitrary,
     fc.array(phaseArbitrary, { minLength: 1, maxLength: 100 }),
   )
-  .map(
-    ([count, phase, history]): RenderEventInfo => ({
-      count,
-      phase,
-      history: Object.freeze(history),
-    }),
-  );
+  .map(([count, phase, history]): RenderEventInfo => ({
+    count,
+    phase,
+    history: Object.freeze(history),
+  }));
 
 describe("Property-Based Tests: Event System", () => {
   describe("Emit and Subscribe Invariants", () => {
@@ -107,7 +105,7 @@ describe("Property-Based Tests: Event System", () => {
             phase: "update",
             history: Object.freeze([
               "mount",
-              ...(Array.from({ length: i }).fill("update") as PhaseType[]),
+              ...Array.from({ length: i }, (): PhaseType => "update"),
             ]),
           });
         }
@@ -464,9 +462,10 @@ describe("Property-Based Tests: Event System", () => {
     )("random sequence of operations maintains invariants", (operations) => {
       const events = new ProfilerEvents();
       const listeners = Array.from({ length: 10 }, () => vi.fn());
-      const unsubscribers: ((() => void) | null)[] = Array.from<
-        (() => void) | null
-      >({ length: 10 }).fill(null);
+      const unsubscribers: ((() => void) | null)[] = Array.from(
+        { length: 10 },
+        () => null,
+      );
       let totalEmits = 0;
 
       operations.forEach(({ action, listenerIndex }) => {

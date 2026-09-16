@@ -347,15 +347,13 @@ describe("ProfilerData", () => {
       // Simulate bug: first render is "update" instead of "mount"
       data.addRender("update");
 
-      expect(() => data.hasMounted()).toThrowError(Error);
-      expect(() => data.hasMounted()).toThrowError(/Invariant violation/);
-      expect(() => data.hasMounted()).toThrowError(
-        /First render must be "mount"/,
-      );
-      expect(() => data.hasMounted()).toThrowError(/got "update"/);
+      expect(() => data.hasMounted()).toThrow(Error);
+      expect(() => data.hasMounted()).toThrow(/Invariant violation/);
+      expect(() => data.hasMounted()).toThrow(/First render must be "mount"/);
+      expect(() => data.hasMounted()).toThrow(/got "update"/);
 
       // Verify exact error explanation (kills StringLiteral mutation)
-      expect(() => data.hasMounted()).toThrowError(
+      expect(() => data.hasMounted()).toThrow(
         /This indicates a bug in React Profiler or library integration\./,
       );
     });
@@ -554,7 +552,7 @@ describe("ProfilerData", () => {
       expect(() => {
         data.addRender("mount");
         data.addRender("update");
-      }).not.toThrowError();
+      }).not.toThrow();
 
       expect(data.getRenderCount()).toBe(2);
     });
@@ -735,7 +733,7 @@ describe("ProfilerData", () => {
         for (let i = 0; i < 10_000; i++) {
           data.addRender(i === 0 ? "mount" : "update");
         }
-      }).not.toThrowError();
+      }).not.toThrow();
 
       expect(data.getRenderCount()).toBe(10_000);
     });
@@ -751,7 +749,7 @@ describe("ProfilerData", () => {
       // 10,001st render should throw
       expect(() => {
         data.addRender("update");
-      }).toThrowError(/Infinite render loop detected/);
+      }).toThrow(/Infinite render loop detected/);
     });
 
     it("should include render count in error message", () => {
@@ -763,7 +761,7 @@ describe("ProfilerData", () => {
 
       expect(() => {
         data.addRender("update");
-      }).toThrowError(/Component rendered 10000 times/);
+      }).toThrow(/Component rendered 10000 times/);
     });
 
     it("should include last 10 phases in error message", () => {
@@ -920,7 +918,7 @@ describe("ProfilerData", () => {
       // Trigger circuit breaker
       expect(() => {
         data.addRender("update");
-      }).toThrowError();
+      }).toThrow();
 
       // Can still read data
       expect(data.getRenderCount()).toBe(10_000);
@@ -935,7 +933,7 @@ describe("ProfilerData", () => {
       // Can add renders again after clear
       expect(() => {
         data.addRender("mount");
-      }).not.toThrowError();
+      }).not.toThrow();
 
       expect(data.getRenderCount()).toBe(1);
     });

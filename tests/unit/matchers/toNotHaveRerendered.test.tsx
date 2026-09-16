@@ -18,7 +18,7 @@ describe("toNotHaveRerendered", () => {
 
     expect(() => {
       expect(ProfiledComponent).toNotHaveRerendered();
-    }).not.toThrowError();
+    }).not.toThrow();
   });
 
   it("should fail when one rerender after snapshot", () => {
@@ -49,7 +49,7 @@ describe("toNotHaveRerendered", () => {
 
     expect(() => {
       expect(ProfiledComponent).toNotHaveRerendered();
-    }).toThrowError(
+    }).toThrow(
       /Expected component not to rerender after snapshot, but it rerendered 2 times/,
     );
   });
@@ -59,7 +59,7 @@ describe("toNotHaveRerendered", () => {
 
     expect(() => {
       expect(regularComponent).toNotHaveRerendered();
-    }).toThrowError(/Expected a profiled component created with withProfiler/);
+    }).toThrow(/Expected a profiled component created with withProfiler/);
   });
 
   it("should provide correct message for .not when passed", () => {
@@ -68,9 +68,7 @@ describe("toNotHaveRerendered", () => {
 
     expect(() => {
       expect(ProfiledComponent).not.toNotHaveRerendered();
-    }).toThrowError(
-      /Expected component to rerender after snapshot, but it did not/,
-    );
+    }).toThrow(/Expected component to rerender after snapshot, but it did not/);
   });
 
   it("should pass with snapshot at beginning (no initial renders)", () => {
@@ -78,7 +76,7 @@ describe("toNotHaveRerendered", () => {
 
     expect(() => {
       expect(ProfiledComponent).toNotHaveRerendered();
-    }).not.toThrowError();
+    }).not.toThrow();
   });
 
   it("should work with multiple snapshots", () => {
@@ -90,13 +88,13 @@ describe("toNotHaveRerendered", () => {
     // After first snapshot: 1 rerender, should fail
     expect(() => {
       expect(ProfiledComponent).toNotHaveRerendered();
-    }).toThrowError();
+    }).toThrow();
 
     // New snapshot resets count
     ProfiledComponent.snapshot();
 
     expect(() => {
       expect(ProfiledComponent).toNotHaveRerendered();
-    }).not.toThrowError();
+    }).not.toThrow();
   });
 });

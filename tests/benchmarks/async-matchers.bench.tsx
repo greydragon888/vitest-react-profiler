@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
-import { bench, describe } from "vitest";
+import { bench, describe, expect } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearProfilerData, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -38,8 +38,12 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "1 render - expect 10 (fast timeout) - 50 iterations",
       async () => {
-        // 50 iterations to amortize GC spikes and stabilize measurements
+        // 50 reps amortize GC spikes. The reset belongs inside the loop: storage is
+        // keyed by the shared TestComponent, so a per-iteration reset would let the
+        // render count accumulate across reps and change what is being measured.
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
+
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -47,7 +51,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
           try {
             // Will timeout quickly and format error (event-based, no polling)
             await expect(ProfiledComponent).toEventuallyRenderTimes(10, {
-              timeout: 50, // Short timeout for faster benchmarking
+              timeout: 10, // 50 reps below, so this is multiplied by 50
             });
           } catch {
             // Expected to fail
@@ -61,6 +65,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     );
 
     bench("10 renders - expect 100 (fast timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -79,6 +84,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     });
 
     bench("100 renders - expect 500 (fast timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -97,6 +103,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     });
 
     bench("500 renders - expect 1000 (realistic timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -119,15 +126,19 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "1 render - expect at least 10 (fast timeout) - 50 iterations",
       async () => {
-        // 50 iterations to amortize GC spikes and stabilize measurements
+        // 50 reps amortize GC spikes. The reset belongs inside the loop: storage is
+        // keyed by the shared TestComponent, so a per-iteration reset would let the
+        // render count accumulate across reps and change what is being measured.
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
+
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
 
           try {
             await expect(ProfiledComponent).toEventuallyRenderAtLeast(10, {
-              timeout: 50,
+              timeout: 10, // 50 reps below, so this is multiplied by 50
             });
           } catch {
             // Expected to fail
@@ -141,6 +152,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     );
 
     bench("10 renders - expect at least 100 (fast timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -160,6 +172,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "500 renders - expect at least 1000 (realistic timeout)",
       async () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -182,8 +195,12 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "check nested-update phase - never happens (fast timeout) - 50 iterations",
       async () => {
-        // 50 iterations to amortize GC spikes and stabilize measurements
+        // 50 reps amortize GC spikes. The reset belongs inside the loop: storage is
+        // keyed by the shared TestComponent, so a per-iteration reset would let the
+        // render count accumulate across reps and change what is being measured.
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
+
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -193,7 +210,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
             await expect(ProfiledComponent).toEventuallyReachPhase(
               "nested-update",
               {
-                timeout: 150,
+                timeout: 10, // 50 reps below, so this is multiplied by 50
               },
             );
           } catch {
@@ -210,6 +227,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "check nested-update phase - many renders (fast timeout)",
       async () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -239,6 +257,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "check nested-update phase - 500 renders (realistic test)",
       async () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 

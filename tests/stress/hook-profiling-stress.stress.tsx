@@ -163,6 +163,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Hook Profiling Stress Tests - Simple Hooks", () => {
   let gcObserver: GCObserver;
 
@@ -170,7 +182,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should handle 2000 rerenders of simple useState hook", () => {
+  it("should handle 2000 rerenders of simple useState hook", async () => {
     const useCounter = () => {
       const [count, setCount] = useState(0);
 
@@ -178,6 +190,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     };
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -196,6 +209,8 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -231,14 +246,14 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB for 2000 rerenders
+      expect(heapDeltaMB).toBeLessThan(5); // < 5 MB for 2000 rerenders (measured 2.1 MB)
     }
 
     // Cleanup
     unmount();
   }, 10_000);
 
-  it("should handle 3000 rerenders of hook with no state", () => {
+  it("should handle 3000 rerenders of hook with no state", async () => {
     const useTimestamp = () => {
       return Date.now();
     };
@@ -248,6 +263,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     );
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -264,6 +280,8 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -283,7 +301,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     expect(totalTime).toBeLessThan(600); // < 600ms
 
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB
+      expect(heapDeltaMB).toBeLessThan(4); // < 4 MB for 3000 rerenders (measured 1.7 MB)
     }
 
     unmount();
@@ -297,7 +315,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should handle 1000 rerenders of hook with state, memo, and callback", () => {
+  it("should handle 1000 rerenders of hook with state, memo, and callback", async () => {
     const useComplexHook = ({ multiplier }: { multiplier: number }) => {
       const [count, setCount] = useState(0);
 
@@ -311,6 +329,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     };
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -332,6 +351,8 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -368,13 +389,13 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(80); // < 80 MB
+      expect(heapDeltaMB).toBeLessThan(2); // < 2 MB for 1000 rerenders (measured 0.72 MB)
     }
 
     unmount();
   }, 12_000);
 
-  it("should handle hook with useEffect + 500 rerenders", () => {
+  it("should handle hook with useEffect + 500 rerenders", async () => {
     const effectSpy = vi.fn();
     const cleanupSpy = vi.fn();
 
@@ -397,6 +418,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     });
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -413,6 +435,8 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -448,7 +472,7 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should handle 20 hooks profiled simultaneously + 100 rerenders each", () => {
+  it("should handle 20 hooks profiled simultaneously + 100 rerenders each", async () => {
     const hooks = Array.from({ length: 20 }, (_, i) => {
       const useIndexedHook = () => {
         const [count, setCount] = useState(0);
@@ -460,6 +484,7 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
     });
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -478,6 +503,8 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -519,7 +546,7 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(100); // < 100 MB
+      expect(heapDeltaMB).toBeLessThan(3); // < 3 MB for 20 hooks x 100 rerenders (measured 1.14 MB)
     }
 
     // Cleanup all hooks
@@ -550,6 +577,8 @@ describe("Hook Profiling Stress Tests - Event Listeners", () => {
       ProfiledHook.onRender(listener);
       listeners.push(listener);
     }
+
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 

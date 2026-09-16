@@ -184,6 +184,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Combined Stress Tests - Events + Concurrent Features", () => {
   let gcObserver: GCObserver;
 
@@ -217,6 +229,7 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
     const ProfiledComponent = withProfiler(CombinedComponent);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -255,6 +268,8 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -298,7 +313,7 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(100); // < 100 MB for combined stress
+      expect(heapDeltaMB).toBeLessThan(4); // < 4 MB for combined stress (measured 1.8 MB)
     }
 
     // Cleanup
@@ -337,6 +352,7 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -362,6 +378,8 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -402,7 +420,7 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(80); // < 80 MB for deferred + listeners
+      expect(heapDeltaMB).toBeLessThan(1); // < 1 MB for deferred + listeners (measured 0.15 MB)
     }
 
     // Cleanup
@@ -434,6 +452,8 @@ describe("Combined Stress Tests - Multiple Components + Concurrent Features", ()
 
       return withProfiler(Comp);
     });
+
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -508,7 +528,7 @@ describe("Combined Stress Tests - Multiple Components + Concurrent Features", ()
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(150); // < 150 MB for 20 components + concurrent + listeners
+      expect(heapDeltaMB).toBeLessThan(8); // < 8 MB for 20 components + concurrent + listeners (measured 3.9 MB)
     }
 
     // Cleanup
@@ -546,6 +566,8 @@ describe("Combined Stress Tests - All Factors", () => {
 
       return withProfiler(Comp);
     });
+
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -646,7 +668,7 @@ describe("Combined Stress Tests - All Factors", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(300); // < 300 MB for ultimate stress
+      expect(heapDeltaMB).toBeLessThan(18); // < 18 MB for ultimate stress (measured 11.6 MB)
     }
 
     // Performance assertion

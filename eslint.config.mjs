@@ -5,8 +5,9 @@
 import eslint from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
 import vitestPlugin from "@vitest/eslint-plugin";
-import eslintPluginImport from "eslint-plugin-import";
-import jsdoc from "eslint-plugin-jsdoc";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import { importX } from "eslint-plugin-import-x";
+import jsdocPlugin from "eslint-plugin-jsdoc";
 // @ts-expect-error - no type definitions available for this package
 import noOnlyTests from "eslint-plugin-no-only-tests";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
@@ -238,20 +239,42 @@ export default tsEslint.config(
   // ============================================
   {
     plugins: {
-      import: eslintPluginImport,
+      // eslint-plugin-import-x: maintained fork of eslint-plugin-import with ESLint 10 support
+      "import-x": importX,
     },
     settings: {
-      "import/resolver": {
-        typescript: {
+      // Graph-building rules (no-cycle, no-named-as-default-member, export, …) silently
+      // no-op without these three: import-x defaults valid extensions to
+      // ['.js','.mjs','.cjs'], so every `.ts` import target failed the extension check
+      // and no module graph was ever built. Verbatim from importX.flatConfigs.typescript.
+      "import-x/extensions": [
+        ".ts",
+        ".tsx",
+        ".cts",
+        ".mts",
+        ".js",
+        ".jsx",
+        ".cjs",
+        ".mjs",
+      ],
+      "import-x/parsers": {
+        "@typescript-eslint/parser": [".ts", ".tsx", ".cts", ".mts"],
+      },
+      "import-x/external-module-folders": [
+        "node_modules",
+        "node_modules/@types",
+      ],
+      "import-x/resolver-next": [
+        createTypeScriptImportResolver({
           alwaysTryTypes: true,
           project: "./tsconfig.json",
-        },
-      },
+        }),
+      ],
     },
     rules: {
-      ...eslintPluginImport.configs.recommended.rules,
-      ...eslintPluginImport.configs.typescript.rules,
-      "import/order": [
+      ...importX.flatConfigs.recommended.rules,
+      ...importX.flatConfigs.typescript.rules,
+      "import-x/order": [
         "error",
         {
           groups: [
@@ -280,16 +303,16 @@ export default tsEslint.config(
           "newlines-between": "always",
         },
       ],
-      "import/no-nodejs-modules": "off",
-      "import/no-commonjs": "error",
-      "import/no-unresolved": "error",
-      "import/no-duplicates": "error",
-      "import/no-cycle": ["error", { maxDepth: 3 }],
-      "import/no-self-import": "error",
-      "import/no-useless-path-segments": "error",
-      "import/first": "error",
-      "import/newline-after-import": "error",
-      "import/no-default-export": "warn",
+      "import-x/no-nodejs-modules": "off",
+      "import-x/no-commonjs": "error",
+      "import-x/no-unresolved": "error",
+      "import-x/no-duplicates": "error",
+      "import-x/no-cycle": ["error", { maxDepth: 3 }],
+      "import-x/no-self-import": "error",
+      "import-x/no-useless-path-segments": "error",
+      "import-x/first": "error",
+      "import-x/newline-after-import": "error",
+      "import-x/no-default-export": "warn",
     },
   },
 
@@ -303,7 +326,7 @@ export default tsEslint.config(
       "!src/**/*.spec.ts?(x)",
     ],
     plugins: {
-      jsdoc,
+      jsdoc: jsdocPlugin,
     },
     settings: {
       jsdoc: {
@@ -346,14 +369,14 @@ export default tsEslint.config(
     rules: {
       ...unicorn.configs.recommended.rules,
       // Disable too strict rules:
-      "unicorn/prevent-abbreviations": "off",
+      "unicorn/name-replacements": "off",
       "unicorn/no-null": "off",
       "unicorn/prefer-top-level-await": "off",
       "unicorn/no-array-reduce": "warn",
       "unicorn/prefer-module": "off",
       "unicorn/prefer-node-protocol": "off",
       "unicorn/filename-case": "off",
-      "unicorn/no-array-for-each": "off",
+      "unicorn/no-for-each": "off",
       "unicorn/prefer-spread": "warn",
       "unicorn/prefer-ternary": "warn",
       "unicorn/no-useless-undefined": [
@@ -423,7 +446,11 @@ export default tsEslint.config(
       sonarjs: sonarjsPlugin,
     },
     rules: {
-      ...sonarjsPlugin.configs.recommended.rules,
+      // sonarjs 4.x types `configs` as optional and `recommended` as a union of config
+      // shapes; at runtime it is a flat config object with `rules`
+      .../** @type {{ recommended: import("eslint").Linter.Config }} */ (
+        sonarjsPlugin.configs
+      ).recommended.rules,
       "sonarjs/no-nested-functions": "off",
       "sonarjs/todo-tag": "off",
       "sonarjs/different-types-comparison": "off",
@@ -470,6 +497,61 @@ export default tsEslint.config(
       "regexp/prefer-plus-quantifier": "warn",
       "regexp/prefer-question-quantifier": "warn",
       "regexp/prefer-star-quantifier": "warn",
+    },
+  },
+
+  // ============================================
+  // 12b. RULES NEW IN UNICORN 63–74 / SONARJS 4
+  // Shipped src adopts the new recommended rules; the ones below are declined for the
+  // stated reason. Tests keep the older surface (second block): modernizing test code
+  // is churn with no shipped value. Must stay after sections 7 and 11 so these
+  // overrides win over "recommended".
+  // ============================================
+  {
+    files: ["**/*.ts?(x)"],
+    rules: {
+      // Naming opinion: would rename `pass` (the Vitest matcher-result contract name)
+      // and other internal booleans — auto-renaming risks touching the API surface
+      "unicorn/consistent-boolean-name": "off",
+      // Number.isSafeInteger() rejects integers above 2^53 that Number.isInteger()
+      // accepts — a behavior change, not a lint fix
+      "unicorn/prefer-number-is-safe-integer": "off",
+      // Module-level instance counter in ProfiledComponent is intentional
+      "unicorn/no-top-level-assignment-in-function": "off",
+      // The autofix relocates code across `/* v8 ignore … */` boundaries, silently
+      // mis-targeting coverage annotations under the 100% gate
+      "unicorn/prefer-early-return": "off",
+      // Style only: `Number.NaN` / `Number.POSITIVE_INFINITY` stay as written
+      "unicorn/prefer-global-number-constants": "off",
+      // Conflicts with the project's single-line JSDoc convention; its autofix produces
+      // malformed JSDoc (content line without the leading `*`)
+      "unicorn/single-line-block-comment-style": "off",
+    },
+  },
+  {
+    // Non-shipped code: idiomatic test patterns (callback `push`, deeply nested
+    // `expect()`, literal floats, loop style) where modernizing is pure churn
+    files: ["**/tests/**/*.ts?(x)"],
+    rules: {
+      "unicorn/max-nested-calls": "off",
+      "unicorn/no-return-array-push": "off",
+      "unicorn/no-break-in-nested-loop": "off",
+      "unicorn/no-global-object-property-assignment": "off",
+      "unicorn/no-computed-property-existence-check": "off",
+      "unicorn/no-declarations-before-early-exit": "off",
+      "unicorn/no-useless-else": "off",
+      "unicorn/no-useless-template-literals": "off",
+      "unicorn/no-non-function-verb-prefix": "off",
+      "unicorn/prefer-number-coercion": "off",
+      "unicorn/prefer-object-define-properties": "off",
+      "unicorn/prefer-continue": "off",
+      "unicorn/consistent-conditional-object-spread": "off",
+      // Tests use literal floats (3.14 ≠ Math.PI) intentionally
+      "unicorn/prefer-math-constants": "off",
+      // Opinionated: converting explicit it() blocks to it.each obscures failure sites
+      "sonarjs/parameterized-tests": "off",
+      // Intentional reach markers (`expect(true).toBe(true)`) in stress/property tests
+      "sonarjs/no-trivial-assertions": "off",
     },
   },
 
@@ -531,8 +613,8 @@ export default tsEslint.config(
       "sonarjs/different-types-comparison": "off",
       "sonarjs/no-unused-collection": "off",
       "unicorn/consistent-function-scoping": "off",
-      "import/no-default-export": "off",
-      "import/no-unresolved": "off",
+      "import-x/no-default-export": "off",
+      "import-x/no-unresolved": "off",
       "prefer-const": "off",
       "prefer-rest-params": "off",
     },
@@ -564,8 +646,8 @@ export default tsEslint.config(
       "sonarjs/different-types-comparison": "off",
       "sonarjs/no-unused-collection": "off",
       "unicorn/consistent-function-scoping": "off",
-      "import/no-default-export": "off",
-      "import/no-unresolved": "off",
+      "import-x/no-default-export": "off",
+      "import-x/no-unresolved": "off",
       "prefer-const": "off",
       "prefer-rest-params": "off",
     },
@@ -597,8 +679,8 @@ export default tsEslint.config(
       "sonarjs/no-unused-collection": "off",
       "sonarjs/void-use": "off",
       "unicorn/consistent-function-scoping": "off",
-      "import/no-default-export": "off",
-      "import/no-unresolved": "off",
+      "import-x/no-default-export": "off",
+      "import-x/no-unresolved": "off",
       "prefer-const": "off",
       "prefer-rest-params": "off",
     },
@@ -642,8 +724,8 @@ export default tsEslint.config(
       "unicorn/consistent-function-scoping": "off",
       "unicorn/no-array-sort": "off",
       // Allow other patterns
-      "import/no-default-export": "off",
-      "import/no-unresolved": "off",
+      "import-x/no-default-export": "off",
+      "import-x/no-unresolved": "off",
       "prefer-const": "off",
       "prefer-rest-params": "off",
     },
@@ -653,7 +735,11 @@ export default tsEslint.config(
   // 15. CONFIG FILES (allow Node.js modules and defaults)
   // ============================================
   {
-    files: ["**/*.config.{js,ts,mjs,mts}", "**/vitest.setup.ts"],
+    // `*.config.mts` does not match vitest.config.common.mts and its siblings:
+    // those end in `.common.mts`, `.unit.mts`, `.bench.mts` and so on, so five
+    // configs were linted by nothing at all. Match every .mts instead —
+    // examples/ and .stryker-tmp/ are already excluded by the global ignores.
+    files: ["**/*.config.{js,ts,mjs,mts}", "**/*.mts", "**/vitest.setup.ts"],
     languageOptions: {
       globals: {
         process: "readonly",
@@ -664,12 +750,28 @@ export default tsEslint.config(
       },
     },
     rules: {
-      "import/no-default-export": "off",
+      "import-x/no-default-export": "off",
+      // Default imports are the documented flat-config entry points of these plugins
+      // (typescript-eslint, sonarjs, regexp) — the member caution is noise here
+      "import-x/no-named-as-default-member": "off",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/prefer-nullish-coalescing": "off",
       "unicorn/prefer-module": "off",
+    },
+  },
+
+  // ============================================
+  // 16. MAINTENANCE SCRIPTS (Node CLIs, not config files)
+  // ============================================
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
     },
   },
 );

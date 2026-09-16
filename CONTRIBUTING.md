@@ -1,16 +1,19 @@
 # Contributing to vitest-react-profiler
 
-First off, thank you for considering contributing to vitest-react-profiler! It's people like you that make it a great tool.
+First off, thank you for considering contributing to vitest-react-profiler! It's people like you that make it
+a great tool.
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code.
+This project and everyone participating in it is governed by our Code of Conduct. By participating, you are
+expected to uphold this code.
 
 ## How Can I Contribute?
 
 ### Reporting Bugs
 
-Before creating bug reports, please check existing issues as you might find out that you don't need to create one. When you are creating a bug report, please include as many details as possible:
+Before creating bug reports, please check existing issues as you might find out that you don't need to create
+one. When you are creating a bug report, please include as many details as possible:
 
 - **Use a clear and descriptive title**
 - **Describe the exact steps to reproduce the problem**
@@ -38,7 +41,7 @@ Unsure where to begin? You can start by looking through these issues:
 
 ### Pull Requests
 
-1. Fork the repo and create your branch from `main`
+1. Fork the repo and create your branch from `master`
 2. If you've added code that should be tested, add tests
 3. If you've changed APIs, update the documentation
 4. Ensure the test suite passes
@@ -46,6 +49,9 @@ Unsure where to begin? You can start by looking through these issues:
 6. Issue that pull request!
 
 ## Development Setup
+
+This project uses **npm** (it has a `package-lock.json` and npm workspaces for `examples/`). Node 18 or newer
+is required by `engines`, and `.nvmrc` pins the version CI uses.
 
 1. **Fork and clone the repository**
 
@@ -57,51 +63,71 @@ Unsure where to begin? You can start by looking through these issues:
 2. **Install dependencies**
 
    ```bash
-   pnpm install
+   npm ci
    ```
 
-3. **Run tests**
+3. **Run the tests**
 
    ```bash
-   pnpm test        # Run tests once
-   pnpm dev         # Run tests in watch mode
-   pnpm test:ui     # Open Vitest UI
+   npm test                 # unit and integration tests
+   npm run test:coverage    # the same, with the 100% coverage gate
+   npm run test:properties  # property-based tests (fast-check)
+   npm run test:stress      # memory and GC stress tests
+   npm run test:bench       # benchmarks
+   npm run test:examples    # the examples workspace against the built package
    ```
 
-4. **Build the package**
+4. **Check types and lint**
 
    ```bash
-   pnpm build
+   npm run typecheck
+   npm run lint             # eslint --fix
+   npm run lint:md          # markdownlint
    ```
 
-5. **Test locally in another project**
+5. **Build the package**
+
    ```bash
-   pnpm link
-   # In your test project
-   pnpm link vitest-react-profiler
+   npm run build
+   ```
+
+6. **Test locally in another project**
+
+   ```bash
+   npm pack                 # produces vitest-react-profiler-<version>.tgz
+   # in your test project
+   npm install ../vitest-react-profiler/vitest-react-profiler-<version>.tgz
    ```
 
 ## Project Structure
 
-```
+```text
 vitest-react-profiler/
-├── src/                 # Source code
-│   ├── index.ts        # Main entry point
-│   ├── withProfiler.tsx # Core wrapper component
-│   └── types.ts        # TypeScript definitions
-├── tests/              # Test files
-├── examples/           # Example usage
-└── docs/              # Documentation
+├── src/
+│   ├── profiler/
+│   │   ├── api/            # public API surface (ProfilerAPI)
+│   │   ├── components/     # withProfiler, ProfiledComponent, render callback
+│   │   └── core/           # ProfilerData, caches, events, storage
+│   ├── matchers/
+│   │   ├── sync/           # toHaveRendered, phases, render budgets, loops
+│   │   ├── async/          # toEventually* matchers, stabilization
+│   │   └── index.ts        # registers the matchers, not a barrel export
+│   ├── hooks/              # profileHook, createHookProfiler
+│   ├── utils/              # renderProfiled, formatting, async helpers
+│   ├── registry.ts         # component registry
+│   ├── types.ts            # shared type definitions
+│   └── index.ts            # package entry point
+├── tests/                  # unit, integration, property, stress, benchmarks
+└── examples/               # usage examples (npm workspace)
 ```
 
 ## Development Guidelines
 
 ### Code Style
 
-- We use Prettier for code formatting
-- We use ESLint for linting
-- Run `pnpm format` before committing
-- Run `pnpm lint` to check for issues
+- Prettier handles formatting and ESLint handles linting
+- The pre-commit hook runs ESLint over staged files; run `npx prettier --write .` to format manually
+- Run `npm run lint` to check and auto-fix, and `npm run typecheck` before opening a pull request
 
 ### Commit Messages
 
@@ -117,10 +143,13 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 - `build:` Changes that affect the build system
 - `ci:` Changes to CI configuration files and scripts
 - `chore:` Other changes that don't modify src or test files
+- `revert:` Reverts a previous commit
+
+Commitlint enforces the subject to be lower-case and every line of the body to be at most 100 characters.
 
 Examples:
 
-```
+```text
 feat: add toHaveRenderedBetween matcher
 fix: handle undefined render history in getLastRender
 docs: update API reference for new matchers
@@ -142,20 +171,38 @@ docs: update API reference for new matchers
 
 ## Versioning and Releases
 
-We use [Changesets](https://github.com/changesets/changesets) for version management:
+Releases are automated with [release-please](https://github.com/googleapis/release-please) and published to npm
+from GitHub Actions via [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (with provenance).
+Nobody bumps versions or edits `CHANGELOG.md` by hand.
 
-1. **Add a changeset for your changes**
+1. **Write [Conventional Commits](https://www.conventionalcommits.org/).** The commit type decides whether a change
+   is released and how the version moves:
 
-   ```bash
-   pnpm changeset
-   ```
+   | Commit                                             | Release | CHANGELOG section  |
+   | -------------------------------------------------- | ------- | ------------------ |
+   | `feat: …`                                          | minor   | Added              |
+   | `fix: …`                                           | patch   | Fixed              |
+   | `perf: …`, `build: …`, `revert: …`                 | patch   | Changed            |
+   | `feat!: …` or a `BREAKING CHANGE:` footer          | major   | ⚠ BREAKING CHANGES |
+   | `chore`, `ci`, `docs`, `test`, `refactor`, `style` | —       | not listed         |
 
-2. **Choose the type of change**
-   - `patch`: Bug fixes and small updates
-   - `minor`: New features that are backward compatible
-   - `major`: Breaking changes
+   Use `feat` / `fix` only for changes that users of the package can observe; dev-only dependency updates are
+   `chore(deps-dev): …`, and commits that touch nothing but `package-lock.json` are never released. The commit
+   subject becomes the CHANGELOG line, so write it for users.
 
-3. **Write a summary** of your changes for the changelog
+2. **Release PR.** After every push to `master`, the Release workflow opens or updates a `release: vX.Y.Z` pull
+   request that bumps `package.json`, `package-lock.json`, `sonar-project.properties`, `CLAUDE.md` and
+   `CHANGELOG.md`. Edits to that PR are overwritten whenever `master` moves, so change commit messages instead.
+
+3. **Publish.** Merging the release PR tags `vX.Y.Z`, creates the GitHub Release and publishes the package to npm.
+   If publishing fails, fix the cause and run the workflow again (**Actions → Release → Run workflow**): every run
+   publishes a tagged version that is still missing from npm.
+
+To force a specific version, add a `Release-As: 2.0.0` footer to a commit on `master`.
+
+The workflow needs the `RELEASE_PLEASE_TOKEN` repository secret: a fine-grained personal access token for this
+repository with **Contents** and **Pull requests** set to _Read and write_. A token is required (instead of
+`GITHUB_TOKEN`) so that CI runs on the release PR.
 
 ## Review Process
 
@@ -164,14 +211,18 @@ We use [Changesets](https://github.com/changesets/changesets) for version manage
 3. Once approved, your PR will be merged
 4. Your contribution will be included in the next release
 
-## Testing Matrix
+## Supported and Tested Versions
 
-We test against:
+What the package declares it supports:
 
-- Node.js: 18.x, 20.x, 22.x
-- React: 16.x, 17.x, 18.x
-- Vitest: 1.x, 2.x
-- Operating Systems: Ubuntu, macOS, Windows
+- Node.js: `>=18.0.0`, npm `>=8.0.0` (`engines`)
+- React: `>=16.8.0`, Vitest: `>=1.0.0` (`peerDependencies`)
+
+What CI actually exercises on every pull request:
+
+- Node.js 22 and 24, each against React 18 and 19 (four combinations)
+- Vitest 4.1.x, the version this repository develops against
+- Ubuntu only — every workflow job runs on `ubuntu-latest`
 
 ## Resources
 

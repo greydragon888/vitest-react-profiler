@@ -257,7 +257,7 @@ describe("Property-Based Tests: API Event Methods", () => {
         const { rerender } = render(<ProfiledComponent value={0} />);
 
         const listener = vi.fn((info) => {
-          expect(info.history.length).toBe(info.count);
+          expect(info.history).toHaveLength(info.count);
         });
 
         ProfiledComponent.onRender(listener);
@@ -378,7 +378,7 @@ describe("Property-Based Tests: API Event Methods", () => {
         const info = await promise;
 
         expect(info.count).toBe(expectedCount);
-        expect(info.history.length).toBe(expectedCount);
+        expect(info.history).toHaveLength(expectedCount);
       },
     );
   });
@@ -459,9 +459,10 @@ describe("Property-Based Tests: API Event Methods", () => {
       const { rerender } = render(<ProfiledComponent value={0} />);
 
       const listeners = Array.from({ length: 10 }, () => vi.fn());
-      const unsubscribers: ((() => void) | null)[] = Array.from<
-        (() => void) | null
-      >({ length: 10 }).fill(null);
+      const unsubscribers: ((() => void) | null)[] = Array.from(
+        { length: 10 },
+        () => null,
+      );
       let renderValue = 1;
 
       operations.forEach(({ action, listenerIndex }) => {

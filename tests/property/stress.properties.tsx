@@ -93,7 +93,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
   describe("Single Component Stress", () => {
     test.prop([fc.integer({ min: 1000, max: 5000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "withProfiler handles thousands of renders without breaking",
       (numRenders) => {
@@ -122,7 +121,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "cache remains stable and frozen with high render count",
       (numRenders) => {
@@ -148,7 +146,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "phase types remain valid throughout render history at scale",
       (numRenders) => {
@@ -177,7 +174,7 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
   describe("Multiple Components Stress", () => {
     test.prop(
       [fc.integer({ min: 50, max: 200 }), fc.integer({ min: 10, max: 50 })],
-      { numRuns: 3, timeout: 90_000 },
+      { numRuns: 3 },
     )(
       "many components with many renders maintain isolation",
       (numComponents, rendersPerComponent) => {
@@ -204,7 +201,7 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop(
       [fc.integer({ min: 20, max: 100 }), fc.integer({ min: 100, max: 500 })],
-      { numRuns: 3, timeout: 90_000 },
+      { numRuns: 3 },
     )(
       "concurrent rendering of multiple components maintains data integrity",
       (numComponents, rendersPerComponent) => {
@@ -237,7 +234,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
   describe("Memory Stability", () => {
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "getRenderHistory array length matches render count at scale",
       (numRenders) => {
@@ -257,7 +253,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop([fc.integer({ min: 500, max: 2000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })("getRendersByPhase sum equals total at scale", (numRenders) => {
       const Component = createSimpleProfiledComponent();
       const { rerender } = render(<Component value={0} />);
@@ -276,7 +271,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 3,
-      timeout: 60_000,
     })("all history entries have valid structure at scale", (numRenders) => {
       const Component = createSimpleProfiledComponent();
       const { rerender } = render(<Component value={0} />);
@@ -298,7 +292,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
   describe("Performance Invariants", () => {
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })("getRenderAt retrieves correct entry at any index", (numRenders) => {
       const Component = createSimpleProfiledComponent();
       const { rerender } = render(<Component value={0} />);
@@ -327,7 +320,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "getLastRender returns actual last entry with many renders",
       (numRenders) => {
@@ -349,7 +341,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
   describe("Extreme Edge Cases", () => {
     test.prop([fc.constant(10_000)], {
       numRuns: 1,
-      timeout: 120_000,
     })(
       "library survives 10000 renders without critical failure",
       (numRenders) => {
@@ -374,7 +365,6 @@ describe("Property-Based Stress Tests: High Volume Rendering", () => {
 
     test.prop([fc.integer({ min: 100, max: 500 })], {
       numRuns: 2,
-      timeout: 90_000,
     })(
       "rapid sequential component creation and destruction",
       (numComponents) => {
@@ -401,7 +391,6 @@ describe("Property-Based Stress Tests: Cache Performance", () => {
   describe("Cache Efficiency Under Load", () => {
     test.prop([fc.integer({ min: 1000, max: 3000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })(
       "cache invalidation works correctly after every render at scale",
       (numRenders) => {
@@ -430,7 +419,6 @@ describe("Property-Based Stress Tests: Cache Performance", () => {
 
     test.prop([fc.integer({ min: 1000, max: 2000 })], {
       numRuns: 5,
-      timeout: 60_000,
     })("histories remain frozen and correct at scale", (numRenders) => {
       const Component = createSimpleProfiledComponent();
       const { rerender } = render(<Component value={0} />);

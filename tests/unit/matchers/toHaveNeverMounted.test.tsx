@@ -22,7 +22,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveNeverMounted();
-      }).toThrowError(/Expected component never to mount, but it mounted/);
+      }).toThrow(/Expected component never to mount, but it mounted/);
     });
 
     it("should fail with non-profiled component", () => {
@@ -30,9 +30,7 @@ describe("Custom Matchers", () => {
 
       expect(() => {
         expect(regularComponent).toHaveNeverMounted();
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should provide correct negative message when never mounted", () => {
@@ -42,7 +40,7 @@ describe("Custom Matchers", () => {
       // Test the negative case
       expect(() => {
         expect(ProfiledComponent).not.toHaveNeverMounted();
-      }).toThrowError(/Expected component to mount, but it never did/);
+      }).toThrow(/Expected component to mount, but it never did/);
     });
 
     it("should pass when component never rendered", () => {

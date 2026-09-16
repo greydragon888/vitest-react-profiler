@@ -179,6 +179,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Registry GC Profiling Tests", () => {
   let gcObserver: GCObserver;
 
@@ -188,8 +200,11 @@ describe("Registry GC Profiling Tests", () => {
   });
 
   describe("GC behavior with component accumulation", () => {
-    it("should analyze GC activity for 1,000 components", () => {
+    it("should analyze GC activity for 1,000 components", async () => {
       const COUNT = 1000;
+
+      // Collected baseline, before the observer so the GC is not counted
+      forceGC(5);
 
       // Start observing GC
       gcObserver.start();
@@ -211,6 +226,8 @@ describe("Registry GC Profiling Tests", () => {
       forceGC(5);
 
       const heapAfter = getHeapStats();
+
+      await flushGCEntries();
 
       gcObserver.stop();
 
@@ -251,7 +268,7 @@ describe("Registry GC Profiling Tests", () => {
         expect(gcStats.maxDuration).toBeLessThan(100); // Max pause < 100ms
       }
 
-      expect(heapDeltaMB).toBeLessThan(5); // < 5 MB for 1k components
+      expect(heapDeltaMB).toBeLessThan(1.5); // < 1.5 MB for 1k components (measured 0.41 MB)
     });
 
     it("should compare GC behavior: with vs without external references", async () => {
@@ -261,6 +278,10 @@ describe("Registry GC Profiling Tests", () => {
 
       // Scenario 1: Keep external references
       console.log("\n  Scenario 1: WITH external references");
+
+      // Collected baseline, before the observer so the GC is not counted
+      forceGC(5);
+
       gcObserver.start();
       gcObserver.reset();
 
@@ -285,6 +306,7 @@ describe("Registry GC Profiling Tests", () => {
       console.log(`    Total GC time: ${gcStats1.totalDuration.toFixed(2)}ms`);
       console.log(`    Set size: ${(registry as any).activeComponents.size}`);
 
+      await flushGCEntries();
       gcObserver.stop();
 
       // Small delay to ensure GC settles
@@ -294,6 +316,10 @@ describe("Registry GC Profiling Tests", () => {
 
       // Scenario 2: No external references (scope-limited)
       console.log("\n  Scenario 2: WITHOUT external references");
+
+      // Collected baseline, before the observer so the GC is not counted
+      forceGC(5);
+
       gcObserver.start();
       gcObserver.reset();
 
@@ -329,6 +355,7 @@ describe("Registry GC Profiling Tests", () => {
       console.log(`    Set size after: ${setSizeAfter}`);
       console.log(`    Set delta: +${setSizeAfter - setSizeBefore}`);
 
+      await flushGCEntries();
       gcObserver.stop();
 
       // Analysis
@@ -350,7 +377,7 @@ describe("Registry GC Profiling Tests", () => {
       expect(setSizeAfter - setSizeBefore).toBe(COUNT); // Should add exactly COUNT
     });
 
-    it("should measure GC impact of clearAll() operation", () => {
+    it("should measure GC impact of clearAll() operation", async () => {
       const COUNT = 1000;
       const RENDERS_PER_COMPONENT = 20;
 
@@ -371,6 +398,8 @@ describe("Registry GC Profiling Tests", () => {
         components.push(profilerData);
       }
 
+      forceGC(3); // Collected baseline, like the snapshot it is compared with
+
       const heapBeforeClear = getHeapStats();
       const setSizeBeforeClear = (registry as any).activeComponents.size;
 
@@ -385,6 +414,7 @@ describe("Registry GC Profiling Tests", () => {
       gcObserver.start();
       registry.clearAll();
       forceGC(3);
+      await flushGCEntries();
       gcObserver.stop();
 
       const heapAfterClear = getHeapStats();
@@ -432,6 +462,8 @@ describe("Registry GC Profiling Tests", () => {
     it("should analyze heap fragmentation under stress", () => {
       console.log("\n🔥 Heap Fragmentation Stress Test:");
 
+      forceGC(3); // Collected baseline, like the snapshot it is compared with
+
       const initialHeap = getHeapStats();
 
       console.log(`\n  Initial Heap State:`);
@@ -446,6 +478,8 @@ describe("Registry GC Profiling Tests", () => {
 
       for (const count of waves) {
         console.log(`\n  Wave: ${count} components`);
+
+        forceGC(3); // Collected baseline, so "allocated" counts this wave only
 
         const heapBefore = getHeapStats();
 
@@ -478,6 +512,8 @@ describe("Registry GC Profiling Tests", () => {
         );
       }
 
+      forceGC(3); // Collected, like initialHeap, so the delta is symmetric
+
       const finalHeap = getHeapStats();
       const totalAccumulated =
         finalHeap.usedHeapSize - initialHeap.usedHeapSize;
@@ -500,13 +536,13 @@ describe("Registry GC Profiling Tests", () => {
 
       // Only check memory if we have valid stats
       if (!Number.isNaN(totalAccumulated)) {
-        expect(totalAccumulated).toBeLessThan(50 * 1024 * 1024); // < 50 MB total
+        expect(totalAccumulated).toBeLessThan(8 * 1024 * 1024); // < 8 MB total (measured 3.9 MB)
       }
     });
   });
 
   describe("Long-running process simulation", () => {
-    it("should simulate 100 test files with memory tracking", () => {
+    it("should simulate 100 test files with memory tracking", async () => {
       console.log("\n⏱️  Long-Running Process Simulation:");
 
       const TEST_FILES = 100;
@@ -551,7 +587,10 @@ describe("Registry GC Profiling Tests", () => {
         }
       }
 
+      await flushGCEntries();
       gcObserver.stop();
+
+      forceGC(3); // Collected, like the in-loop snapshots above
 
       const finalHeap = getHeapStats();
       const finalSetSize = (registry as any).activeComponents.size;
@@ -597,7 +636,7 @@ describe("Registry GC Profiling Tests", () => {
 
         // Only check if we have valid stats
         if (!Number.isNaN(bytesPerComponent)) {
-          expect(bytesPerComponent).toBeLessThan(1024); // < 1 KB per component
+          expect(bytesPerComponent).toBeLessThan(512); // < 512 B per component (measured 205 B)
         }
       }
     });

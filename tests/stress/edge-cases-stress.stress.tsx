@@ -165,6 +165,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
   let gcObserver: GCObserver;
 
@@ -176,11 +188,12 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
     cleanup();
   });
 
-  it("should handle 9999 renders (just below MAX_SAFE_RENDERS=10000)", () => {
+  it("should handle 9999 renders (just below MAX_SAFE_RENDERS=10000)", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -199,6 +212,8 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -234,14 +249,14 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
 
     // Verify correctness
     expect(ProfiledComponent.getRenderCount()).toBe(9999);
-    expect(ProfiledComponent.getRenderHistory().length).toBe(9999);
+    expect(ProfiledComponent.getRenderHistory()).toHaveLength(9999);
 
     // Performance assertion
     expect(totalTime).toBeLessThan(5000); // < 5 seconds for 9999 renders
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(200); // < 200 MB for 9999 renders
+      expect(heapDeltaMB).toBeLessThan(15); // < 15 MB for 9999 renders (measured 6.2 MB)
     }
   }, 10_000);
 
@@ -389,7 +404,7 @@ describe("Edge Cases - Large History Performance", () => {
     cleanup();
   });
 
-  it("should handle 5000 renders + getRenderHistory() efficiently", () => {
+  it("should handle 5000 renders + getRenderHistory() efficiently", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -401,6 +416,7 @@ describe("Edge Cases - Large History Performance", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -412,7 +428,7 @@ describe("Edge Cases - Large History Performance", () => {
 
       // Verify frozen
       expect(Object.isFrozen(history)).toBe(true);
-      expect(history.length).toBe(5000);
+      expect(history).toHaveLength(5000);
     }
 
     const endTime = performance.now();
@@ -421,6 +437,8 @@ describe("Edge Cases - Large History Performance", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -445,7 +463,7 @@ describe("Edge Cases - Large History Performance", () => {
     expect(totalTime).toBeLessThan(100); // < 100ms for 1000 accesses
   });
 
-  it("should handle 5000 renders + multiple API calls efficiently", () => {
+  it("should handle 5000 renders + multiple API calls efficiently", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -457,6 +475,7 @@ describe("Edge Cases - Large History Performance", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -468,7 +487,7 @@ describe("Edge Cases - Large History Performance", () => {
       const history = ProfiledComponent.getRenderHistory();
 
       expect(count).toBe(5000);
-      expect(history.length).toBe(5000);
+      expect(history).toHaveLength(5000);
       expect(Object.isFrozen(history)).toBe(true);
     }
 
@@ -478,6 +497,8 @@ describe("Edge Cases - Large History Performance", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -505,8 +526,9 @@ describe("Edge Cases - Memory Efficiency", () => {
     cleanup();
   });
 
-  it("should not leak memory with rapid component mount/unmount cycles", () => {
+  it("should not leak memory with rapid component mount/unmount cycles", async () => {
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -528,6 +550,8 @@ describe("Edge Cases - Memory Efficiency", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
+
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -545,7 +569,7 @@ describe("Edge Cases - Memory Efficiency", () => {
 
     // Should not leak significantly
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(Math.abs(heapDeltaMB)).toBeLessThan(10); // < 10 MB leak
+      expect(Math.abs(heapDeltaMB)).toBeLessThan(12); // < 12 MB leak (measured 7.3 MB)
     }
   });
 });

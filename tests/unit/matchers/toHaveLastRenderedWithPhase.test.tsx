@@ -18,7 +18,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("mount");
-      }).not.toThrowError();
+      }).not.toThrow();
     });
 
     it("should fail when last render is update", () => {
@@ -28,9 +28,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("mount");
-      }).toThrowError(
-        /Expected last render to be 'mount', but it was 'update'/,
-      );
+      }).toThrow(/Expected last render to be 'mount', but it was 'update'/);
     });
   });
 
@@ -42,7 +40,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("update");
-      }).not.toThrowError();
+      }).not.toThrow();
     });
 
     it("should fail when last render is mount", () => {
@@ -50,9 +48,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("update");
-      }).toThrowError(
-        /Expected last render to be 'update', but it was 'mount'/,
-      );
+      }).toThrow(/Expected last render to be 'update', but it was 'mount'/);
     });
   });
 
@@ -62,7 +58,7 @@ describe("toHaveLastRenderedWithPhase", () => {
       // This test validates the phase validation
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("nested-update");
-      }).toThrowError(/component has not rendered yet/);
+      }).toThrow(/component has not rendered yet/);
     });
   });
 
@@ -70,7 +66,7 @@ describe("toHaveLastRenderedWithPhase", () => {
     it("should fail when component has not rendered", () => {
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("mount");
-      }).toThrowError(
+      }).toThrow(
         /Expected last render to be 'mount', but component has not rendered yet/,
       );
     });
@@ -80,9 +76,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(regularComponent).toHaveLastRenderedWithPhase("mount");
-      }).toThrowError(
-        /Expected a profiled component created with withProfiler/,
-      );
+      }).toThrow(/Expected a profiled component created with withProfiler/);
     });
 
     it("should fail with invalid phase parameter", () => {
@@ -91,7 +85,7 @@ describe("toHaveLastRenderedWithPhase", () => {
       expect(() => {
         // @ts-expect-error - Testing invalid phase
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("invalid");
-      }).toThrowError(
+      }).toThrow(
         /Expected phase must be one of: 'mount', 'update', 'nested-update', received 'invalid'/,
       );
     });
@@ -103,7 +97,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.toHaveLastRenderedWithPhase("update");
-      }).not.toThrowError();
+      }).not.toThrow();
     });
 
     it("should fail with .not when phase matches", () => {
@@ -111,7 +105,7 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).not.toHaveLastRenderedWithPhase("mount");
-      }).toThrowError(/Expected last render not to be 'mount', but it was/);
+      }).toThrow(/Expected last render not to be 'mount', but it was/);
     });
   });
 
@@ -124,11 +118,11 @@ describe("toHaveLastRenderedWithPhase", () => {
 
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("update");
-      }).not.toThrowError();
+      }).not.toThrow();
 
       expect(() => {
         expect(ProfiledComponent).toHaveLastRenderedWithPhase("mount");
-      }).toThrowError();
+      }).toThrow();
     });
   });
 });

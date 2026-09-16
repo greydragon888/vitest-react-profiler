@@ -165,7 +165,7 @@ describe("Stress Tests - toHaveRerendered High Volume", () => {
 
     // Verify no significant memory leak (< 10MB growth)
     if (!Number.isNaN(heapGrowthMB)) {
-      expect(Math.abs(heapGrowthMB)).toBeLessThan(10);
+      expect(Math.abs(heapGrowthMB)).toBeLessThan(3); // measured 1.16 MB
     }
   });
 });
@@ -394,7 +394,7 @@ describe("Stress Tests - Rerender Matchers Memory & Cleanup", () => {
 
     // Should not leak significantly (< 20MB)
     if (!Number.isNaN(growthMB)) {
-      expect(Math.abs(growthMB)).toBeLessThan(20);
+      expect(Math.abs(growthMB)).toBeLessThan(2); // measured 0.28 MB, sign varies by Node version
     }
   });
 
@@ -438,7 +438,7 @@ describe("Stress Tests - Rerender Matchers Memory & Cleanup", () => {
 
     // Should not leak significantly (< 5MB)
     if (!Number.isNaN(growthMB)) {
-      expect(Math.abs(growthMB)).toBeLessThan(5);
+      expect(Math.abs(growthMB)).toBeLessThan(1); // measured 0.10 MB, sign varies by Node version
     }
   });
 

@@ -457,7 +457,7 @@ describe("Property-Based Tests: ProfilerStorage (WeakMap)", () => {
           }
 
           // All accesses to same component should return same reference
-          if (!references.every((ref) => ref === references[0])) {
+          if (references.some((ref) => ref !== references[0])) {
             return false;
           }
         }
@@ -494,9 +494,9 @@ describe("Property-Based Tests: ProfilerStorage (WeakMap)", () => {
 
         // Add renders via first getOrCreate
         const data1 = storage.getOrCreate(targetComponent);
-        const midPoint = Math.floor(phases.length / 2);
+        const midpoint = Math.floor(phases.length / 2);
 
-        for (let i = 0; i < midPoint; i++) {
+        for (let i = 0; i < midpoint; i++) {
           const phase = phases[i];
 
           if (!phase) {
@@ -509,7 +509,7 @@ describe("Property-Based Tests: ProfilerStorage (WeakMap)", () => {
         // Add more renders via second getOrCreate
         const data2 = storage.getOrCreate(targetComponent);
 
-        for (let i = midPoint; i < phases.length; i++) {
+        for (let i = midpoint; i < phases.length; i++) {
           const phase = phases[i];
 
           if (!phase) {

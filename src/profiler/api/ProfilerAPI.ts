@@ -53,7 +53,7 @@ export class ProfilerAPI {
     let cachedData: ProfilerData | undefined;
 
     return () => {
-      /* v8 ignore next -- @preserve */
+      /* v8 ignore start -- @preserve */
       // Stryker disable next-line ConditionalExpression: __DEV__ check for cache metrics is dev-only instrumentation
       if (__DEV__) {
         if (cachedData === undefined) {
@@ -62,6 +62,7 @@ export class ProfilerAPI {
           cacheMetrics.recordHit("closureCache");
         }
       }
+      /* v8 ignore stop -- @preserve */
 
       cachedData ??= fetchData(component);
 

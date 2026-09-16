@@ -1,5 +1,6 @@
-import { defineConfig } from "vitest/config";
 import path from "node:path";
+
+import { defineConfig } from "vitest/config";
 
 /**
  * Common Vitest configuration shared across all test types
@@ -21,9 +22,7 @@ export const commonConfig = defineConfig({
    */
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@test-utils": path.resolve(__dirname, "./src/test-utils"),
-      "@components": path.resolve(__dirname, "./src/components"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 
