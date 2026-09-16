@@ -21,9 +21,9 @@ export const commonConfig = defineConfig({
    */
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@test-utils": path.resolve(__dirname, "./src/test-utils"),
-      "@components": path.resolve(__dirname, "./src/components"),
+      "@": path.resolve(import.meta.dirname, "./src"),
+      "@test-utils": path.resolve(import.meta.dirname, "./src/test-utils"),
+      "@components": path.resolve(import.meta.dirname, "./src/components"),
     },
   },
 
