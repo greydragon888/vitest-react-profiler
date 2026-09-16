@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { bench, describe } from "vitest";
+import { bench, describe, expect } from "vitest";
 
 import { clearProfilerData, withProfiler } from "../../src";
 
