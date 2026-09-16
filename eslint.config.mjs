@@ -735,7 +735,11 @@ export default tsEslint.config(
   // 15. CONFIG FILES (allow Node.js modules and defaults)
   // ============================================
   {
-    files: ["**/*.config.{js,ts,mjs,mts}", "**/vitest.setup.ts"],
+    // `*.config.mts` does not match vitest.config.common.mts and its siblings:
+    // those end in `.common.mts`, `.unit.mts`, `.bench.mts` and so on, so five
+    // configs were linted by nothing at all. Match every .mts instead —
+    // examples/ and .stryker-tmp/ are already excluded by the global ignores.
+    files: ["**/*.config.{js,ts,mjs,mts}", "**/*.mts", "**/vitest.setup.ts"],
     languageOptions: {
       globals: {
         process: "readonly",

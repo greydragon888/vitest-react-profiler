@@ -1,4 +1,5 @@
 import { defineConfig, mergeConfig } from "vitest/config";
+
 import { commonConfig } from "./vitest.config.common.mjs";
 
 /**
