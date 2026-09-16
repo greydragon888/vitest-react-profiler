@@ -27,3 +27,5 @@
 
 # Build configuration
 /tsdown.config.ts @greydragon888
+/release-please-config.json @greydragon888
+/.release-please-manifest.json @greydragon888

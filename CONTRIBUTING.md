@@ -142,20 +142,38 @@ docs: update API reference for new matchers
 
 ## Versioning and Releases
 
-We use [Changesets](https://github.com/changesets/changesets) for version management:
+Releases are automated with [release-please](https://github.com/googleapis/release-please) and published to npm
+from GitHub Actions via [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (with provenance).
+Nobody bumps versions or edits `CHANGELOG.md` by hand.
 
-1. **Add a changeset for your changes**
+1. **Write [Conventional Commits](https://www.conventionalcommits.org/).** The commit type decides whether a change
+   is released and how the version moves:
 
-   ```bash
-   pnpm changeset
-   ```
+   | Commit | Release | CHANGELOG section |
+   | --- | --- | --- |
+   | `feat: …` | minor | Added |
+   | `fix: …` | patch | Fixed |
+   | `perf: …`, `build: …`, `revert: …` | patch | Changed |
+   | `feat!: …` or a `BREAKING CHANGE:` footer | major | ⚠ BREAKING CHANGES |
+   | `chore`, `ci`, `docs`, `test`, `refactor`, `style` | — | not listed |
 
-2. **Choose the type of change**
-   - `patch`: Bug fixes and small updates
-   - `minor`: New features that are backward compatible
-   - `major`: Breaking changes
+   Use `feat` / `fix` only for changes that users of the package can observe; dev-only dependency updates are
+   `chore(deps-dev): …`, and commits that touch nothing but `package-lock.json` are never released. The commit
+   subject becomes the CHANGELOG line, so write it for users.
 
-3. **Write a summary** of your changes for the changelog
+2. **Release PR.** After every push to `master`, the Release workflow opens or updates a `release: vX.Y.Z` pull
+   request that bumps `package.json`, `package-lock.json`, `sonar-project.properties`, `CLAUDE.md` and
+   `CHANGELOG.md`. Edits to that PR are overwritten whenever `master` moves, so change commit messages instead.
+
+3. **Publish.** Merging the release PR tags `vX.Y.Z`, creates the GitHub Release and publishes the package to npm.
+   If publishing fails, fix the cause and run the workflow again (**Actions → Release → Run workflow**): every run
+   publishes a tagged version that is still missing from npm.
+
+To force a specific version, add a `Release-As: 2.0.0` footer to a commit on `master`.
+
+The workflow needs the `RELEASE_PLEASE_TOKEN` repository secret: a fine-grained personal access token for this
+repository with **Contents** and **Pull requests** set to *Read and write*. A token is required (instead of
+`GITHUB_TOKEN`) so that CI runs on the release PR.
 
 ## Review Process
 
