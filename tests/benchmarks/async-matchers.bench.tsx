@@ -38,9 +38,12 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "1 render - expect 10 (fast timeout) - 50 iterations",
       async () => {
-        // 50 iterations to amortize GC spikes and stabilize measurements
-        clearProfilerData();
+        // 50 reps amortize GC spikes. The reset belongs inside the loop: storage is
+        // keyed by the shared TestComponent, so a per-iteration reset would let the
+        // render count accumulate across reps and change what is being measured.
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
+
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -123,9 +126,12 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "1 render - expect at least 10 (fast timeout) - 50 iterations",
       async () => {
-        // 50 iterations to amortize GC spikes and stabilize measurements
-        clearProfilerData();
+        // 50 reps amortize GC spikes. The reset belongs inside the loop: storage is
+        // keyed by the shared TestComponent, so a per-iteration reset would let the
+        // render count accumulate across reps and change what is being measured.
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
+
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
@@ -189,9 +195,12 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "check nested-update phase - never happens (fast timeout) - 50 iterations",
       async () => {
-        // 50 iterations to amortize GC spikes and stabilize measurements
-        clearProfilerData();
+        // 50 reps amortize GC spikes. The reset belongs inside the loop: storage is
+        // keyed by the shared TestComponent, so a per-iteration reset would let the
+        // render count accumulate across reps and change what is being measured.
         for (let rep = 0; rep < 50; rep++) {
+          clearProfilerData();
+
           const ProfiledComponent = withProfiler(TestComponent);
 
           render(<ProfiledComponent value={0} />);
