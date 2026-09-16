@@ -48,7 +48,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
           try {
             // Will timeout quickly and format error (event-based, no polling)
             await expect(ProfiledComponent).toEventuallyRenderTimes(10, {
-              timeout: 50, // Short timeout for faster benchmarking
+              timeout: 10, // 50 reps below, so this is multiplied by 50
             });
           } catch {
             // Expected to fail
@@ -132,7 +132,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
 
           try {
             await expect(ProfiledComponent).toEventuallyRenderAtLeast(10, {
-              timeout: 50,
+              timeout: 10, // 50 reps below, so this is multiplied by 50
             });
           } catch {
             // Expected to fail
@@ -201,7 +201,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
             await expect(ProfiledComponent).toEventuallyReachPhase(
               "nested-update",
               {
-                timeout: 150,
+                timeout: 10, // 50 reps below, so this is multiplied by 50
               },
             );
           } catch {
