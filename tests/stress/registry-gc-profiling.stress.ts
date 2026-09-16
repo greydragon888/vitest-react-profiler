@@ -179,6 +179,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Registry GC Profiling Tests", () => {
   let gcObserver: GCObserver;
 
@@ -188,7 +200,7 @@ describe("Registry GC Profiling Tests", () => {
   });
 
   describe("GC behavior with component accumulation", () => {
-    it("should analyze GC activity for 1,000 components", () => {
+    it("should analyze GC activity for 1,000 components", async () => {
       const COUNT = 1000;
 
       // Collected baseline, before the observer so the GC is not counted
@@ -214,6 +226,8 @@ describe("Registry GC Profiling Tests", () => {
       forceGC(5);
 
       const heapAfter = getHeapStats();
+
+      await flushGCEntries();
 
       gcObserver.stop();
 

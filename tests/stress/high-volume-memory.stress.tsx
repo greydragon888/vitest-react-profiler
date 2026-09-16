@@ -199,6 +199,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("High-Volume Memory Profiling - Single Component", () => {
   let gcObserver: GCObserver;
 
@@ -206,7 +218,7 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should analyze memory consumption for 1000 renders", () => {
+  it("should analyze memory consumption for 1000 renders", async () => {
     const Component: FC<{ value: number }> = ({ value }) => (
       <div>Value: {value}</div>
     );
@@ -238,6 +250,8 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -321,7 +335,7 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     }
   });
 
-  it("should analyze near-maximum renders (9500) memory impact", () => {
+  it("should analyze near-maximum renders (9500) memory impact", async () => {
     // MAX_SAFE_RENDERS = 10,000
     // This test verifies memory behavior near the safety limit
     const Component: FC<{ iteration: number }> = ({ iteration }) => (
@@ -344,6 +358,8 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -634,7 +650,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     }
   });
 
-  it("should analyze memory for 30 components with 101 renders each (3030 total)", () => {
+  it("should analyze memory for 30 components with 101 renders each (3030 total)", async () => {
     interface CompProps {
       value: number;
     }
@@ -675,6 +691,8 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
