@@ -163,6 +163,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Hook Profiling Stress Tests - Simple Hooks", () => {
   let gcObserver: GCObserver;
 
@@ -170,7 +182,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should handle 2000 rerenders of simple useState hook", () => {
+  it("should handle 2000 rerenders of simple useState hook", async () => {
     const useCounter = () => {
       const [count, setCount] = useState(0);
 
@@ -197,6 +209,8 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -239,7 +253,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     unmount();
   }, 10_000);
 
-  it("should handle 3000 rerenders of hook with no state", () => {
+  it("should handle 3000 rerenders of hook with no state", async () => {
     const useTimestamp = () => {
       return Date.now();
     };
@@ -266,6 +280,8 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -299,7 +315,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should handle 1000 rerenders of hook with state, memo, and callback", () => {
+  it("should handle 1000 rerenders of hook with state, memo, and callback", async () => {
     const useComplexHook = ({ multiplier }: { multiplier: number }) => {
       const [count, setCount] = useState(0);
 
@@ -335,6 +351,8 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -377,7 +395,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     unmount();
   }, 12_000);
 
-  it("should handle hook with useEffect + 500 rerenders", () => {
+  it("should handle hook with useEffect + 500 rerenders", async () => {
     const effectSpy = vi.fn();
     const cleanupSpy = vi.fn();
 
@@ -418,6 +436,8 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
+
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -452,7 +472,7 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should handle 20 hooks profiled simultaneously + 100 rerenders each", () => {
+  it("should handle 20 hooks profiled simultaneously + 100 rerenders each", async () => {
     const hooks = Array.from({ length: 20 }, (_, i) => {
       const useIndexedHook = () => {
         const [count, setCount] = useState(0);
@@ -483,6 +503,8 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 

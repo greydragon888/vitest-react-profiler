@@ -165,6 +165,18 @@ function forceGC(cycles = 3): void {
   }
 }
 
+/**
+ * Node delivers `gc` performance entries asynchronously, so a fully synchronous
+ * test receives none of them and every GC statistic reads as zero. Yielding one
+ * macrotask before reading is enough; `takeRecords()` does not help, it returns
+ * nothing until the yield has happened.
+ */
+function flushGCEntries(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
   let gcObserver: GCObserver;
 
@@ -176,7 +188,7 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
     cleanup();
   });
 
-  it("should handle 9999 renders (just below MAX_SAFE_RENDERS=10000)", () => {
+  it("should handle 9999 renders (just below MAX_SAFE_RENDERS=10000)", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -200,6 +212,8 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
@@ -390,7 +404,7 @@ describe("Edge Cases - Large History Performance", () => {
     cleanup();
   });
 
-  it("should handle 5000 renders + getRenderHistory() efficiently", () => {
+  it("should handle 5000 renders + getRenderHistory() efficiently", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -424,6 +438,8 @@ describe("Edge Cases - Large History Performance", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
+
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -447,7 +463,7 @@ describe("Edge Cases - Large History Performance", () => {
     expect(totalTime).toBeLessThan(100); // < 100ms for 1000 accesses
   });
 
-  it("should handle 5000 renders + multiple API calls efficiently", () => {
+  it("should handle 5000 renders + multiple API calls efficiently", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -482,6 +498,8 @@ describe("Edge Cases - Large History Performance", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
+
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -508,7 +526,7 @@ describe("Edge Cases - Memory Efficiency", () => {
     cleanup();
   });
 
-  it("should not leak memory with rapid component mount/unmount cycles", () => {
+  it("should not leak memory with rapid component mount/unmount cycles", async () => {
     gcObserver.start();
     forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
@@ -531,6 +549,8 @@ describe("Edge Cases - Memory Efficiency", () => {
     forceGC(5);
 
     const heapAfter = getHeapStats();
+
+    await flushGCEntries();
 
     gcObserver.stop();
 
