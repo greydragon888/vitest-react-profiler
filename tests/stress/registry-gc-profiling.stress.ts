@@ -306,6 +306,7 @@ describe("Registry GC Profiling Tests", () => {
       console.log(`    Total GC time: ${gcStats1.totalDuration.toFixed(2)}ms`);
       console.log(`    Set size: ${(registry as any).activeComponents.size}`);
 
+      await flushGCEntries();
       gcObserver.stop();
 
       // Small delay to ensure GC settles
@@ -354,6 +355,7 @@ describe("Registry GC Profiling Tests", () => {
       console.log(`    Set size after: ${setSizeAfter}`);
       console.log(`    Set delta: +${setSizeAfter - setSizeBefore}`);
 
+      await flushGCEntries();
       gcObserver.stop();
 
       // Analysis
@@ -375,7 +377,7 @@ describe("Registry GC Profiling Tests", () => {
       expect(setSizeAfter - setSizeBefore).toBe(COUNT); // Should add exactly COUNT
     });
 
-    it("should measure GC impact of clearAll() operation", () => {
+    it("should measure GC impact of clearAll() operation", async () => {
       const COUNT = 1000;
       const RENDERS_PER_COMPONENT = 20;
 
@@ -412,6 +414,7 @@ describe("Registry GC Profiling Tests", () => {
       gcObserver.start();
       registry.clearAll();
       forceGC(3);
+      await flushGCEntries();
       gcObserver.stop();
 
       const heapAfterClear = getHeapStats();
@@ -539,7 +542,7 @@ describe("Registry GC Profiling Tests", () => {
   });
 
   describe("Long-running process simulation", () => {
-    it("should simulate 100 test files with memory tracking", () => {
+    it("should simulate 100 test files with memory tracking", async () => {
       console.log("\n⏱️  Long-Running Process Simulation:");
 
       const TEST_FILES = 100;
@@ -584,6 +587,7 @@ describe("Registry GC Profiling Tests", () => {
         }
       }
 
+      await flushGCEntries();
       gcObserver.stop();
 
       forceGC(3); // Collected, like the in-loop snapshots above

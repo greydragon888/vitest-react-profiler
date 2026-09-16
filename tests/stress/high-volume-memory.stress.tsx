@@ -287,7 +287,7 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     }
   });
 
-  it("should analyze memory growth for 2000 renders", () => {
+  it("should analyze memory growth for 2000 renders", async () => {
     const Component: FC<{ count: number }> = ({ count }) => (
       <div>Count: {count}</div>
     );
@@ -309,6 +309,7 @@ describe("High-Volume Memory Profiling - Single Component", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -415,7 +416,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should analyze memory for 100 components", () => {
+  it("should analyze memory for 100 components", async () => {
     gcObserver.start();
 
     // Measure from a collected heap: heapAfter is taken after forceGC, so
@@ -440,6 +441,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -471,7 +473,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     }
   });
 
-  it("should analyze memory for 100 components with 11 renders each (1100 total)", () => {
+  it("should analyze memory for 100 components with 11 renders each (1100 total)", async () => {
     interface CompProps {
       value: number;
     }
@@ -516,6 +518,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -564,7 +567,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     }
   });
 
-  it("should analyze memory for 50 components with 51 renders each (2550 total)", () => {
+  it("should analyze memory for 50 components with 51 renders each (2550 total)", async () => {
     interface CompProps {
       count: number;
     }
@@ -605,6 +608,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
 
     const heapAfter = getHeapStats();
 
+    await flushGCEntries();
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -758,7 +762,7 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     gcObserver = new GCObserver();
   });
 
-  it("should verify linear (not exponential) memory growth with increasing renders", () => {
+  it("should verify linear (not exponential) memory growth with increasing renders", async () => {
     const Component: FC<{ n: number }> = ({ n }) => <div>{n}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -805,6 +809,7 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
       console.log(`    Bytes per render: ${formatBytes(bytesPerRender)}`);
     }
 
+    await flushGCEntries();
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
@@ -859,7 +864,7 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     }
   });
 
-  it("should measure heap fragmentation with interleaved renders and GC", () => {
+  it("should measure heap fragmentation with interleaved renders and GC", async () => {
     const Component: FC<{ value: number }> = ({ value }) => <div>{value}</div>;
     const ProfiledComponent = withProfiler(Component);
 
@@ -913,6 +918,7 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
       }
     }
 
+    await flushGCEntries();
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
