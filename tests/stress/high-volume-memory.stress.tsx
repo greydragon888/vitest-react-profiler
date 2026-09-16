@@ -378,11 +378,11 @@ describe("High-Volume Memory Profiling - Single Component", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB for 9500 renders
+      expect(heapDeltaMB).toBeLessThan(12); // < 12 MB for 9500 renders (measured 4.7 MB)
     }
 
     if (!Number.isNaN(bytesPerRender)) {
-      expect(bytesPerRender).toBeLessThan(10_240); // < 10 KB per render
+      expect(bytesPerRender).toBeLessThan(2048); // < 2 KB per render (measured 520 B)
     }
 
     // GC assertions
@@ -626,11 +626,11 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(20); // < 20 MB for 2550 renders
+      expect(heapDeltaMB).toBeLessThan(10); // < 10 MB for 2550 renders (measured 5.9 MB)
     }
 
     if (!Number.isNaN(bytesPerRender)) {
-      expect(bytesPerRender).toBeLessThan(10_240); // < 10 KB per render
+      expect(bytesPerRender).toBeLessThan(5120); // < 5 KB per render (measured 2.4 KB)
     }
   });
 
@@ -719,11 +719,11 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(25); // < 25 MB for 3030 renders
+      expect(heapDeltaMB).toBeLessThan(8); // < 8 MB for 3030 renders (measured 4.2 MB)
     }
 
     if (!Number.isNaN(bytesPerRender)) {
-      expect(bytesPerRender).toBeLessThan(10_240); // < 10 KB per render
+      expect(bytesPerRender).toBeLessThan(3072); // < 3 KB per render (measured 1.4 KB)
     }
 
     // GC assertions
@@ -921,7 +921,7 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     const totalGrowth = finalHeap.usedHeapSize - initialHeap.usedHeapSize;
 
     if (!Number.isNaN(totalGrowth)) {
-      expect(totalGrowth).toBeLessThan(20 * 1024 * 1024); // < 20 MB for 500 renders with GC
+      expect(totalGrowth).toBeLessThan(2 * 1024 * 1024); // < 2 MB for 500 renders with GC (measured 0.28 MB)
     }
   });
 });

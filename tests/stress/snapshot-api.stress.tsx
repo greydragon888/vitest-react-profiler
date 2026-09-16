@@ -245,7 +245,7 @@ describe("Stress Tests - Snapshot API Memory Efficiency", () => {
 
     // Should not leak significantly (< 5 MB for 10,000 total renders with clear)
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(Math.abs(heapDeltaMB)).toBeLessThan(5);
+      expect(Math.abs(heapDeltaMB)).toBeLessThan(1); // measured 0.03 MB
     }
   });
 
@@ -298,7 +298,7 @@ describe("Stress Tests - Snapshot API Memory Efficiency", () => {
 
     // Memory should be reasonable for 9000+ renders
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50);
+      expect(heapDeltaMB).toBeLessThan(1); // measured 0.12 MB
     }
   });
 });

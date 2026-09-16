@@ -254,7 +254,7 @@ describe("Registry GC Profiling Tests", () => {
         expect(gcStats.maxDuration).toBeLessThan(100); // Max pause < 100ms
       }
 
-      expect(heapDeltaMB).toBeLessThan(5); // < 5 MB for 1k components
+      expect(heapDeltaMB).toBeLessThan(1.5); // < 1.5 MB for 1k components (measured 0.41 MB)
     });
 
     it("should compare GC behavior: with vs without external references", async () => {
@@ -519,7 +519,7 @@ describe("Registry GC Profiling Tests", () => {
 
       // Only check memory if we have valid stats
       if (!Number.isNaN(totalAccumulated)) {
-        expect(totalAccumulated).toBeLessThan(50 * 1024 * 1024); // < 50 MB total
+        expect(totalAccumulated).toBeLessThan(8 * 1024 * 1024); // < 8 MB total (measured 3.9 MB)
       }
     });
   });
@@ -618,7 +618,7 @@ describe("Registry GC Profiling Tests", () => {
 
         // Only check if we have valid stats
         if (!Number.isNaN(bytesPerComponent)) {
-          expect(bytesPerComponent).toBeLessThan(1024); // < 1 KB per component
+          expect(bytesPerComponent).toBeLessThan(512); // < 512 B per component (measured 205 B)
         }
       }
     });

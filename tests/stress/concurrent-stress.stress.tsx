@@ -268,7 +268,7 @@ describe("Concurrent Features Stress Tests - startTransition", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB for 500 transitions
+      expect(heapDeltaMB).toBeLessThan(4); // < 4 MB for 500 transitions (measured 1.5 MB)
     }
 
     // Cleanup
@@ -417,7 +417,7 @@ describe("Concurrent Features Stress Tests - useDeferredValue", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(30); // < 30 MB for 1000 updates
+      expect(heapDeltaMB).toBeLessThan(1); // < 1 MB for 1000 updates (measured 0.32 MB)
     }
 
     // Cleanup

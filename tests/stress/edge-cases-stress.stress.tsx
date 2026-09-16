@@ -242,7 +242,7 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(200); // < 200 MB for 9999 renders
+      expect(heapDeltaMB).toBeLessThan(15); // < 15 MB for 9999 renders (measured 6.2 MB)
     }
   }, 10_000);
 
@@ -549,7 +549,7 @@ describe("Edge Cases - Memory Efficiency", () => {
 
     // Should not leak significantly
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(Math.abs(heapDeltaMB)).toBeLessThan(10); // < 10 MB leak
+      expect(Math.abs(heapDeltaMB)).toBeLessThan(12); // < 12 MB leak (measured 7.3 MB)
     }
   });
 });

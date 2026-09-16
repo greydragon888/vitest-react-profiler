@@ -232,7 +232,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB for 2000 rerenders
+      expect(heapDeltaMB).toBeLessThan(5); // < 5 MB for 2000 rerenders (measured 2.1 MB)
     }
 
     // Cleanup
@@ -285,7 +285,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     expect(totalTime).toBeLessThan(600); // < 600ms
 
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(50); // < 50 MB
+      expect(heapDeltaMB).toBeLessThan(4); // < 4 MB for 3000 rerenders (measured 1.7 MB)
     }
 
     unmount();
@@ -371,7 +371,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(80); // < 80 MB
+      expect(heapDeltaMB).toBeLessThan(2); // < 2 MB for 1000 rerenders (measured 0.72 MB)
     }
 
     unmount();
@@ -524,7 +524,7 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(100); // < 100 MB
+      expect(heapDeltaMB).toBeLessThan(3); // < 3 MB for 20 hooks x 100 rerenders (measured 1.14 MB)
     }
 
     // Cleanup all hooks
