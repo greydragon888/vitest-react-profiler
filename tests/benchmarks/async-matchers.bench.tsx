@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { bench, describe } from "vitest";
 
-import { withProfiler } from "../../src";
+import { clearProfilerData, withProfiler } from "../../src";
 
 import type { FC } from "react";
 
@@ -39,6 +39,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
       "1 render - expect 10 (fast timeout) - 50 iterations",
       async () => {
         // 50 iterations to amortize GC spikes and stabilize measurements
+        clearProfilerData();
         for (let rep = 0; rep < 50; rep++) {
           const ProfiledComponent = withProfiler(TestComponent);
 
@@ -61,6 +62,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     );
 
     bench("10 renders - expect 100 (fast timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -79,6 +81,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     });
 
     bench("100 renders - expect 500 (fast timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -97,6 +100,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     });
 
     bench("500 renders - expect 1000 (realistic timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -120,6 +124,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
       "1 render - expect at least 10 (fast timeout) - 50 iterations",
       async () => {
         // 50 iterations to amortize GC spikes and stabilize measurements
+        clearProfilerData();
         for (let rep = 0; rep < 50; rep++) {
           const ProfiledComponent = withProfiler(TestComponent);
 
@@ -141,6 +146,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     );
 
     bench("10 renders - expect at least 100 (fast timeout)", async () => {
+      clearProfilerData();
       const ProfiledComponent = withProfiler(TestComponent);
       const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -160,6 +166,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "500 renders - expect at least 1000 (realistic timeout)",
       async () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -183,6 +190,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
       "check nested-update phase - never happens (fast timeout) - 50 iterations",
       async () => {
         // 50 iterations to amortize GC spikes and stabilize measurements
+        clearProfilerData();
         for (let rep = 0; rep < 50; rep++) {
           const ProfiledComponent = withProfiler(TestComponent);
 
@@ -210,6 +218,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "check nested-update phase - many renders (fast timeout)",
       async () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
@@ -239,6 +248,7 @@ describe("Async Matchers - Performance (Overhead)", () => {
     bench(
       "check nested-update phase - 500 renders (realistic test)",
       async () => {
+        clearProfilerData();
         const ProfiledComponent = withProfiler(TestComponent);
         const { rerender } = render(<ProfiledComponent value={0} />);
 
