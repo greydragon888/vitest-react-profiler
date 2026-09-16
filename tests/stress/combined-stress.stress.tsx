@@ -217,6 +217,7 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
     const ProfiledComponent = withProfiler(CombinedComponent);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -337,6 +338,7 @@ describe("Combined Stress Tests - Events + Concurrent Features", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -434,6 +436,8 @@ describe("Combined Stress Tests - Multiple Components + Concurrent Features", ()
 
       return withProfiler(Comp);
     });
+
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -546,6 +550,8 @@ describe("Combined Stress Tests - All Factors", () => {
 
       return withProfiler(Comp);
     });
+
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 

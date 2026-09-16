@@ -178,6 +178,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     };
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -248,6 +249,7 @@ describe("Hook Profiling Stress Tests - Simple Hooks", () => {
     );
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -311,6 +313,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     };
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -397,6 +400,7 @@ describe("Hook Profiling Stress Tests - Complex Hooks", () => {
     });
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -460,6 +464,7 @@ describe("Hook Profiling Stress Tests - Multiple Hooks", () => {
     });
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -550,6 +555,8 @@ describe("Hook Profiling Stress Tests - Event Listeners", () => {
       ProfiledHook.onRender(listener);
       listeners.push(listener);
     }
+
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 

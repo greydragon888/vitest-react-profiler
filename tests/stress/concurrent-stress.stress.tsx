@@ -204,6 +204,7 @@ describe("Concurrent Features Stress Tests - startTransition", () => {
     const ProfiledComponent = withProfiler(RapidTransitionComponent);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -358,6 +359,7 @@ describe("Concurrent Features Stress Tests - useDeferredValue", () => {
     const ProfiledComponent = withProfiler(DeferredStressComponent);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 

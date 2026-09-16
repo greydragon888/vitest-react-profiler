@@ -191,6 +191,9 @@ describe("Registry GC Profiling Tests", () => {
     it("should analyze GC activity for 1,000 components", () => {
       const COUNT = 1000;
 
+      // Collected baseline, before the observer so the GC is not counted
+      forceGC(5);
+
       // Start observing GC
       gcObserver.start();
 
@@ -261,6 +264,10 @@ describe("Registry GC Profiling Tests", () => {
 
       // Scenario 1: Keep external references
       console.log("\n  Scenario 1: WITH external references");
+
+      // Collected baseline, before the observer so the GC is not counted
+      forceGC(5);
+
       gcObserver.start();
       gcObserver.reset();
 
@@ -294,6 +301,10 @@ describe("Registry GC Profiling Tests", () => {
 
       // Scenario 2: No external references (scope-limited)
       console.log("\n  Scenario 2: WITHOUT external references");
+
+      // Collected baseline, before the observer so the GC is not counted
+      forceGC(5);
+
       gcObserver.start();
       gcObserver.reset();
 
@@ -371,6 +382,8 @@ describe("Registry GC Profiling Tests", () => {
         components.push(profilerData);
       }
 
+      forceGC(3); // Collected baseline, like the snapshot it is compared with
+
       const heapBeforeClear = getHeapStats();
       const setSizeBeforeClear = (registry as any).activeComponents.size;
 
@@ -432,6 +445,8 @@ describe("Registry GC Profiling Tests", () => {
     it("should analyze heap fragmentation under stress", () => {
       console.log("\n🔥 Heap Fragmentation Stress Test:");
 
+      forceGC(3); // Collected baseline, like the snapshot it is compared with
+
       const initialHeap = getHeapStats();
 
       console.log(`\n  Initial Heap State:`);
@@ -446,6 +461,8 @@ describe("Registry GC Profiling Tests", () => {
 
       for (const count of waves) {
         console.log(`\n  Wave: ${count} components`);
+
+        forceGC(3); // Collected baseline, so "allocated" counts this wave only
 
         const heapBefore = getHeapStats();
 
@@ -477,6 +494,8 @@ describe("Registry GC Profiling Tests", () => {
           `    Retention rate: ${((retained / allocated) * 100).toFixed(2)}%`,
         );
       }
+
+      forceGC(3); // Collected, like initialHeap, so the delta is symmetric
 
       const finalHeap = getHeapStats();
       const totalAccumulated =
@@ -552,6 +571,8 @@ describe("Registry GC Profiling Tests", () => {
       }
 
       gcObserver.stop();
+
+      forceGC(3); // Collected, like the in-loop snapshots above
 
       const finalHeap = getHeapStats();
       const finalSetSize = (registry as any).activeComponents.size;

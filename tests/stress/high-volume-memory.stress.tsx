@@ -222,8 +222,8 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     }
 
     warmup.unmount();
-    forceGC(3); // Clean warm-up artifacts
     clearRegistry(); // Reset render counts after warm-up
+    forceGC(3); // Clean warm-up artifacts, last so the baseline is collected
 
     // Now measure baseline
     const heapBefore = getHeapStats();
@@ -898,6 +898,9 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     gcObserver.stop();
 
     const gcStats = gcObserver.getStats();
+
+    forceGC(3); // Collected, like initialHeap, so the delta is symmetric
+
     const finalHeap = getHeapStats();
 
     console.log(`\n  Final Heap:`);

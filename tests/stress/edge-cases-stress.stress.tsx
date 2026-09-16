@@ -181,6 +181,7 @@ describe("Edge Cases - MAX_SAFE_RENDERS Boundary", () => {
     const ProfiledComponent = withProfiler(Component);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -401,6 +402,7 @@ describe("Edge Cases - Large History Performance", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -457,6 +459,7 @@ describe("Edge Cases - Large History Performance", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -507,6 +510,7 @@ describe("Edge Cases - Memory Efficiency", () => {
 
   it("should not leak memory with rapid component mount/unmount cycles", () => {
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
