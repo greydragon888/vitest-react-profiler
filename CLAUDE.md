@@ -216,7 +216,7 @@ vitest-react-profiler/
 | `vitest.config.properties.mts` | Property tests         | Extends common, coverage disabled, 30s timeout                      |
 | `vitest.config.bench.mts`      | Benchmarks             | Extends common, forks pool, 600s timeout                            |
 | `vitest.stryker.config.mts`    | Mutation testing       | Extends common, forks pool, 5s timeout                              |
-| `vitest.stress.config.mts`     | Stress tests           | Extends common, memory/load testing                                 |
+| `vitest.config.stress.mts`     | Stress tests           | Extends common, memory/load testing                                 |
 | `eslint.config.mjs`            | ESLint rules           | Flat config format                                                  |
 | `tsconfig.json`                | TypeScript             | Path aliases (`@/` → `src/`)                                        |
 | `tsdown.config.ts`             | Build config           | ESM + CJS bundles                                                   |
