@@ -757,4 +757,17 @@ export default tsEslint.config(
       "unicorn/prefer-module": "off",
     },
   },
+
+  // ============================================
+  // 16. MAINTENANCE SCRIPTS (Node CLIs, not config files)
+  // ============================================
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
+    },
+  },
 );

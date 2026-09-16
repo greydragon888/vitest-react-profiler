@@ -208,6 +208,67 @@ jobs:
         if: steps.changes.outputs.should_run != 'true'
         run: echo "⏭️ Stress tests skipped - no changes to src/, tests/stress/, or vitest.stress.config.mts"
 
+  bench:
+    name: Benchmarks
+    runs-on: ubuntu-latest
+    # The suite takes ~5 minutes locally; the timeout only guards against a hang.
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2 # Need previous commit to detect changes
+
+      - name: Check if relevant files changed
+        id: changes
+        run: |
+          # Get changed files between HEAD and HEAD~1
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+
+          # Check if src/, tests/benchmarks/, or the benchmark config changed
+          # (bench merges vitest.config.common.mts, so that counts too)
+          if echo "$CHANGED_FILES" | grep -qE '^(src/|tests/benchmarks/|tests/setup\.bench\.ts|vitest\.config\.(bench|common)\.mts|scripts/check-bench-results\.mjs)'; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "✅ Relevant files changed - running benchmarks"
+            echo "$CHANGED_FILES" | grep -E '^(src/|tests/benchmarks/|tests/setup\.bench|vitest\.config\.(bench|common)|scripts/check-bench-results)' | head -10
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No relevant changes - skipping benchmarks"
+            echo "Changed files:"
+            echo "$CHANGED_FILES" | head -10
+          fi
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: "npm"
+
+      - name: Install dependencies
+        if: steps.changes.outputs.should_run == 'true'
+        run: npm ci
+
+      # `vitest bench` exits 0 even when a benchmark throws on every iteration:
+      # the task is reported with no hz and no sampleCount and printed as NaNx.
+      # Running the suite therefore proves nothing on its own - the report check
+      # inside test:bench:ci is what makes this job a gate.
+      - name: Run benchmarks
+        if: steps.changes.outputs.should_run == 'true'
+        run: npm run test:bench:ci
+
+      - name: Upload benchmark results
+        if: always() && steps.changes.outputs.should_run == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmark-results
+          path: .bench/
+          retention-days: 7
+
+      - name: Skip benchmarks (no relevant changes)
+        if: steps.changes.outputs.should_run != 'true'
+        run: echo "⏭️ Benchmarks skipped - no changes to src/, tests/benchmarks/, or the benchmark config"
+
   mutation-test:
     name: Mutation Testing
     runs-on: ubuntu-latest

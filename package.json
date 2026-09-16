@@ -71,6 +71,7 @@
     "test:mutation:report": "open reports/mutation-report.html",
     "test:properties": "vitest run --config vitest.config.properties.mts",
     "test:bench": "vitest bench --config vitest.config.bench.mts",
+    "test:bench:ci": "npm run test:bench && node scripts/check-bench-results.mjs",
     "test:stress": "vitest run --config vitest.config.stress.mts",
     "test:examples": "npm run test:run --workspaces --if-present",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.node.json",
