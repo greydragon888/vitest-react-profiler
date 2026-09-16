@@ -5,8 +5,11 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "../../src"),
-      "vitest-react-profiler": path.resolve(__dirname, "../../src/index.ts"),
+      "@": path.resolve(import.meta.dirname, "../../src"),
+      "vitest-react-profiler": path.resolve(
+        import.meta.dirname,
+        "../../src/index.ts",
+      ),
     },
   },
 
