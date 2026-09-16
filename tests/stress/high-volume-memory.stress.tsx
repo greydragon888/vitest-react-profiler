@@ -280,6 +280,7 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     const ProfiledComponent = withProfiler(Component);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -329,6 +330,7 @@ describe("High-Volume Memory Profiling - Single Component", () => {
     const ProfiledComponent = withProfiler(Component);
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -459,6 +461,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -534,7 +537,10 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
 
     // Memory assertions
     if (!Number.isNaN(heapDeltaMB)) {
-      expect(heapDeltaMB).toBeLessThan(10); // < 10 MB for 1100 renders
+      // Mounting the 100 components accounts for ~9 MB of this on its own (see
+      // the 100-component test above); the 1000 rerenders add ~1 MB. Measured
+      // 9.5-10.2 MB across Node 22 and 24, so 10 MB straddled the result.
+      expect(heapDeltaMB).toBeLessThan(15); // < 15 MB for 1100 renders
     }
 
     if (!Number.isNaN(bytesPerRender)) {
@@ -548,6 +554,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -633,6 +640,7 @@ describe("High-Volume Memory Profiling - Multiple Components", () => {
     }
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: heapAfter is measured after a GC too
 
     const heapBefore = getHeapStats();
 
@@ -751,6 +759,8 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     const checkpoints = [100, 250, 500, 1000];
 
     for (const checkpoint of checkpoints) {
+      forceGC(3); // Collected baseline: heapAfter is measured after a GC too
+
       const heapBefore = getHeapStats();
       const currentRenders = ProfiledComponent.getRenderCount();
 
@@ -838,6 +848,7 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     console.log("\n🔥 Heap Fragmentation Analysis:");
 
     gcObserver.start();
+    forceGC(3); // Collected baseline: finalHeap is measured after a GC too
 
     const initialHeap = getHeapStats();
 
@@ -850,6 +861,8 @@ describe("High-Volume Memory Profiling - Growth Patterns", () => {
     const waves = [100, 200, 300, 400, 500];
 
     for (const count of waves) {
+      forceGC(3); // Collected baseline, so "allocated" counts this wave only
+
       const heapBefore = getHeapStats();
 
       // Render until count
